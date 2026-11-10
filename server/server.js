@@ -2779,6 +2779,7 @@ async function handler(req, res) {
     await ensureReady();
     saveBeforeReply(res);
     db = await store.refresh(db);
+    if (ADMIN_EMAILS.length) db.users.forEach(u => { if (ADMIN_EMAILS.includes(String(u.email).toLowerCase()) && u.role !== 'admin') u.role = 'admin'; });
     runDueTasks(false);
     if (pathname === '/api/cron') {
       // Called once a day by Vercel Cron. Vercel sends the CRON_SECRET as a bearer token.
