@@ -39,7 +39,7 @@ function recordsOf(db) {
 async function sb(method, pathAndQuery, { body, headers, raw } = {}) {
   const res = await fetch(URL_BASE + pathAndQuery, {
     method,
-    headers: Object.assign({ apikey: KEY, Authorization: 'Bearer ' + KEY }, headers || {}),
+    headers: Object.assign(KEY.startsWith('sb_') ? { apikey: KEY } : { apikey: KEY, Authorization: 'Bearer ' + KEY }, headers || {}),
     body,
     signal: AbortSignal.timeout(20000)
   });
