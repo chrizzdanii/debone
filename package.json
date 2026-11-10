@@ -1,0 +1,16 @@
+{
+  "name": "debone-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DEBONE website, shop, services and student academy",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "backup": "node server/backup.js",
+    "check": "node --check server/server.js && node --check server/backup.js",
+    "migrate": "node server/migrate-to-supabase.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

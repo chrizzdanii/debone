@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Staff login | DEBONE</title>
+<meta name="description" content="DEBONE Photos &amp; Video Editing Studio, Port Harcourt: photography, video, printing, computer services, NIN and ID services, and academy courses.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0A0A0C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=28">
+<link rel="stylesheet" href="pages.css?v=28">
+<style>
+  .staff-wrap{min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:24px;position:relative;isolation:isolate}
+  .staff-wrap::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 80% 15%,rgba(255,90,31,.2),transparent 50%),radial-gradient(circle at 10% 90%,rgba(31,224,196,.07),transparent 45%)}
+  .staff-card{width:min(440px,100%);background:var(--graphite);border:1px solid var(--line);padding:clamp(28px,4vw,44px);animation:rise .8s var(--ease) both}
+  .staff-card h1{font-size:clamp(2.2rem,5vw,3rem);margin:10px 0 8px}
+  .staff-card .muted{font-size:.95rem}
+  .staff-badge{display:inline-block;font:600 .66rem Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);border:1px solid rgba(31,224,196,.45);padding:6px 10px}
+  .staff-form{display:grid;gap:16px;margin-top:26px}
+  .staff-form .field{display:grid;gap:8px}
+  .staff-form label{font:500 .7rem Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+  .staff-form .btn{width:100%}
+  .staff-form .btn[disabled]{opacity:.6;cursor:wait}
+  .staff-foot{margin-top:22px;font-size:.85rem;color:var(--ash);text-align:center}
+  .staff-foot a{color:var(--orange)}
+</style>
+<link rel="stylesheet" href="theme-brand.css?v=28">
+<link rel="stylesheet" href="responsive.css?v=28">
+</head>
+<body class="theme-brand">
+<div class="staff-wrap">
+  <main class="staff-card" aria-labelledby="staff-title">
+    <span class="staff-badge">Staff only</span>
+    <h1 id="staff-title">Admin &amp; instructor login</h1>
+    <p class="muted">For DEBONE administrators and instructors. Students log in at the academy page.</p>
+    <form class="staff-form" id="staff-form" novalidate>
+      <div class="field">
+        <label for="email">Staff email</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <p class="form-error" id="staff-error" role="alert"></p>
+      <button class="btn btn-solid" id="staff-submit" type="submit">Log in to admin</button>
+    </form>
+    <p class="staff-foot"><a href="forgot-password.html">Forgot your password?</a> · <a href="login.html">Student login</a> · <a href="index.html">Back to website</a></p>
+  </main>
+<aside class="auth-panel" aria-hidden="true">
+  <img src="https://assets.mixkit.co/videos/44068/44068-thumb-720-0.jpg" alt="">
+  <div class="auth-quote">
+    <h2>Admin &amp; instructor access</h2>
+    <p>Manage courses, live classes, assignments and student records for DEBONE Academy.</p>
+  </div>
+</aside>
+</div>
+<script src="staff-login.js?v=28"></script>
+<script src="motion.js?v=28"></script>
+</body>
+</html>

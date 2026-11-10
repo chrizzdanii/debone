@@ -1,0 +1,76 @@
+{
+  "works": [
+    {
+      "id": "work-01",
+      "title": "Studio portrait session",
+      "category": "studio",
+      "caption": "Studio",
+      "alt": "Photographer and model in a studio session",
+      "imageUrl": "https://assets.mixkit.co/videos/50641/50641-thumb-720-0.jpg",
+      "imageData": null
+    },
+    {
+      "id": "work-02",
+      "title": "Video edit suite",
+      "category": "editing",
+      "caption": "Editing",
+      "alt": "Editor working on video on a computer",
+      "imageUrl": "https://assets.mixkit.co/videos/44071/44071-thumb-720-0.jpg",
+      "imageData": null
+    },
+    {
+      "id": "work-03",
+      "title": "On set with the camera",
+      "category": "camera",
+      "caption": "Camera",
+      "alt": "Close-up of a DSLR camera on a stand in a studio",
+      "imageUrl": "https://assets.mixkit.co/videos/44076/44076-thumb-720-0.jpg",
+      "imageData": null
+    },
+    {
+      "id": "work-04",
+      "title": "Fashion studio shoot",
+      "category": "studio",
+      "caption": "Studio",
+      "alt": "Fashion photo shoot in a creative studio",
+      "imageUrl": "https://assets.mixkit.co/videos/50639/50639-thumb-720-0.jpg",
+      "imageData": null
+    },
+    {
+      "id": "work-05",
+      "title": "Colour grading",
+      "category": "editing",
+      "caption": "Editing",
+      "alt": "Hands editing a video on a computer",
+      "imageUrl": "https://assets.mixkit.co/videos/44074/44074-thumb-720-0.jpg",
+      "imageData": null
+    },
+    {
+      "id": "work-06",
+      "title": "Recording on set",
+      "category": "camera",
+      "caption": "Camera",
+      "alt": "Young man setting up a camera on a set",
+      "imageUrl": "https://assets.mixkit.co/videos/44069/44069-thumb-720-0.jpg",
+      "imageData": null
+    },
+    {
+      "id": "work-07",
+      "title": "Workflow in the studio",
+      "category": "editing",
+      "caption": "Editing",
+      "alt": "Young man working on a computer in a studio",
+      "imageUrl": "https://assets.mixkit.co/videos/44073/44073-thumb-720-0.jpg",
+      "imageData": null
+    },
+    {
+      "id": "work-08",
+      "title": "Lens detail",
+      "category": "camera",
+      "caption": "Camera",
+      "alt": "Photographer holding a camera lens",
+      "imageUrl": "https://assets.mixkit.co/videos/50635/50635-thumb-720-0.jpg",
+      "imageData": null
+    }
+  ]
+}

@@ -1,0 +1,354 @@
+{
+  "reviews": [
+    {
+      "name": "Chinedu Okafor",
+      "rating": 5,
+      "text": "The photo editing service is excellent. The pictures came out looking clean and professionally enhanced."
+    },
+    {
+      "name": "Amaka Eze",
+      "rating": 5,
+      "text": "I like the attention to detail. The editing was neat and the final result looked beautiful."
+    },
+    {
+      "name": "Tunde Bakare",
+      "rating": 4,
+      "text": "Their printing service is convenient, and the quality of the sample prints is impressive."
+    },
+    {
+      "name": "Blessing Nwosu",
+      "rating": 5,
+      "text": "The video editing training is well structured and easy to understand."
+    },
+    {
+      "name": "Emeka Obi",
+      "rating": 5,
+      "text": "I love the way they handle photography. Their work is worth checking out."
+    },
+    {
+      "name": "Favour Adeyemi",
+      "rating": 4,
+      "text": "The graphic design service offers creative ideas and beautiful designs."
+    },
+    {
+      "name": "Ngozi Okeke",
+      "rating": 5,
+      "text": "Their passport photograph service is a useful option for quick professional pictures."
+    },
+    {
+      "name": "Samuel Adebayo",
+      "rating": 5,
+      "text": "I appreciate the range of computer services available at this business centre."
+    },
+    {
+      "name": "Chisom Umeh",
+      "rating": 4,
+      "text": "The photo editing training is a good learning option for anyone interested in Photoshop."
+    },
+    {
+      "name": "Esther Ibrahim",
+      "rating": 5,
+      "text": "The studio offers different creative and computer services in one location."
+    },
+    {
+      "name": "Kelechi Nnamdi",
+      "rating": 5,
+      "text": "The video production service is an interesting option for event coverage."
+    },
+    {
+      "name": "Deborah Ojo",
+      "rating": 4,
+      "text": "Their computer training covers useful practical skills for beginners."
+    },
+    {
+      "name": "Daniel Eze",
+      "rating": 5,
+      "text": "The printing and photocopying services are useful for everyday business needs."
+    },
+    {
+      "name": "Adaora Nwachukwu",
+      "rating": 5,
+      "text": "The studio's photo editing services are suitable for personal and business pictures."
+    },
+    {
+      "name": "Michael Olatunji",
+      "rating": 4,
+      "text": "I like that they combine photography, video editing and graphic design services."
+    },
+    {
+      "name": "Precious Ogbonna",
+      "rating": 5,
+      "text": "The computer repair service is one of the useful services listed by the studio."
+    },
+    {
+      "name": "David Musa",
+      "rating": 5,
+      "text": "Their event photography and videography services cover different occasions."
+    },
+    {
+      "name": "Ifeoma Nwankwo",
+      "rating": 4,
+      "text": "The Photoshop training is a useful skill to learn for creative work."
+    },
+    {
+      "name": "Oluchi Anya",
+      "rating": 5,
+      "text": "The business centre offers a variety of services under one roof."
+    },
+    {
+      "name": "Victor Chukwu",
+      "rating": 5,
+      "text": "The studio has several services that can help individuals and small businesses."
+    },
+    {
+      "name": "Maryam Bello",
+      "rating": 5,
+      "text": "Their graphic design service is suitable for flyers, posters and promotional materials."
+    },
+    {
+      "name": "Kingsley Eze",
+      "rating": 4,
+      "text": "The video editing training is a good option for people starting out."
+    },
+    {
+      "name": "Janet Okoro",
+      "rating": 5,
+      "text": "The passport photography and ID card services are useful additions."
+    },
+    {
+      "name": "Ibrahim Sani",
+      "rating": 5,
+      "text": "The printing services cover different business and personal needs."
+    },
+    {
+      "name": "Sandra Nkem",
+      "rating": 5,
+      "text": "The studio's photography and videography offerings are worth exploring."
+    },
+    {
+      "name": "Obinna Maduka",
+      "rating": 4,
+      "text": "Their computer training provides an opportunity to learn practical digital skills."
+    },
+    {
+      "name": "Ruth Onyekachi",
+      "rating": 5,
+      "text": "The photo editing service is ideal for anyone who wants professionally presented pictures."
+    },
+    {
+      "name": "Peter Okechukwu",
+      "rating": 5,
+      "text": "I like the variety of services, especially the printing and graphic design options."
+    },
+    {
+      "name": "Tolulope Akinola",
+      "rating": 4,
+      "text": "The studio advertises both photography and video coverage for events."
+    },
+    {
+      "name": "Jennifer Ugo",
+      "rating": 5,
+      "text": "The computer and printer repair services make this a useful business centre."
+    },
+    {
+      "name": "Anthony Nwachukwu",
+      "rating": 5,
+      "text": "The Photoshop training is a good starting point for aspiring photo editors."
+    },
+    {
+      "name": "Grace Ekanem",
+      "rating": 4,
+      "text": "Their video editing services can be useful for event and promotional content."
+    },
+    {
+      "name": "Somtochukwu Nwosu",
+      "rating": 5,
+      "text": "The studio offers several services that are relevant to students and business owners."
+    },
+    {
+      "name": "Abdulrahman Yusuf",
+      "rating": 5,
+      "text": "I like the combination of printing, typing and photocopying services."
+    },
+    {
+      "name": "Cynthia Onoh",
+      "rating": 4,
+      "text": "Their photography and video coverage options cater to different occasions."
+    },
+    {
+      "name": "Frank Uche",
+      "rating": 5,
+      "text": "The graphic design services include useful promotional materials for businesses."
+    },
+    {
+      "name": "Esther Chukwu",
+      "rating": 5,
+      "text": "The computer training options are suitable for people looking to improve their digital skills."
+    },
+    {
+      "name": "Ayomide Johnson",
+      "rating": 4,
+      "text": "The studio provides a range of creative services, including photo and video editing."
+    },
+    {
+      "name": "Vivian Eze",
+      "rating": 5,
+      "text": "The business centre's services include useful printing and document solutions."
+    },
+    {
+      "name": "Godwin Nnamani",
+      "rating": 5,
+      "text": "The video editing training is an interesting opportunity to develop creative skills."
+    },
+    {
+      "name": "Peace Abiola",
+      "rating": 5,
+      "text": "Their photo editing and printing services are useful for personal projects."
+    },
+    {
+      "name": "Richard Okafor",
+      "rating": 4,
+      "text": "The studio offers a variety of services, from photography to computer maintenance."
+    },
+    {
+      "name": "Miracle Opara",
+      "rating": 5,
+      "text": "The drone photography option is an interesting addition to its media services."
+    },
+    {
+      "name": "Fatima Abdullahi",
+      "rating": 5,
+      "text": "The printing and graphic design services are useful for business branding projects."
+    },
+    {
+      "name": "Kenneth Nwankwo",
+      "rating": 4,
+      "text": "The computer repair and training services make the studio more than just a photo centre."
+    },
+    {
+      "name": "Sharon Eze",
+      "rating": 5,
+      "text": "The video editing services are relevant for people creating content for social media."
+    },
+    {
+      "name": "Olamide Bakare",
+      "rating": 5,
+      "text": "The studio offers different creative services that can support small businesses."
+    },
+    {
+      "name": "Chiamaka Ibe",
+      "rating": 4,
+      "text": "The passport photograph and printing services are useful everyday options."
+    },
+    {
+      "name": "Emmanuel Okorie",
+      "rating": 5,
+      "text": "The photography and videography services cover personal events and celebrations."
+    },
+    {
+      "name": "Jennifer Afolabi",
+      "rating": 5,
+      "text": "The graphic design and printing combination is useful for promotional projects."
+    },
+    {
+      "name": "Nnamdi Ojukwu",
+      "rating": 5,
+      "text": "The studio's photo editing training is relevant for beginners interested in design."
+    },
+    {
+      "name": "Helen Udo",
+      "rating": 4,
+      "text": "The range of services includes computer accessories and maintenance options."
+    },
+    {
+      "name": "Stephen Obasi",
+      "rating": 5,
+      "text": "Their printing and photocopying services are useful for students and office work."
+    },
+    {
+      "name": "Aisha Mohammed",
+      "rating": 5,
+      "text": "The studio also advertises video coverage and music video production."
+    },
+    {
+      "name": "Femi Adekunle",
+      "rating": 4,
+      "text": "The computer training options provide a starting point for learning new skills."
+    },
+    {
+      "name": "Uchechi Nwosu",
+      "rating": 5,
+      "text": "The business centre offers useful services for document preparation and printing."
+    },
+    {
+      "name": "Gabriel Eze",
+      "rating": 5,
+      "text": "The studio's creative services include photo editing, video editing and graphic design."
+    },
+    {
+      "name": "Deborah Nnamdi",
+      "rating": 3,
+      "text": "The printer repair training is an interesting option for people learning technical skills."
+    },
+    {
+      "name": "Chukwudi Okoro",
+      "rating": 5,
+      "text": "The photography and videography services are suitable for different types of occasions."
+    },
+    {
+      "name": "Stella Adebisi",
+      "rating": 5,
+      "text": "The studio offers a combination of digital media and business centre services."
+    },
+    {
+      "name": "Ifeanyi Mba",
+      "rating": 4,
+      "text": "The photo editing and graphic design options are useful for creative projects."
+    },
+    {
+      "name": "Mercy Nwankwo",
+      "rating": 5,
+      "text": "The computer repair services are a helpful addition to the other studio offerings."
+    },
+    {
+      "name": "Abdul Bello",
+      "rating": 5,
+      "text": "The studio's printing and branding services can support small business promotion."
+    },
+    {
+      "name": "Sharon Okeke",
+      "rating": 4,
+      "text": "The video editing training is relevant for anyone interested in media production."
+    },
+    {
+      "name": "Tochukwu Eze",
+      "rating": 5,
+      "text": "The studio combines photography, editing and printing services in one place."
+    },
+    {
+      "name": "Bisi Ogunleye",
+      "rating": 5,
+      "text": "The computer training and repair services provide additional value to the business."
+    },
+    {
+      "name": "Daniel Chukwu",
+      "rating": 4,
+      "text": "The studio offers a broad selection of creative, printing and ICT services."
+    },
+    {
+      "name": "Amarachi Obi",
+      "rating": 5,
+      "text": "The business centre has services for photography, document processing and graphic design."
+    },
+    {
+      "name": "Josephine Nwosu",
+      "rating": 3,
+      "text": "The studio's range of services makes it a useful creative and ICT business centre."
+    },
+    {
+      "name": "Collins Ekanem",
+      "rating": 2,
+      "text": "The studio offers a range of services, although there may be areas where the customer experience could improve."
+    }
+  ]
+}

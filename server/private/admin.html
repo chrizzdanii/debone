@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Admin panel | DEBONE</title>
+<meta name="description" content="DEBONE Photos &amp; Video Editing Studio, Port Harcourt: photography, video, printing, computer services, NIN and ID services, and academy courses.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0A0A0C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=42">
+<link rel="stylesheet" href="pages.css?v=42">
+<link rel="stylesheet" href="admin.css?v=42">
+<link rel="stylesheet" href="theme-brand.css?v=42">
+<link rel="stylesheet" href="responsive.css?v=42">
+</head>
+<body class="app theme-brand" data-shell="staff">
+<a class="skip" href="#view">Skip to content</a>
+
+<aside class="side" id="side" aria-label="Admin navigation">
+  <a class="logo" href="index.html" aria-label="DEBONE home">DEBONE<span>.</span></a>
+  <p class="side-tag" id="role-tag">Admin</p>
+  <nav class="side-nav" aria-label="Admin">
+    <p class="side-group">Overview</p>
+    <a href="#overview" data-view="overview"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Overview</a>
+    <p class="side-group">Academy</p>
+    <a href="#live" data-view="live"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg></span>Live classes</a>
+    <a href="#assignments" data-view="assignments"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></span>Assignments</a>
+    <a href="#courses" data-view="courses" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg></span>Courses &amp; lessons</a>
+    <a href="#transfers" data-view="transfers" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10h18M5 10V6h14v4M5 10v8h14v-8M9 14h6"/></svg></span>Payment approvals</a>
+    <a href="#certificates" data-view="certificates" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="9" r="5"/><path d="M8.5 13.5L7 21l5-2.5 5 2.5-1.5-7.5"/></svg></span>Certificates</a>
+    <a href="#community" data-view="community" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4V5z"/></svg></span>Community moderation</a>
+    <a href="#challenges" data-view="challenges" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg></span>Monthly challenges</a>
+    <a href="#bundles" data-view="bundles" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="8" y="13" width="8" height="8" rx="2"/></svg></span>Course bundles</a>
+    <a href="#reviews" data-view="reviews" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span>Course reviews</a>
+    <a href="#webinars" data-view="webinars" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5l4 2.5-4 2.5z"/></svg></span>Free webinars</a>
+    <p class="side-group">Studio & services</p>
+    <a href="#services" data-view="services" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.5 6.5a4 4 0 0 0 5 5L12 19l-3-3 7.5-7.5z"/><path d="M14 4l6 6"/></svg></span>Services</a>
+    <a href="#talent" data-view="talent" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></span>Talent profiles</a>
+    <a href="#bookings" data-view="bookings" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>Bookings and quotes</a>
+    <a href="#digital" data-view="digital" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></span>Digital products</a>
+    <a href="#products" data-view="products" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h2l2.4 11h10.2L20 7H6.2"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></svg></span>Shop products</a>
+    <a href="#works" data-view="works" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>Selected work</a>
+    <p class="side-group">Website</p>
+    <a href="#settings" data-view="settings" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Site settings</a>
+    <p class="side-group">System</p>
+    <a href="#setup" data-view="setup" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg></span>Set-up &amp; backup</a>
+    <a href="#rules" data-view="rules" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>Business rules</a>
+    <a href="#users" data-view="users" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5.5a3.5 3.5 0 0 1 0 6.5"/><path d="M18 20a6.5 6.5 0 0 0-3-5.5"/></svg></span>Users &amp; roles</a>
+    <a href="#applications" data-view="applications" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></span>Instructor applications</a>
+    <a href="#payments" data-view="payments" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><path d="M6 15h4"/></svg></span>Payments</a>
+    <a href="#referrals" data-view="referrals" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M16 11h6"/></svg></span>Referrals</a>
+    <a href="#reports" data-view="reports" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>Reports and analytics</a>
+    <a href="#refunds" data-view="refunds" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 14l-5-5 5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></span>Refunds</a>
+    <a href="#announce" data-view="announce" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10v4a1 1 0 0 0 1 1h2l6 4V5L6 9H4a1 1 0 0 0-1 1z"/><path d="M16 8.5a5 5 0 0 1 0 7"/></svg></span>Announcements</a>
+    <a href="#feedback" data-view="feedback" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4V5z"/></svg></span>Feedback</a>
+    <a href="#newsletter" data-view="newsletter" class="admin-only"><span class="ix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg></span>Newsletter</a>
+  </nav>
+  <div class="side-foot">
+    <div class="me"><b id="me-name">Loading…</b><span id="me-email"></span></div>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+
+<div class="main">
+  <header class="topbar">
+    <button class="burger" id="burger" type="button" aria-label="Open navigation" aria-expanded="false"><span></span></button>
+    <div class="crumb" id="crumb">Overview</div>
+  </header>
+  <main class="view" id="view" tabindex="-1"><div class="skeleton"></div></main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="shell.js?v=42"></script>
+<script src="icons.js?v=42"></script>
+<script src="modal.js?v=42"></script>
+<script src="admin.js?v=42"></script>
+<script src="motion.js?v=42"></script>
+</body>
+</html>

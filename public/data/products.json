@@ -1,0 +1,197 @@
+{
+  "categories": [
+    {
+      "id": "cameras",
+      "label": "Cameras & video"
+    },
+    {
+      "id": "photo",
+      "label": "Photography"
+    },
+    {
+      "id": "laptops",
+      "label": "Laptops"
+    },
+    {
+      "id": "printing",
+      "label": "Printing equipment"
+    },
+    {
+      "id": "accessories",
+      "label": "Computer accessories"
+    }
+  ],
+  "products": [
+    {
+      "id": "dslr-mirrorless",
+      "cat": "cameras",
+      "name": "DSLR & mirrorless cameras",
+      "summary": "Cameras for photography and video.",
+      "description": "Choose a body for photos and video. Ask us about the lens kit, memory cards and what suits your work.",
+      "price": null,
+      "image": "https://images.unsplash.com/photo-1496598894108-068941485c21?w=1200&q=80&auto=format&fit=crop"
+    },
+    {
+      "id": "camcorders",
+      "cat": "cameras",
+      "name": "Camcorders",
+      "summary": "Dedicated video cameras for events and interviews.",
+      "description": "Built for long recordings at events, weddings and interviews. We will help you pick the right model for your shoot.",
+      "price": null
+    },
+    {
+      "id": "gimbals",
+      "cat": "cameras",
+      "name": "Gimbals & stabilisers",
+      "summary": "Smooth, steady handheld footage.",
+      "description": "Stabilisers that keep your footage smooth while you walk, run or move between shots.",
+      "price": null
+    },
+    {
+      "id": "tripods",
+      "cat": "cameras",
+      "name": "Tripods & stands",
+      "summary": "Steady shots for photos, video and live streams.",
+      "description": "Sturdy tripods and stands for cameras, phones and lights.",
+      "price": null
+    },
+    {
+      "id": "microphones",
+      "cat": "cameras",
+      "name": "Microphones",
+      "summary": "Clear audio for interviews, voiceovers and events.",
+      "description": "Microphones for clean sound on interviews, voiceovers and event recording.",
+      "price": null,
+      "image": "https://images.pexels.com/photos/3710191/pexels-photo-3710191.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    },
+    {
+      "id": "drones",
+      "cat": "cameras",
+      "name": "Drones",
+      "summary": "Aerial cameras for events, property and content.",
+      "description": "Drones for aerial photography and video. We also offer drone coverage as a service.",
+      "price": null,
+      "image": "https://images.unsplash.com/photo-1620926530886-1deabbcbe24d?w=1200&q=80&auto=format&fit=crop"
+    },
+    {
+      "id": "lenses",
+      "cat": "photo",
+      "name": "Lenses",
+      "summary": "Lenses for portraits, events and landscapes.",
+      "description": "Prime and zoom lenses for your camera body. Tell us your camera model and the kind of shots you want.",
+      "price": null,
+      "image": "https://images.unsplash.com/photo-1500646953400-045056a916d7?w=1200&q=80&auto=format&fit=crop"
+    },
+    {
+      "id": "studio-lighting",
+      "cat": "photo",
+      "name": "Studio lighting kits",
+      "summary": "Soft, flattering light for portraits and products.",
+      "description": "Lighting kits and modifiers for studio portraits, product shots and video.",
+      "price": null
+    },
+    {
+      "id": "laptops-new",
+      "cat": "laptops",
+      "name": "New laptops",
+      "summary": "Laptops for study, office and creative work.",
+      "description": "New laptops for everyday, study, office and creative work. Ask us about the model that suits your budget.",
+      "price": null,
+      "image": "https://images.unsplash.com/photo-1709721821603-8f0f11ce3e0d?w=1200&q=80&auto=format&fit=crop"
+    },
+    {
+      "id": "laptops-refurb",
+      "cat": "laptops",
+      "name": "Refurbished laptops",
+      "summary": "Used laptops in ready-to-use condition.",
+      "description": "Ask us about the condition, specifications and what is covered before you buy.",
+      "price": null,
+      "image": "https://images.unsplash.com/photo-1709721821603-8f0f11ce3e0d?w=1200&q=80&auto=format&fit=crop"
+    },
+    {
+      "id": "inkjet-laser",
+      "cat": "printing",
+      "name": "Inkjet & laser printers",
+      "summary": "Printers for home, office and small business.",
+      "description": "Printers for home, office and small business printing. Ask about running costs before you buy.",
+      "price": null,
+      "image": "https://images.pexels.com/photos/23534017/pexels-photo-23534017/free-photo-of-printer.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    },
+    {
+      "id": "di-machine",
+      "cat": "printing",
+      "name": "DI printing machine",
+      "summary": "Direct printing equipment for items and garments.",
+      "description": "Direct printing machine for items and garments. Ask us for specifications and a demonstration.",
+      "price": null,
+      "image": "https://images.pexels.com/photos/5727002/pexels-photo-5727002.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    },
+    {
+      "id": "flex-machine",
+      "cat": "printing",
+      "name": "Flex printing machine",
+      "summary": "Large-format printing for banners and signage.",
+      "description": "Flex printing machine for banners, signage and displays.",
+      "price": null,
+      "image": "https://images.pexels.com/photos/1440504/pexels-photo-1440504.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    },
+    {
+      "id": "ink-spares",
+      "cat": "printing",
+      "name": "Ink, toner & spares",
+      "summary": "Ink, toner and printer spare parts.",
+      "description": "Ink, toner and spare parts. Tell us your printer model when you order.",
+      "price": null,
+      "image": "https://images.pexels.com/photos/23534017/pexels-photo-23534017/free-photo-of-printer.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    },
+    {
+      "id": "usb-hubs",
+      "cat": "accessories",
+      "name": "USB hubs & adapters",
+      "summary": "Add ports to your laptop.",
+      "description": "USB-C and USB hubs and adapters, including HDMI options.",
+      "price": null
+    },
+    {
+      "id": "cables-chargers",
+      "cat": "accessories",
+      "name": "Cables & chargers",
+      "summary": "Everyday cables and charging accessories.",
+      "description": "Cables and chargers for laptops, phones and tablets.",
+      "price": null
+    },
+    {
+      "id": "bags-sleeves",
+      "cat": "accessories",
+      "name": "Laptop bags & sleeves",
+      "summary": "Protective bags and sleeves.",
+      "description": "Protective bags and sleeves for common laptop sizes.",
+      "price": null
+    },
+    {
+      "id": "power-banks",
+      "cat": "accessories",
+      "name": "Power banks",
+      "summary": "Portable charging for long days out.",
+      "description": "Portable power banks for phones, tablets and laptops.",
+      "price": null
+    },
+    {
+      "id": "storage",
+      "cat": "accessories",
+      "name": "Flash drives & SSDs",
+      "summary": "Fast storage for files and backups.",
+      "description": "Flash drives and SSDs for files, projects and backups.",
+      "price": null
+    },
+    {
+      "id": "mice-keyboards",
+      "cat": "accessories",
+      "name": "Mice & keyboards",
+      "summary": "Wired and wireless options.",
+      "description": "Wired and wireless mice and keyboards for work, study and home.",
+      "price": null,
+      "image": "https://images.unsplash.com/photo-1683701251422-912fe98f2b5e?w=1200&q=80&auto=format&fit=crop"
+    }
+  ]
+}

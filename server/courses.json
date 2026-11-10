@@ -1,0 +1,154 @@
+{
+  "currency": "NGN",
+  "announcements": [
+    {
+      "title": "Free intro course is open to every student",
+      "body": "Create your account and start Introduction to AI today. No payment needed."
+    },
+    {
+      "title": "AI Video Creation enrolments are open",
+      "body": "Pay once to unlock every lesson in the course."
+    },
+    {
+      "title": "Need help with a payment?",
+      "body": "Message us on WhatsApp at 0803 598 8889 and we will sort it out quickly."
+    }
+  ],
+  "courses": [
+    {
+      "id": "ai-intro",
+      "title": "Introduction to AI",
+      "subtitle": "Free · Start here",
+      "summary": "What AI is, how to talk to it well, and where it fits into creative work. A gentle start for anyone.",
+      "level": "Beginner",
+      "price": 0,
+      "lessons": [
+        {
+          "id": "ai-intro-1",
+          "title": "What AI actually is",
+          "free": true,
+          "body": [
+            "AI systems learn patterns from very large amounts of examples, then use those patterns to predict, classify or generate things. A language model predicts likely next words. An image model learns how pixels usually fit together.",
+            "Knowing this helps you set realistic expectations: AI is fast and tireless, but it can be confidently wrong, so you always check the output."
+          ]
+        },
+        {
+          "id": "ai-intro-2",
+          "title": "Writing prompts that work",
+          "free": true,
+          "body": [
+            "A good prompt states the goal, the context, the format you want and any limits. Compare \"write a caption\" with \"write three Instagram captions for a wedding photo, warm tone, under 20 words each, no hashtags\".",
+            "Iterate. Read the first answer, say what to change, and ask again. Good results usually come from two or three rounds."
+          ]
+        },
+        {
+          "id": "ai-intro-3",
+          "title": "AI tools for creators",
+          "free": true,
+          "body": [
+            "Creators use AI for scripts, captions, thumbnails, voiceovers, background removal and video rough cuts. Start with one task you repeat every week and find a tool that does only that well.",
+            "Keep your own taste at the centre. AI speeds up the making; the choices about what to say and how it should feel are still yours."
+          ]
+        }
+      ],
+      "category": "ai"
+    },
+    {
+      "id": "ai-video",
+      "title": "AI Video Creation",
+      "subtitle": "Full course · One-time payment",
+      "summary": "Plan, generate and finish short AI videos for brands and social media, from first idea to final export.",
+      "level": "Intermediate",
+      "price": 50000,
+      "lessons": [
+        {
+          "id": "ai-video-1",
+          "title": "Planning a shot with AI",
+          "free": false,
+          "body": [
+            "Every good AI video starts with a shot list. Write each scene as a short paragraph: subject, action, camera move, lighting and mood.",
+            "Plan for 8 to 12 second clips. Short, controlled shots are easier to generate well and to join together."
+          ]
+        },
+        {
+          "id": "ai-video-2",
+          "title": "Generating scenes from text and images",
+          "free": false,
+          "body": [
+            "Text-to-video creates a scene from a description. Image-to-video animates a still you already control, which gives you more consistency.",
+            "Generate two or three takes per scene and keep the cleanest one. Do not fall in love with the first result."
+          ]
+        },
+        {
+          "id": "ai-video-3",
+          "title": "Keeping characters consistent",
+          "free": false,
+          "body": [
+            "Use one clear reference image of your subject and keep wardrobe, lighting and colour grading the same across scenes.",
+            "Write a short style block and paste it at the end of every prompt. Repetition is what makes a series look like one story."
+          ]
+        },
+        {
+          "id": "ai-video-4",
+          "title": "Editing and finishing AI footage",
+          "free": false,
+          "body": [
+            "Bring your clips into an editor, trim the start and end of each, and add sound, titles and transitions. Match colour across clips so they belong together.",
+            "Export in the format each platform needs and check it on a phone before you send it to a client."
+          ]
+        }
+      ],
+      "liveStart": "2026-11-19",
+      "liveLabel": "Official live training starts 19 November 2026",
+      "category": "ai"
+    },
+    {
+      "id": "ai-automation",
+      "title": "AI Automation for Business",
+      "subtitle": "Full course · One-time payment",
+      "summary": "Find the repetitive work in your business and automate it with no-code tools and AI, step by step.",
+      "level": "Intermediate",
+      "price": 50000,
+      "lessons": [
+        {
+          "id": "ai-auto-1",
+          "title": "Mapping a repetitive task",
+          "free": false,
+          "body": [
+            "Write down a task you do more than three times a week: the trigger, the steps, the tools used and the output. This is your first automation candidate.",
+            "Automate the boring, well-defined work first. Leave judgement-heavy work for people."
+          ]
+        },
+        {
+          "id": "ai-auto-2",
+          "title": "Connecting tools with no-code workflows",
+          "free": false,
+          "body": [
+            "Most automations follow a trigger, then actions. A new form entry can trigger a message, a spreadsheet row and a calendar event.",
+            "Test with dummy data, then switch on one step at a time so problems are easy to find."
+          ]
+        },
+        {
+          "id": "ai-auto-3",
+          "title": "Using AI to draft, sort and reply",
+          "free": false,
+          "body": [
+            "Place AI inside a workflow to classify incoming enquiries, draft replies and summarise long messages. Always keep a human review step for anything customers will see.",
+            "Give the model a clear role, the business facts it may use, and the things it must never promise."
+          ]
+        },
+        {
+          "id": "ai-auto-4",
+          "title": "Measuring and improving automations",
+          "free": false,
+          "body": [
+            "Track how many times each automation runs, how long it saves and how often it needs fixing. A simple weekly check keeps workflows healthy.",
+            "Document each automation in one page so anyone on your team can understand and maintain it."
+          ]
+        }
+      ],
+      "comingSoon": true,
+      "category": "ai"
+    }
+  ]
+}

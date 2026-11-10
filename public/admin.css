@@ -1,0 +1,40 @@
+/* Admin and instructor panel */
+.side-tag{font:600 .66rem Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin:-18px 10px 22px}
+.admin-only.hidden-role{display:none}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.field{display:grid;gap:8px}
+.field label{font:500 .7rem Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+.field .hint{font-size:.8rem;color:var(--ash)}
+.check{display:flex;align-items:center;gap:10px;font-size:.92rem;color:var(--bone)}
+.check input{width:18px;height:18px;accent-color:var(--orange)}
+select.input{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ash) 50%),linear-gradient(135deg,var(--ash) 50%,transparent 50%);background-position:calc(100% - 18px) 55%,calc(100% - 13px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}
+textarea.input{padding:12px 16px;min-height:100px;resize:vertical}
+.stat-card{background:var(--graphite);border:1px solid var(--line);padding:22px;transition:transform .4s var(--ease),border-color .4s}
+.stat-card:hover{transform:translateY(-4px);border-color:rgba(255,90,31,.5)}
+.stat-card span{color:var(--ash);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase}
+.stat-card b{display:block;font:400 clamp(2.2rem,3.6vw,3rem)/1 Anton,Impact,sans-serif;margin-top:10px;font-variant-numeric:tabular-nums}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);background:var(--graphite)}
+.table-wrap .tbl{min-width:620px}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lesson-row{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);transition:background .3s}
+.lesson-row:hover{background:rgba(242,237,228,.03)}
+.lesson-row .n{font:400 1.2rem Anton,Impact,sans-serif;color:var(--ash)}
+.lesson-row small{color:var(--ash)}
+.box{background:var(--graphite);border:1px solid var(--line);padding:clamp(20px,3vw,30px);margin-bottom:16px}
+.box h2{font-size:clamp(1.6rem,2.6vw,2.2rem);margin-bottom:14px}
+.pill-check{font-size:.8rem;color:var(--ash)}
+.msg-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
+.msg-row b{font-weight:600}
+.msg-row p{color:var(--bone);font-size:.92rem;white-space:pre-wrap;word-wrap:break-word}
+.msg-row span{color:var(--ash);font-size:.8rem}
+.sub-row{display:grid;grid-template-columns:1.2fr 2fr 1fr auto;gap:12px;align-items:start;padding:16px 0;border-bottom:1px solid var(--line)}
+.sub-row p{font-size:.92rem;color:var(--bone);white-space:pre-wrap;word-wrap:break-word}
+.sub-row a{color:var(--orange);word-break:break-all;font-size:.88rem}
+.sub-row .input{min-height:42px;padding:8px 12px}
+.sub-row textarea.input{min-height:60px}
+@media (max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}.sub-row{grid-template-columns:1fr}}
+.form-grid{display:grid;gap:16px}
+.form-grid .btn{width:auto}
+.box .box{margin:0}

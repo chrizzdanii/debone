@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign up | DEBONE Academy</title>
+<meta name="description" content="Create your DEBONE Academy student account.">
+<meta name="theme-color" content="#0B0B0B">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=28">
+<link rel="stylesheet" href="pages.css?v=28">
+<link rel="stylesheet" href="theme-brand.css?v=28">
+<link rel="stylesheet" href="responsive.css?v=28">
+<link rel="stylesheet" href="login.css?v=28">
+</head>
+<body class="theme-brand lg-page">
+<a class="skip" href="#lg-form">Skip to the form</a>
+<div class="lg-split">
+  <section class="lg-left">
+    <div class="lg-inner">
+      <a class="lg-brand" href="index.html" aria-label="DEBONE home">DEBONE<span>.</span></a>
+      <p class="lg-kicker">Create your account</p>
+      <h1 class="lg-title">Join DEBONE Academy</h1>
+      <p class="lg-sub">Create a free student account. Start with the introduction course straight away. Full courses unlock after payment.</p>
+      <div class="lg-alert" id="lg-alert" role="alert" hidden></div>
+      <form class="lg-form" id="lg-form" novalidate>
+        <div class="lg-field">
+          <label for="lg-name">Full name</label>
+          <input class="input" id="lg-name" autocomplete="name" maxlength="80" placeholder="Enter your full name" required>
+        </div>
+        <div class="lg-field">
+          <label for="lg-phone">Phone (optional)</label>
+          <input class="input" id="lg-phone" type="tel" autocomplete="tel" maxlength="20" placeholder="Enter your phone number">
+        </div>
+        <div class="lg-field">
+          <label for="lg-email">Email address</label>
+          <input class="input" id="lg-email" type="email" autocomplete="email" placeholder="Enter your email address" required>
+        </div>
+        <div class="lg-field">
+          <label for="lg-pass">Password</label>
+          <div class="lg-pw">
+            <input class="input" id="lg-pass" type="password" autocomplete="new-password" placeholder="At least 8 characters" required minlength="8">
+            <button type="button" class="lg-eye" id="lg-eye" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
+        <button class="btn btn-solid lg-submit" id="lg-submit" type="submit">Create account</button>
+      </form>
+      <div class="lg-or"><span>or</span></div>
+      <a class="lg-google" id="lg-google" href="/api/auth/google"><svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6C12.3 13.5 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7-10.1 7-17.5z"/><path fill="#FBBC05" d="M10.4 28.8A14.5 14.5 0 0 1 9.5 24c0-1.7.3-3.3.9-4.8l-7.8-6A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.7-4.2-13.6-10l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg><span>Sign up with Google</span></a>
+      <p class="lg-switch">Already have an account? <a class="lg-link" href="login.html">Log in</a></p>
+    </div>
+  </section>
+  <aside class="lg-right" aria-hidden="true">
+    <img src="https://assets.mixkit.co/videos/44068/44068-thumb-720-0.jpg" alt="">
+    <div class="lg-card" id="lg-card">
+      <p class="lg-quote" id="lg-quote">Learn with DEBONE Academy.</p>
+      <p class="lg-by" id="lg-by">Photography, video and AI courses</p>
+    </div>
+  </aside>
+</div>
+<script src="icons.js?v=28"></script>
+<script src="signup.js?v=28"></script>
+<script src="settings.js?v=28"></script>
+</body>
+</html>

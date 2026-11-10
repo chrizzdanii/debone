@@ -1,0 +1,68 @@
+/* ===== Responsive layer (v18): phones, tablets and laptops ===== */
+html,body{max-width:100%;overflow-x:hidden}
+img,video,iframe,svg{max-width:100%}
+@media (max-width:1180px){
+  .ft-top{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ft-brand,.ft-sub{grid-column:1/-1}
+}
+@media (max-width:900px){
+  .theme-brand .main{margin-left:0}
+  .theme-brand .side{inset:0 auto 0 0;height:100vh;width:min(300px,86vw);border-radius:0 26px 26px 0;transform:translateX(-106%);transition:transform .5s cubic-bezier(.2,.7,.1,1);z-index:70}
+  .theme-brand .side.open{transform:none}
+  .theme-brand .topbar{padding:12px 16px;gap:10px}
+  .theme-brand .top-actions{gap:8px}
+  .theme-brand .user-meta{display:none}
+  .theme-brand .view{padding:22px 16px 90px}
+  .theme-brand .view-head h1,.theme-brand .view h1{font-size:clamp(2rem,8vw,2.8rem)}
+  .two,.course-layout,.live-layout,.grid-2,.grid-3,.split-feature,.visit-grid,.staff-wrap,.academy-hero-grid,.svc,.product-layout,.rvs-summary,.rv-summary{grid-template-columns:1fr !important}
+  .feature{grid-template-columns:1fr !important;min-height:0}
+  .feature-media{min-height:320px}
+  .feature-copy{padding:48px 20px 64px}
+  .sub-row{grid-template-columns:1fr !important}
+  .section-row{flex-direction:column;align-items:flex-start}
+  .hero-inner{padding-top:120px}
+  .hero h1{font-size:clamp(2.4rem,10vw,4rem)}
+  .kpis{grid-template-columns:1fr 1fr}
+  .stats-grid{grid-template-columns:1fr}
+  .stat{border-left:0;border-top:1px solid var(--line)}
+  .stat:first-child{border-top:0}
+  .steps{grid-template-columns:1fr 1fr}
+  .cards{grid-template-columns:1fr}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .svc-cards{grid-template-columns:1fr}
+  .tst-grid{grid-template-columns:1fr}
+  .auth-panel{display:none}
+  .page-hero{padding-top:120px}
+}
+@media (max-width:640px){
+  .container{width:min(var(--max),100% - 32px)}
+  .ft-top{grid-template-columns:1fr 1fr;gap:28px 18px}
+  .ft-wordmark{font-size:clamp(3.2rem,24vw,6.5rem);margin-bottom:24px}
+  .ft-bottom{flex-direction:column;align-items:flex-start}
+  .kpis{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .cta-row,.row,.product-actions,.btn-row{flex-direction:column;align-items:stretch}
+  .cta-row .btn,.row .btn,.product-actions .btn,.btn-row .btn{width:100%;justify-content:center}
+  .btn{padding:0 18px;min-height:50px}
+  .chat{height:380px}
+  .lesson-pane{padding:20px;min-height:0}
+  .auth-form,.staff-card,.auth{padding:22px}
+  .rvs-stage{padding:26px 20px 130px}
+  .rvs-controls{gap:10px}
+  .rvs-count{min-width:0}
+  .rvs-pause{width:100%;margin-left:0}
+  .filters,.rvs-filters,.tst-filters{overflow-x:auto;flex-wrap:nowrap;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+  .filters button,.rvs-filters button,.tst-filters button{flex:0 0 auto}
+  .table-wrap{overflow-x:auto}
+  .player-head{flex-direction:column;align-items:flex-start}
+  .bell-panel{right:-8px;width:calc(100vw - 24px)}
+  .svc-num{font-size:clamp(3.6rem,20vw,5rem)}
+  .section{padding-block:64px}
+  .legal-body{padding:48px 16px 80px}
+}
+@media (max-width:420px){
+  .ft-top{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr}
+  .kpis .kpi b{font-size:2.4rem}
+}

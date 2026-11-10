@@ -1,0 +1,264 @@
+{
+  "testimonials": [
+    {
+      "name": "Chinedu Okafor",
+      "country": "Nigeria",
+      "text": "This course opened my eyes to what artificial intelligence can do. I now understand how to use AI tools to improve my daily work."
+    },
+    {
+      "name": "Amaka Eze",
+      "country": "Nigeria",
+      "text": "I learned how to write better prompts and get more useful results from AI. The lessons were easy to follow."
+    },
+    {
+      "name": "Daniel Johnson",
+      "country": "USA",
+      "text": "The AI video creation lessons were very informative. I learned how to turn simple ideas into engaging video content."
+    },
+    {
+      "name": "Blessing Nwosu",
+      "country": "Nigeria",
+      "text": "I never thought creating videos with AI could be this interesting. The practical lessons made everything easier."
+    },
+    {
+      "name": "Emeka Obi",
+      "country": "Nigeria",
+      "text": "The training gave me a better understanding of AI automation and how businesses can save time using technology."
+    },
+    {
+      "name": "Sarah Williams",
+      "country": "UK",
+      "text": "A very useful introduction to artificial intelligence. I particularly enjoyed the practical examples."
+    },
+    {
+      "name": "Favour Adeyemi",
+      "country": "Nigeria",
+      "text": "I can now create better content using AI tools. The training was worth studying."
+    },
+    {
+      "name": "Ngozi Okeke",
+      "country": "Nigeria",
+      "text": "The explanations were straightforward, and I could understand the lessons even as a beginner."
+    },
+    {
+      "name": "Michael Brown",
+      "country": "USA",
+      "text": "I enjoyed learning how AI can support business operations. The automation concepts were especially interesting."
+    },
+    {
+      "name": "Samuel Adebayo",
+      "country": "Nigeria",
+      "text": "This course helped me understand how to use AI for content creation and business productivity."
+    },
+    {
+      "name": "Chisom Umeh",
+      "country": "Nigeria",
+      "text": "The prompt-writing lessons were very helpful. I now get better results when working with AI."
+    },
+    {
+      "name": "Esther Ibrahim",
+      "country": "Nigeria",
+      "text": "The course introduced me to tools I didn't know existed. It has changed how I approach creative work."
+    },
+    {
+      "name": "David Anderson",
+      "country": "Canada",
+      "text": "The video creation training was practical and informative. I especially liked learning about AI-generated scenes."
+    },
+    {
+      "name": "Kelechi Nnamdi",
+      "country": "Nigeria",
+      "text": "I learned how to create videos without needing expensive equipment. This was one of my favourite parts."
+    },
+    {
+      "name": "Deborah Ojo",
+      "country": "Nigeria",
+      "text": "The lessons were well organised, and the training helped me understand AI from the basics."
+    },
+    {
+      "name": "Olivia Martin",
+      "country": "Australia",
+      "text": "A great learning experience. I now have a better understanding of how AI can support creative projects."
+    },
+    {
+      "name": "Adaora Nwachukwu",
+      "country": "Nigeria",
+      "text": "I particularly enjoyed the AI video creation module. The possibilities for content creators are amazing."
+    },
+    {
+      "name": "Michael Olatunji",
+      "country": "Nigeria",
+      "text": "The automation lessons helped me see how repetitive business tasks can be handled more efficiently."
+    },
+    {
+      "name": "Precious Ogbonna",
+      "country": "Nigeria",
+      "text": "I joined as a beginner, but the explanations made the lessons easy to understand."
+    },
+    {
+      "name": "James Wilson",
+      "country": "UK",
+      "text": "The course provided useful insights into AI tools and their applications in modern businesses."
+    },
+    {
+      "name": "David Musa",
+      "country": "Nigeria",
+      "text": "I now understand how to combine different AI tools to make my content creation process easier."
+    },
+    {
+      "name": "Ifeoma Nwankwo",
+      "country": "Nigeria",
+      "text": "The training was interesting, practical and easy to follow. I learned several new things."
+    },
+    {
+      "name": "Oluchi Anya",
+      "country": "Nigeria",
+      "text": "The course helped me understand how AI can be used for more than just writing. The video lessons were particularly useful."
+    },
+    {
+      "name": "Sophia Garcia",
+      "country": "Spain",
+      "text": "I enjoyed the practical approach. It made learning artificial intelligence less complicated."
+    },
+    {
+      "name": "Victor Chukwu",
+      "country": "Nigeria",
+      "text": "The business automation module introduced me to new ways of improving productivity."
+    },
+    {
+      "name": "Maryam Bello",
+      "country": "Nigeria",
+      "text": "I found the AI tools for creators very helpful. I can now explore new ways to develop my creative ideas."
+    },
+    {
+      "name": "Kingsley Eze",
+      "country": "Nigeria",
+      "text": "The video editing lessons gave me a better understanding of how AI can simplify content production."
+    },
+    {
+      "name": "Janet Okoro",
+      "country": "Nigeria",
+      "text": "I appreciated how the lessons moved from basic concepts to practical applications."
+    },
+    {
+      "name": "Ibrahim Sani",
+      "country": "Nigeria",
+      "text": "The training helped me understand how businesses can use AI to improve their daily operations."
+    },
+    {
+      "name": "Ethan Taylor",
+      "country": "USA",
+      "text": "The AI automation course was a useful introduction to workflow automation. I enjoyed learning the different possibilities."
+    },
+    {
+      "name": "Sandra Nkem",
+      "country": "Nigeria",
+      "text": "I learned how to approach AI video creation step by step. The lessons were very helpful."
+    },
+    {
+      "name": "Obinna Maduka",
+      "country": "Nigeria",
+      "text": "The training introduced me to practical AI applications that I can explore in my personal projects."
+    },
+    {
+      "name": "Ruth Onyekachi",
+      "country": "Nigeria",
+      "text": "I enjoyed the course because it explained complex technology in simple language."
+    },
+    {
+      "name": "Peter Okechukwu",
+      "country": "Nigeria",
+      "text": "The lessons on connecting tools and automating repetitive tasks were particularly interesting."
+    },
+    {
+      "name": "Tolulope Akinola",
+      "country": "Nigeria",
+      "text": "This training helped me understand how AI can support social media content creation."
+    },
+    {
+      "name": "Jennifer Ugo",
+      "country": "Nigeria",
+      "text": "I found the course informative, especially the sections on prompts and AI tools."
+    },
+    {
+      "name": "Lucas Thompson",
+      "country": "UK",
+      "text": "A helpful course for anyone interested in learning how artificial intelligence works and how to apply it."
+    },
+    {
+      "name": "Anthony Nwachukwu",
+      "country": "Nigeria",
+      "text": "The AI video creation lessons helped me understand how to generate scenes and develop video ideas."
+    },
+    {
+      "name": "Grace Ekanem",
+      "country": "Nigeria",
+      "text": "I liked the practical examples. They helped me understand how AI can be useful in everyday business."
+    },
+    {
+      "name": "Somtochukwu Nwosu",
+      "country": "Nigeria",
+      "text": "The training gave me more confidence to experiment with AI tools and develop my own creative projects."
+    },
+    {
+      "name": "Abdulrahman Yusuf",
+      "country": "Nigeria",
+      "text": "The automation lessons were useful. I now have a clearer picture of how to reduce repetitive tasks."
+    },
+    {
+      "name": "Cynthia Onoh",
+      "country": "Nigeria",
+      "text": "I enjoyed learning about AI-generated content. The course gave me ideas I can apply to future projects."
+    },
+    {
+      "name": "Frank Uche",
+      "country": "Nigeria",
+      "text": "The training was a good introduction to AI. I particularly liked the explanations of different tools."
+    },
+    {
+      "name": "Emily Clark",
+      "country": "Canada",
+      "text": "The course was informative and accessible. I learned useful ways to incorporate AI into my workflow."
+    },
+    {
+      "name": "Esther Chukwu",
+      "country": "Nigeria",
+      "text": "I now understand how AI can assist with writing, research and content creation. Very useful lessons."
+    },
+    {
+      "name": "Ayomide Johnson",
+      "country": "Nigeria",
+      "text": "The AI video lessons were interesting. Learning how to develop scenes from simple ideas was my favourite part."
+    },
+    {
+      "name": "Vivian Eze",
+      "country": "Nigeria",
+      "text": "The course helped me understand how automation can make business processes more organised."
+    },
+    {
+      "name": "Godwin Nnamani",
+      "country": "Nigeria",
+      "text": "I learned new ways to use AI for creative work. The training was straightforward and informative."
+    },
+    {
+      "name": "Peace Abiola",
+      "country": "Nigeria",
+      "text": "The beginner lessons were very helpful. I now feel more comfortable exploring artificial intelligence."
+    },
+    {
+      "name": "Daniel Smith",
+      "country": "Australia",
+      "text": "An interesting learning experience. The practical approach made the AI concepts easier to understand."
+    },
+    {
+      "name": "Richard Okafor",
+      "country": "Nigeria",
+      "text": "The course introduced me to several AI applications that I can use to improve my productivity."
+    },
+    {
+      "name": "Miracle Opara",
+      "country": "Nigeria",
+      "text": "I enjoyed the entire learning experience. The lessons gave me a better understanding of AI video creation and automation."
+    }
+  ]
+}
