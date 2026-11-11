@@ -380,12 +380,15 @@ function courseView(course, user) {
     const prev = i > 0 ? course.lessons[i - 1] : null;
     const preview = !!l.free && course.price > 0;   // a free preview lesson inside a paid course stays open
     const nextStart = lessonSessions(course, l).map(s => Date.parse(s.startsAt)).filter(Number.isFinite).sort((a,b) => a-b)[0];
-    const dateLocked = held && enrolled && !preview && !done.has(l.id) && i > 0 && Number.isFinite(nextStart) && Date.now() < new Date(nextStart).setHours(0,0,0,0);
+    // A calendar date alone never opens the next lesson. Staff must actually start its linked live class.
+    const sessions = lessonSessions(course, l);
+    const adminStarted = sessions.some(s => !!s.liveStartedAt || s.status === 'live');
+    const liveLocked = held && enrolled && !preview && !done.has(l.id) && i > 0 && !adminStarted;
     const gated = held && enrolled && !preview && !!prev && !done.has(prev.id) && !done.has(l.id);
     return {
       id: l.id, number: i + 1, title: l.title, free: !!l.free,
-      locked: !(enrolled || l.free) || gated || dateLocked, gated: gated || dateLocked, completed: done.has(l.id),
-      lockReason: dateLocked ? 'The next lesson opens on its scheduled class date.' : gated ? 'Finish lesson ' + i + ' (its live class and assignment) to unlock this lesson.' : ''
+      locked: !(enrolled || l.free) || gated || liveLocked, gated: gated || liveLocked, completed: done.has(l.id),
+      lockReason: gated ? 'Finish lesson ' + i + ' (its live class and assignment) to unlock this lesson.' : liveLocked ? 'Waiting for the admin to start the live class for this lesson.' : ''
     };
   });
   const completed = lessons.filter(l => l.completed).length;
@@ -2528,6 +2531,7 @@ route('PATCH', '/api/staff/sessions/:id', async ctx => {
     const wasLive = s.status === 'live';
     s.status = b.status;
     if (s.status === 'live' && !wasLive) {
+      s.liveStartedAt = s.liveStartedAt || now();
       const c = db.courses.find(x => x.id === s.courseId);
       if (c) studentsWithAccess(c).forEach(u => notify(u.id, 'Class is live now', s.title + '\nJoin from your lesson or the Live classes page.', '#live', { kind: 'live', course: c.title }));
     }

@@ -390,7 +390,7 @@
     }).join('');
     var nextBtn = d.next
       ? (d.completed
-        ? (j.nextLocked ? '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="' + esc(j.nextLockReason || 'Next class has not started') + '">Next class not started</button>' : '<button class="btn btn-solid btn-sm unlock-pop" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>')
+        ? (j.nextLocked ? '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="' + esc(j.nextLockReason || 'Waiting for admin to go live') + '">Waiting for admin to go live</button>' : '<button class="btn btn-solid btn-sm unlock-pop" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>')
         : '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="Finish this lesson to unlock the next one">' + LOCK_SVG + ' Next lesson locked</button>')
       : '';
     pane.innerHTML =
