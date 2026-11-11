@@ -1091,6 +1091,7 @@
     DModal.open({ size: 'md', eyebrow: isNew ? 'New webinar' : 'Edit webinar', title: isNew ? 'Schedule a free webinar' : esc(it.title), body:
       '<form class="sub-form" id="wbf" novalidate>' +
         '<div class="field"><label>Title</label><input class="input" name="title" required maxlength="120" value="' + esc(it.title || '') + '"></div>' +
+        '<div class="field"><img class="admin-bundle-preview" id="bundle-cover-preview" alt="Bundle cover preview" style="' + (it.image ? '' : 'display:none;') + '" src="' + esc(it.image || '') + '"></div>' +
         '<div class="field"><label>Description</label><textarea class="input" name="description" rows="3" maxlength="1500">' + esc(it.description || '') + '</textarea></div>' +
         '<div class="grid-2"><div class="field"><label>Date and time</label><input class="input" type="datetime-local" name="startsAt" required value="' + esc(local) + '"></div>' +
         '<div class="field"><label>Instructor</label><input class="input" name="instructor" maxlength="120" value="' + esc(it.instructor || '') + '"></div></div>' +
@@ -1346,6 +1347,15 @@
         '<p class="form-error" id="bdf-err" role="alert"></p><div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid">' + (isNew ? 'Create bundle' : 'Save changes') + '</button></div></form>',
         onMount: function (box, inst) {
           box.querySelector('[data-cancel]').addEventListener('click', inst.close);
+          var bundleFile = box.querySelector('[name=bundleImage]');
+          bundleFile.addEventListener('change', function () {
+            var preview = box.querySelector('#bundle-cover-preview'), file = bundleFile.files[0];
+            if (!file) return;
+            if (file.size > 500000 || !['image/png','image/jpeg','image/webp'].includes(file.type)) { toast('Choose PNG, JPEG or WebP under 500 KB.', 'err'); bundleFile.value=''; return; }
+            var reader = new FileReader();
+            reader.onload = function () { preview.src = reader.result; preview.style.display = 'block'; };
+            reader.readAsDataURL(file);
+          });
           box.querySelector('#bdf').addEventListener('submit', async function (e) {
             e.preventDefault();
             var f = e.target, err = box.querySelector('#bdf-err'); err.textContent = '';
@@ -1367,7 +1377,7 @@
       '<div class="dt-tools"><span class="muted">' + d.bundles.length + ' bundles</span><button class="btn btn-solid" type="button" id="bd-new">New bundle</button></div>' +
       '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th>Bundle</th><th>Courses</th><th>Price</th><th>Status</th><th></th></tr></thead><tbody>' +
       (d.bundles.length ? d.bundles.map(function (b, i) {
-        return '<tr style="--i:' + i + '"><td><b>' + esc(b.title) + '</b></td><td class="small">' + b.courseIds.map(function (id) { var c = courses.find(function (x) { return x.id === id; }); return esc(c ? c.title : id); }).join(', ') + '</td><td>' + naira(b.price) + '</td>' +
+        return '<tr style="--i:' + i + '"><td><div class="admin-bundle-title">' + (b.image ? '<img src="' + esc(b.image) + '" alt="" loading="lazy">' : '<span class="admin-bundle-placeholder">D</span>') + '<b>' + esc(b.title) + '</b></div></td><td class="small">' + b.courseIds.map(function (id) { var c = courses.find(function (x) { return x.id === id; }); return esc(c ? c.title : id); }).join(', ') + '</td><td>' + naira(b.price) + '</td>' +
           '<td><span class="gpill ' + (b.active !== false ? 'pass' : 'none') + '">' + (b.active !== false ? 'Live' : 'Hidden') + '</span></td>' +
           '<td class="dt-act"><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(b.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(b.id) + '">Delete</button></td></tr>';
       }).join('') : '<tr><td colspan="5" class="muted">No bundles yet.</td></tr>') + '</tbody></table></div></section>');
@@ -1460,6 +1470,7 @@
     var r = await api('/api/staff/reports/revenue'), a = await api('/api/staff/analytics');
     var months = r.byMonth.map(function (m) { return '<div class="rp-bar"><i data-h="' + Math.max(4, Math.round(m.amount / Math.max(1, Math.max.apply(null, r.byMonth.map(function (x) { return x.amount; }))) * 100)) + '"></i><span>' + esc(m.month) + '</span><b>' + naira(m.amount) + '</b></div>'; }).join('') || '<p class="muted">No sales yet.</p>';
     setView(head('Business', 'Reports and analytics', 'Sales, refunds and website activity.') +
+      '<div class="rp-live"><span class="rp-live-dot"></span> Auto-updating every 10 seconds <span class="rp-live-time">· Updated ' + new Date().toLocaleTimeString() + '</span></div>' +
       '<div class="rp-stats"><div><span>Gross sales</span><b>' + naira(r.gross) + '</b></div><div><span>Refunded</span><b>' + naira(r.refunded) + '</b></div><div><span>Net</span><b>' + naira(r.net) + '</b></div><div><span>Orders</span><b>' + r.orders + '</b></div></div>' +
       '<div class="rp-actions"><a class="btn btn-solid" href="/api/staff/reports/revenue?format=csv">Download sales report (CSV)</a></div>' +
       '<div class="grid-2" style="margin-top:16px"><section class="box"><p class="eyebrow">Sales by month</p><div class="rp-chart">' + months + '</div></section>' +
@@ -1472,7 +1483,7 @@
     setTimeout(function () { view.querySelectorAll('[data-h]').forEach(function (el) { el.style.height = el.getAttribute('data-h') + '%'; }); }, 120);
     // Refresh only while reports remain visible; no manual reload required.
     if (window.deboneReportTimer) clearTimeout(window.deboneReportTimer);
-    window.deboneReportTimer = setTimeout(function () { if (location.hash.replace(/^#/, '').split('/')[0] === 'reports') renderReports().catch(function (e) { console.warn('Report refresh failed', e); }); }, 15000);
+    window.deboneReportTimer = setTimeout(function () { if (location.hash.replace(/^#/, '').split('/')[0] === 'reports') renderReports().catch(function (e) { console.warn('Report refresh failed', e); }); }, 10000);
   }
 
   /* ---------- Community moderation and suspensions (admin) ---------- */

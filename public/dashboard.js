@@ -774,7 +774,7 @@
       resizeToJpeg(file, 360).then(function (dataUrl) {
         window.dispatchEvent(new CustomEvent('debone:avatar-preview', { detail: { src: dataUrl } }));   // show it at once
         var big = document.querySelector('.pf-photo .pf-avatar'); if (big && big.tagName === 'IMG') big.src = dataUrl;
-        return api('/api/me/avatar', { method: 'POST', body: { data: dataUrl } });
+        return api('/api/me/avatar', { method: 'POST', body: { data: dataUrl } }).then(function (r) { window.deboneAvatarVersion = String(Date.now()); return r; });
       }).then(function () {
         toast('Profile photo saved.');
         return loadDash();
@@ -783,7 +783,7 @@
     });
     var rm = document.getElementById('pf-remove');
     if (rm) rm.addEventListener('click', function () {
-      api('/api/me/avatar', { method: 'DELETE' }).then(function () { toast('Photo removed.'); return loadDash(); })
+      api('/api/me/avatar', { method: 'DELETE' }).then(function () { window.deboneAvatarVersion = String(Date.now()); toast('Photo removed.'); return loadDash(); })
         .then(function () { renderProfile(); }).catch(function (err) { toast(err.message, 'err'); });
     });
 

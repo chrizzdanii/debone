@@ -122,7 +122,7 @@
       document.getElementById('shell-name').textContent = u.name;
       var side = document.getElementById('me-name'); if (side) side.textContent = u.name;
     }
-    if (u.hasAvatar) setAvatar('/api/me/avatar?v=' + Date.now());
+    if (u.hasAvatar) setAvatar('/api/me/avatar?v=' + (window.deboneAvatarVersion || '1'));
     else {
       setAvatar('');
       var initials = (u.name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');

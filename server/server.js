@@ -414,7 +414,7 @@ function courseView(course, user) {
     category: course.category || null, categoryLabel: (COURSE_CATEGORIES.find(c => c.id === course.category) || {}).label || null,
     instructor: course.instructor || null, startDate: course.startDate || null, duration: course.duration || null,
     schedule: course.schedule || null, classesPerWeek: course.classesPerWeek || null, sessionsTotal: course.sessionsTotal || null,
-    seats: course.price > 0 ? (course.seats || null) : null, seatsLeft: (course.price > 0 && course.seats) ? Math.max(0, course.seats - enrolledCount(course)) : null,
+    seats: course.price > 0 ? (course.seats || 1000) : null, seatsLeft: course.price > 0 ? Math.max(0, (course.seats || 1000) - enrolledCount(course)) : null,
     minStudents: course.minStudents || null, enrolledCount: enrolledCount(course),
     progress: lessons.length ? Math.round((completed / lessons.length) * 100) : 0,
     rating: ratingFor(course.id)
@@ -2347,7 +2347,7 @@ route('POST', '/api/courses/:id/enroll', async ctx => {
   const course = db.courses.find(c => c.id === ctx.params.id);
   if (!course) throw httpError(404, 'Course not found');
   if (course.comingSoon) throw httpError(403, 'This course is coming soon. Enrolment will open later.');
-  if (course.price > 0 && course.seats && !courseAccess(user, course) && enrolledCount(course) >= course.seats) throw httpError(403, 'This course is full. Please check back for the next intake.');
+  if (course.price > 0 && !courseAccess(user, course) && enrolledCount(course) >= (course.seats || 1000)) throw httpError(403, 'This course is full. Please check back for the next intake.');
   if (course.price === 0) return json(ctx.res, 200, { free: true, courseId: course.id });
   if (enrollmentFor(user.id, course.id)) return json(ctx.res, 200, { alreadyEnrolled: true, courseId: course.id });
   let amountKobo = course.price * 100, couponCode = '';

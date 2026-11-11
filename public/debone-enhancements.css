@@ -8,3 +8,29 @@
 .rp-chart .rp-bar i {transition:height 1s cubic-bezier(.2,.8,.2,1);}
 @keyframes deboneRise {from {opacity:0;transform:translateY(13px)}to {opacity:1;transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){.bd-card,.bd-img,.rp-stats>div,.rp-chart .rp-bar i {transition:none!important;animation:none!important}}
+
+/* DEBONE dashboard visual refinement */
+.rp-live{display:flex;align-items:center;flex-wrap:wrap;gap:9px;font-size:12px;font-weight:650;color:#4b7865;margin:8px 0 18px}
+.rp-live-dot{width:9px;height:9px;background:#20c985;border-radius:50%;box-shadow:0 0 0 5px rgba(32,201,133,.13);animation:dbPulse 2.4s ease-in-out infinite}
+.rp-live-time{color:var(--muted,#7a8190);font-weight:400}
+.rp-stats{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;margin:16px 0!important}
+.rp-stats>div{min-width:0!important;overflow:hidden;display:flex;flex-direction:column;gap:8px;border-radius:18px!important;padding:20px!important;transition:transform .3s,box-shadow .3s}
+.rp-stats>div>b{font-size:clamp(20px,2vw,30px)!important;line-height:1.15;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.rp-stats>div>span{font-size:12px;letter-spacing:.02em}
+.rp-chart{min-height:190px;max-width:100%;overflow-x:auto}
+.rp-chart .rp-bar i{transition:height 850ms cubic-bezier(.2,.8,.2,1)}
+.dt-wrap{max-width:100%;overflow-x:auto}
+.admin-bundle-title{display:flex;align-items:center;gap:12px;min-width:180px}
+.admin-bundle-title img,.admin-bundle-placeholder{width:60px;height:48px;object-fit:cover;border-radius:10px;flex:none}
+.admin-bundle-placeholder{display:grid;place-items:center;background:linear-gradient(135deg,#e6af25,#282024);color:white;font-weight:900}
+.admin-bundle-preview{display:block;max-width:100%;width:230px;height:125px;object-fit:cover;border-radius:14px}
+.bd-card{will-change:transform;transition:transform .42s cubic-bezier(.2,.8,.2,1),box-shadow .42s!important}
+.bd-card:hover{transform:translateY(-9px)!important;box-shadow:0 25px 55px rgba(0,0,0,.18)!important}
+.bd-card .bd-img{min-height:185px;background-size:cover;background-position:center;transition:transform .65s cubic-bezier(.2,.8,.2,1)}
+.bd-card:hover .bd-img{transform:scale(1.06)}
+.bd-card .bd-head,.bd-card .bd-courses,.bd-card .bd-foot{min-width:0}
+.bd-card .bd-head h3{overflow-wrap:anywhere}
+@keyframes dbPulse{50%{box-shadow:0 0 0 10px rgba(32,201,133,0)}}
+@media(max-width:1000px){.rp-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:560px){.rp-stats{grid-template-columns:minmax(0,1fr)!important}.rp-stats>div{padding:16px!important}}
+@media(prefers-reduced-motion:reduce){.rp-live-dot,.bd-card,.bd-card .bd-img{animation:none!important;transition:none!important}}
