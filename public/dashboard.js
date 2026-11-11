@@ -366,7 +366,7 @@
     return step(3, state, 'Live class', inner);
   }
   function assignStep(j) {
-    if (!j.assignments.length) return step(4, 'done', 'Assignment', '<p class="muted">There is no assignment for this lesson.</p>');
+    if (!j.assignments.length) return step(4, 'todo', 'Assignment', '<p class="muted">Waiting for your instructor to publish the assignment. You cannot finish this lesson until you submit it.</p>');
     var all = j.requirements.submitted;
     var inner = j.assignments.map(function (a) {
       var sub = a.submission;
@@ -424,16 +424,13 @@
     });
     pane.querySelectorAll('[data-join]').forEach(function (b) {
       b.addEventListener('click', async function () {
-        var url = b.getAttribute('data-url'), yt = b.getAttribute('data-yt'), sid = b.getAttribute('data-join');
-        var w = url ? window.open('about:blank', '_blank') : null;
+        var sid = b.getAttribute('data-join');
         b.disabled = true;
         try {
           await api('/api/sessions/' + encodeURIComponent(sid) + '/attend', { method: 'POST', body: {} });
-          if (w) w.location = url;
-          toast('You are checked in. Enjoy the class!');
-          if (!url && yt) location.hash = '#live/' + sid;
-          else openLesson(l.id, null, true);
-        } catch (e) { if (w) w.close(); toast(e.message, 'err'); b.disabled = false; }
+          toast('Live joined. Opening your live class page.');
+          location.hash = '#live/' + encodeURIComponent(sid);
+        } catch (e) { toast(e.message, 'err'); b.disabled = false; }
       });
     });
     pane.querySelectorAll('[data-watch]').forEach(function (b) {

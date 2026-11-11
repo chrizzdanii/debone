@@ -363,12 +363,13 @@ function lessonRequirements(user, course, lesson) {
   const sessions = lessonSessions(course, lesson);
   const classDone = sessions.length === 0 || sessions.some(s => db.attendance.some(a => a.sessionId === s.id && a.userId === user.id));
   const assignments = db.assignments.filter(a => a.courseId === course.id && a.lessonId === lesson.id);
-  const submitted = assignments.every(a => db.submissions.some(x => x.assignmentId === a.id && x.userId === user.id));
+  const submitted = assignments.length > 0 && assignments.every(a => db.submissions.some(x => x.assignmentId === a.id && x.userId === user.id));
   const note = (db.notes.find(n => n.userId === user.id && n.lessonId === lesson.id) || {}).text || '';
   const noteDone = !REQUIRE_NOTE || note.trim().length > 0;
   const missing = [];
   if (!classDone) missing.push('Join the live class or watch its recording');
-  if (!submitted) missing.push('Submit the assignment for this lesson');
+  if (!assignments.length) missing.push('Wait for your instructor to publish the assignment');
+  else if (!submitted) missing.push('Submit every assignment for this lesson');
   if (!noteDone) missing.push('Write your lesson note');
   return { hasClass: sessions.length > 0, classDone, hasAssignment: assignments.length > 0, submitted, noteDone, ready: missing.length === 0, missing };
 }
@@ -745,7 +746,7 @@ route('GET', '/api/notifications', async ctx => {
     const ids = db.courses.filter(c => courseAccess(user, c)).map(c => c.id);
     db.sessions.filter(s => ids.includes(s.courseId) && s.status !== 'ended').forEach(s => {
       const c = db.courses.find(x => x.id === s.courseId);
-      items.push({ id: 'ses-' + s.id, kind: 'live', title: (s.status === 'live' ? 'Live now: ' : 'Class scheduled: ') + s.title, body: c ? c.title : '', createdAt: s.createdAt || '', link: '#live' });
+      items.push({ id: 'ses-' + s.id, kind: 'live', title: (s.status === 'live' ? 'Live now: ' : 'Class scheduled: ') + s.title, body: c ? c.title : '', createdAt: (s.status === 'live' ? (s.liveStartedAt || s.startedAt || s.updatedAt || s.createdAt) : s.createdAt) || '', link: '#live/' + s.id });
     });
     db.assignments.filter(a => ids.includes(a.courseId)).forEach(a => {
       items.push({ id: 'asg-' + a.id, kind: 'assignment', title: 'New assignment: ' + a.title, body: 'Due ' + (a.dueAt || 'no date'), createdAt: a.createdAt || '', link: '#assignments' });

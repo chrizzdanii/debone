@@ -240,21 +240,40 @@
       (on ? '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>' : '<path d="M16 9.5l5 5M21 9.5l-5 5"/>') + '</svg>';
   }
 
-  /* Catch-up: pop up what the student missed while they were away (dashboard only) */
-  function catchUp() {
-    if (!/dashboard/.test(location.pathname)) return;
-    fetch('/api/notifications', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-      if (!d || !d.unread) return;
-      var seen = d.seenAt || '', weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
-      var fresh = d.items.filter(function (i) { return i.createdAt && i.createdAt > seen && i.createdAt > weekAgo && i.kind !== 'submission'; }).slice(0, 3).reverse();
-      if (!fresh.length) return;
-      var kindMap = { announcement: 'announcement', assignment: 'assignment', live: 'live', graded: 'graded' };
-      fresh.forEach(function (i) { show({ title: i.title, body: i.body, link: i.link, kind: kindMap[i.kind] || 'update' }); });
-      fetch('/api/notifications/read', { method: 'POST', credentials: 'same-origin' }).then(function () { window.dispatchEvent(new CustomEvent('debone:notice-read')); }).catch(function () {});
-    }).catch(function () {});
+  /* Delivery: poll unread notifications even when SSE is unavailable (e.g. serverless).
+     Never mark a notification read merely because it was displayed: the bell retains it
+     until the student explicitly acknowledges it. Deduplicate within this browser tab. */
+  var delivered = Object.create(null), checking = false;
+  function checkNotices() {
+    if (checking || document.hidden || !/dashboard/.test(location.pathname)) return;
+    checking = true;
+    fetch('/api/notifications', { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !Array.isArray(d.items)) return;
+        var seen = d.seenAt || '';
+        d.items.filter(function (i) {
+          return i.id && i.createdAt && i.createdAt > seen && !delivered[i.id];
+        }).slice(0, 5).reverse().forEach(function (i) {
+          delivered[i.id] = true;
+          show({ title: i.title, body: i.body, link: i.link, kind: i.kind || 'update' });
+          window.dispatchEvent(new CustomEvent('debone:notice', { detail: i }));
+        });
+      }).catch(function () {}).then(function () { checking = false; });
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(catchUp, 1200); });
-  else setTimeout(catchUp, 1200);
+  function initNotices() {
+    checkNotices();
+    setInterval(checkNotices, 2000);
+    window.addEventListener('debone:refresh', checkNotices);
+    window.addEventListener('debone:notice', function (e) {
+      if (e.detail && e.detail.id) delivered[e.detail.id] = true;
+    });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) checkNotices(); });
+    window.addEventListener('focus', checkNotices);
+    window.addEventListener('online', checkNotices);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNotices);
+  else initNotices();
 
   window.DNotify = { show: show, chime: chime, isMuted: muted };
 })();
