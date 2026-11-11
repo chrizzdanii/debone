@@ -373,9 +373,23 @@ function lessonRequirements(user, course, lesson) {
   if (!noteDone) missing.push('Write your lesson note');
   return { hasClass: sessions.length > 0, classDone, hasAssignment: assignments.length > 0, submitted, noteDone, ready: missing.length === 0, missing };
 }
+// A saved progress record is not proof of completion when lesson requirements are unmet.
+function validLessonCompletion(user, course, lesson) {
+  if (!user || !db.progress.some(p => p.userId === user.id && p.lessonId === lesson.id)) return false;
+  return isStaff(user) || lessonRequirements(user, course, lesson).ready;
+}
 function courseView(course, user) {
+  // Revoke stale completion records created before the assignment gate existed.
+  // Without this, submitting an assignment later could resurrect an old completion.
+  if (user && !isStaff(user)) {
+    const lessonIds = new Set(course.lessons.map(l => l.id));
+    const before = db.progress.length;
+    db.progress = db.progress.filter(p => p.userId !== user.id || !lessonIds.has(p.lessonId) ||
+      validLessonCompletion(user, course, course.lessons.find(l => l.id === p.lessonId)));
+    if (db.progress.length !== before) save();
+  }
   const enrolled = courseAccess(user, course);
-  const done = new Set(user ? db.progress.filter(p => p.userId === user.id).map(p => p.lessonId) : []);
+  const done = new Set(user ? course.lessons.filter(l => validLessonCompletion(user, course, l)).map(l => l.id) : []);
   const held = !!user && !isStaff(user);
   const lessons = course.lessons.map((l, i) => {
     const prev = i > 0 ? course.lessons[i - 1] : null;
@@ -1257,7 +1271,7 @@ route('DELETE', '/api/staff/reviews/:id', async ctx => {
 /* ============ Certificates ============ */
 function courseProgress(user, course) {
   const lessonIds = course.lessons.map(l => l.id);
-  const done = new Set(db.progress.filter(p => p.userId === user.id).map(p => p.lessonId));
+  const done = new Set(course.lessons.filter(l => validLessonCompletion(user, course, l)).map(l => l.id));
   const lessonsDone = lessonIds.filter(id => done.has(id)).length;
   const graded = db.assignments.filter(a => a.courseId === course.id).map(a => {
     const s = db.submissions.find(x => x.assignmentId === a.id && x.userId === user.id);
@@ -2374,7 +2388,7 @@ route('GET', '/api/lessons/:id', async ctx => {
     return json(ctx.res, 403, { error: 'locked', message: 'This lesson unlocks when you enrol in the course.', course: { id: course.id, title: course.title, price: course.price, comingSoon: !!course.comingSoon } });
   }
   const idx = course.lessons.findIndex(l => l.id === lesson.id);
-  const done = !!db.progress.find(p => p.userId === user.id && p.lessonId === lesson.id);
+  const done = validLessonCompletion(user, course, lesson);
   const cv = courseView(course, user).lessons[idx];
   if (cv && cv.gated) {
     const prevL = course.lessons[idx - 1];
@@ -2409,7 +2423,7 @@ route('POST', '/api/lessons/:id/complete', async ctx => {
   const entry = findLesson(ctx.params.id);
   if (!entry) throw httpError(404, 'Lesson not found');
   if (!(entry.lesson.free || courseAccess(user, entry.course))) throw httpError(403, 'This lesson is locked.');
-  if (!isStaff(user) && !db.progress.find(p => p.userId === user.id && p.lessonId === entry.lesson.id)) {
+  if (!isStaff(user)) {
     const li = entry.course.lessons.findIndex(l => l.id === entry.lesson.id);
     const cv = courseView(entry.course, user).lessons[li];
     if (cv && cv.gated) throw httpError(403, cv.lockReason);
