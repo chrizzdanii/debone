@@ -983,7 +983,8 @@
     view.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('form')) dirty = true; }, true);
     view.addEventListener('submit', function () { dirty = false; }, true);
     window.addEventListener('hashchange', function () { dirty = false; pending = false; });
-    /* Auto-refresh disabled: the dashboard no longer redraws itself when data changes. */
+    window.addEventListener('debone:refresh', liveRedraw);
+    document.addEventListener('focusout', function () { if (pending) setTimeout(function () { if (pending) liveRedraw(); }, 400); });
     window.addEventListener('debone:unlock', async function (ev) {
       await loadDash();
       var cur = (location.hash || '').replace(/^#/, '').split('/');

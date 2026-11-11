@@ -1676,7 +1676,9 @@
     view.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('form')) liveDirty = true; }, true);
     view.addEventListener('submit', function () { liveDirty = false; }, true);
     window.addEventListener('hashchange', function () { liveDirty = false; livePending = false; });
-    /* Auto-refresh disabled: the dashboard no longer redraws itself when data changes. */
+    document.addEventListener('focusout', function () { if (livePending) setTimeout(function () { if (livePending) liveRefresh(); }, 350); });
+    window.addEventListener('debone:refresh', liveRefresh);
+    window.addEventListener('debone:notice', function () { setTimeout(liveRefresh, 300); });
   }
 
   async function boot() {
