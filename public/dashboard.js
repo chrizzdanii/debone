@@ -98,6 +98,7 @@
 
   function setView(html) {
     if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return;
+    if (window.DLive && DLive.silent && DLive.patch) { DLive.patch(view, html); return; }
     view.innerHTML = html;
     view.classList.remove('enter');
     void view.offsetWidth;
@@ -963,24 +964,22 @@
     /* Live updates: anything that changes (new marks, a payment confirmed, a new class, an admin setting) shows within a second,
        without a reload, without flicker, and never while you are typing or a pop-up is open. */
     var refreshing = false, dirty = false, pending = false;
-    /* Live events update the visible overview numbers only. Rebuilding the view here
-       replaced the whole dashboard DOM on every revision and caused the page to flash. */
+    /* Refresh every student section. Only changed DOM nodes are patched in place. */
     async function liveRedraw() {
-      if (refreshing) return;
-      var name = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
-      if (name !== 'overview') return;
+      if (refreshing || document.hidden) return;
       if (dirty || (window.DLive && DLive.busy())) { pending = true; return; }
       refreshing = true; pending = false;
       try {
-        var fresh = await api('/api/dashboard');
-        state.d = fresh;
-        var numbers = [fresh.stats.enrolled, fresh.stats.completedLessons, fresh.stats.avgProgress];
-        view.querySelectorAll('.kpis .kpi b[data-count]').forEach(function (el, i) {
-          if (i >= numbers.length) return;
-          el.setAttribute('data-count', Number(numbers[i]) || 0);
-          el.textContent = Number(numbers[i]).toLocaleString('en-US');
-        });
-      } catch (_) {} finally { refreshing = false; }
+        await loadDash();
+        var name = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
+        // Avoid interrupting an active lesson player or live class chat.
+        if (name === 'course' && typeof refreshCourseState === 'function') await refreshCourseState();
+        else if (!(name === 'live' && document.getElementById('chat-log')) &&
+                 !(view.querySelector('video:not([paused]),audio:not([paused])'))) {
+          await (window.DLive ? DLive.quiet(function () { return route(); }) : route());
+        }
+      } catch (err) { console.warn('Student live update:', err); }
+      finally { refreshing = false; }
     }
     view.addEventListener('input', function (e) { if (e.target.closest && e.target.closest('form')) dirty = true; }, true);
     view.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('form')) dirty = true; }, true);

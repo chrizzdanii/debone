@@ -38,6 +38,47 @@
     try { r = fn(); } catch (e) { done(); throw e; }
     return Promise.resolve(r).then(function (v) { done(); return v; }, function (e) { done(); throw e; });
   };
+  /* Patch changed DOM nodes in place, instead of replacing a whole dashboard view.
+     This preserves the existing page, listeners, focused controls and scroll position. */
+  DLive.patch = function (host, html) {
+    var template = document.createElement('template');
+    template.innerHTML = html;
+    var focus = document.activeElement;
+    var isEditing = function (el) {
+      return el === focus && (el.matches('input,textarea,select,[contenteditable]'));
+    };
+    function sync(old, fresh) {
+      if (old.nodeType !== fresh.nodeType || (old.nodeType === 1 && old.tagName !== fresh.tagName)) {
+        old.replaceWith(fresh.cloneNode(true)); return;
+      }
+      if (old.nodeType === 3) { if (old.nodeValue !== fresh.nodeValue) old.nodeValue = fresh.nodeValue; return; }
+      if (old.nodeType !== 1) return;
+      if (old.hasAttribute('data-live-preserve') || isEditing(old)) return;
+      if (old.matches('video,audio,iframe,canvas')) return;
+      Array.from(old.attributes).forEach(function (attr) {
+        if (!fresh.hasAttribute(attr.name)) old.removeAttribute(attr.name);
+      });
+      Array.from(fresh.attributes).forEach(function (attr) {
+        if (old.getAttribute(attr.name) !== attr.value) old.setAttribute(attr.name, attr.value);
+      });
+      if (old.matches('input,textarea,select')) {
+        if (old.type !== 'file' && old.value !== fresh.value) old.value = fresh.value;
+        if ('checked' in old) old.checked = fresh.checked;
+      }
+      var a = Array.from(old.childNodes), b = Array.from(fresh.childNodes);
+      for (var i = 0; i < b.length; i++) {
+        if (!a[i]) { old.appendChild(b[i].cloneNode(true)); continue; }
+        sync(a[i], b[i]);
+      }
+      for (var j = a.length - 1; j >= b.length; j--) if (a[j].parentNode === old) old.removeChild(a[j]);
+    }
+    var before = Array.from(host.childNodes), after = Array.from(template.content.childNodes);
+    for (var i = 0; i < after.length; i++) {
+      if (!before[i]) host.appendChild(after[i].cloneNode(true));
+      else sync(before[i], after[i]);
+    }
+    for (var j = before.length - 1; j >= after.length; j--) if (before[j].parentNode === host) host.removeChild(before[j]);
+  };
   var fireTimer = null;
   function fire() {
     clearTimeout(fireTimer);

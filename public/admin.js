@@ -44,6 +44,7 @@
   }
   function setView(html) {
     if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return;
+    if (window.DLive && DLive.silent && DLive.patch) { DLive.patch(view, html); return; }
     view.innerHTML = html;
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
   }
@@ -1660,33 +1661,15 @@
   /* Live updates: when anything changes (a student pays, a setting is saved, another admin edits), redraw this view
      within a second. No page reload, no flicker, and never while you are typing or have unsaved edits. */
   var liveDirty = false, liveBusy = false, livePending = false;
-  /* Keep the admin shell and current view intact. On the overview, refresh only
-     the numeric summary cards instead of calling route(true), which rebuilt the page. */
+  /* Refresh all admin sections without replacing the whole page. */
   async function liveRefresh() {
-    if (!me || (location.hash || '#overview').replace(/^#/, '').split('/')[0] !== 'overview') return;
-    if (liveBusy) return;
+    if (!me || liveBusy || document.hidden) return;
     if (liveDirty || (window.DLive && DLive.busy())) { livePending = true; return; }
     livePending = false; liveBusy = true;
     try {
-      var o = await api('/api/staff/overview');
-      var values = {
-        'Students': o.students,
-        'Instructors': o.instructors,
-        'Courses': o.courses,
-        'Live now': o.liveNow,
-        'Need marking': o.pendingGrading,
-        'Active enrolments': o.enrollments,
-        'Revenue': naira(o.revenue)
-      };
-      view.querySelectorAll('.stat-card').forEach(function (card) {
-        var label = card.querySelector('span');
-        var value = label && values[label.textContent.trim()];
-        if (value !== undefined) {
-          var number = card.querySelector('b');
-          if (number) number.textContent = typeof value === 'number' ? value.toLocaleString('en-US') : value;
-        }
-      });
-    } catch (_) {} finally { liveBusy = false; }
+      await (window.DLive ? DLive.quiet(function () { return route(true); }) : route(true));
+    } catch (err) { console.warn('Admin live update:', err); }
+    finally { liveBusy = false; }
   }
   function liveWatch() {
     view.addEventListener('input', function (e) { if (e.target.closest && e.target.closest('form')) liveDirty = true; }, true);
