@@ -2,9 +2,11 @@
   'use strict';
   var params = new URLSearchParams(location.search);
   var next = params.get('next') === 'admin' ? 'staff-login.html' : 'dashboard.html';
+  var $ = function (id) { return document.getElementById(id); };
   var REF_KEY = 'debone-ref', ref = (params.get('ref') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
   try { if (ref) localStorage.setItem(REF_KEY, ref); else ref = localStorage.getItem(REF_KEY) || ''; } catch (e) {}
   var form = $('lg-form'), alertBox = $('lg-alert'), submit = $('lg-submit');
+  if (ref) { var g = $('lg-google'); if (g) g.setAttribute('href', '/api/auth/google?ref=' + encodeURIComponent(ref)); }
 
   function showAlert(msg, ok) {
     alertBox.textContent = msg;
@@ -34,9 +36,10 @@
     submit.disabled = true; submit.textContent = 'Creating your account…';
     try {
       var res = await fetch('/api/auth/signup', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: $('lg-name').value.trim(), email: email, phone: $('lg-phone').value.trim(), password: pass }) });
+        body: JSON.stringify({ name: $('lg-name').value.trim(), email: email, phone: $('lg-phone').value.trim(), password: pass, referralCode: ref }) });
       var data = await res.json().catch(function () { return {}; });
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+      try { localStorage.removeItem(REF_KEY); } catch (e) {}
       showAlert('Account created. Opening your dashboard…', true);
       location.href = next;
     } catch (err) {
