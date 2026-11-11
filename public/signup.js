@@ -2,7 +2,8 @@
   'use strict';
   var params = new URLSearchParams(location.search);
   var next = params.get('next') === 'admin' ? 'staff-login.html' : 'dashboard.html';
-  var $ = function (id) { return document.getElementById(id); };
+  var REF_KEY = 'debone-ref', ref = (params.get('ref') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+  try { if (ref) localStorage.setItem(REF_KEY, ref); else ref = localStorage.getItem(REF_KEY) || ''; } catch (e) {}
   var form = $('lg-form'), alertBox = $('lg-alert'), submit = $('lg-submit');
 
   function showAlert(msg, ok) {
