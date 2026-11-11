@@ -1,0 +1,51 @@
+/* Lesson journey, locked lessons and unlock animations (student dashboard) */
+.lesson-btn.locked{opacity:.62}
+.lesson-btn.gated{cursor:not-allowed}
+.lesson-btn .st{display:inline-flex;align-items:center;gap:6px}
+.lesson-btn.shake{animation:jShake .45s cubic-bezier(.36,.07,.19,.97)}
+.lesson-btn.just-unlocked{animation:jUnlock 1.6s ease both}
+@keyframes jShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+@keyframes jUnlock{0%{background:rgba(224,168,0,.45);transform:scale(.97)}40%{transform:scale(1.03)}100%{background:transparent;transform:scale(1)}}
+
+.cert-card{margin:18px;padding:18px;border:1px solid rgba(224,168,0,.45);border-radius:16px;background:linear-gradient(135deg,rgba(224,168,0,.16),rgba(224,168,0,.03));animation:jRise .6s both}
+.cert-card[hidden]{display:none}
+.cert-card b{display:block;font:400 1.15rem Anton,Impact,sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.cert-card p{color:var(--ash);font-size:.88rem;margin:8px 0 14px}
+@keyframes jRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.journey{position:relative;display:grid;gap:0;margin:22px 0 8px}
+.journey::before{content:"";position:absolute;left:17px;top:18px;bottom:18px;width:2px;background:var(--line)}
+.jstep{position:relative;display:grid;grid-template-columns:36px 1fr;gap:16px;padding-bottom:26px;animation:jRise .5s both}
+.jstep:nth-child(2){animation-delay:.06s}.jstep:nth-child(3){animation-delay:.12s}.jstep:nth-child(4){animation-delay:.18s}
+.jdot{position:relative;z-index:1;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:600 .85rem Inter,sans-serif;background:#101010;border:2px solid var(--line);color:var(--ash);transition:all .4s}
+.jstep.done .jdot{background:var(--teal);border-color:var(--teal);color:#0B0B0B;animation:jPop .5s}
+.jstep.todo .jdot{border-color:var(--orange);color:var(--orange);box-shadow:0 0 0 0 rgba(224,168,0,.5);animation:jPulse 2s infinite}
+@keyframes jPop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes jPulse{70%{box-shadow:0 0 0 12px rgba(224,168,0,0)}100%{box-shadow:0 0 0 0 rgba(224,168,0,0)}}
+.jbody h3{font-size:1.15rem;margin:6px 0 10px}
+.jmeta{font-size:.92rem;margin-bottom:8px}
+.jins{color:var(--ash);font-size:.9rem;margin-bottom:10px;white-space:pre-wrap}
+.jok{color:var(--teal);font-weight:600;font-size:.9rem;margin:6px 0 10px}
+.jlive{display:flex;align-items:center;gap:10px;color:#ff5d73;font-weight:700;margin:8px 0 12px;text-transform:uppercase;font-size:.78rem;letter-spacing:.14em}
+.jlive i{width:10px;height:10px;border-radius:50%;background:#ff5d73;animation:jPing 1.4s infinite}
+@keyframes jPing{0%{box-shadow:0 0 0 0 rgba(255,93,115,.7)}100%{box-shadow:0 0 0 14px rgba(255,93,115,0)}}
+.jcount{font:400 1.3rem Anton,Impact,sans-serif;color:var(--orange);margin-top:6px}
+.btn.pulse{animation:jBtnPulse 1.8s infinite}
+@keyframes jBtnPulse{0%{box-shadow:0 0 0 0 rgba(224,168,0,.55)}100%{box-shadow:0 0 0 16px rgba(224,168,0,0)}}
+.jassign{display:grid;gap:10px;padding:16px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02);margin-bottom:12px}
+.jassign .input{min-height:46px}
+.jassign textarea.input{min-height:84px}
+.jassign .btn{justify-self:start}
+
+.finish-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:10px 0 6px;padding:18px 20px;border:1px solid var(--line);border-radius:18px;background:#101010;transition:all .5s}
+.finish-bar .fb-text b{display:block}
+.finish-bar .fb-text span{color:var(--ash);font-size:.88rem}
+.finish-bar.is-ready{border-color:var(--orange);background:linear-gradient(135deg,rgba(224,168,0,.14),#101010);animation:jRise .5s both}
+.finish-bar.is-done{border-color:rgba(107,203,119,.5);background:linear-gradient(135deg,rgba(107,203,119,.12),#101010)}
+.next-locked{opacity:.55;cursor:not-allowed}
+.unlock-pop{animation:jBtnPulse 1.8s 3}
+
+.gate-card{text-align:center;padding:clamp(28px,5vw,56px);border:1px dashed rgba(224,168,0,.5);border-radius:22px;display:grid;gap:14px;justify-items:center;animation:jRise .5s both}
+.gate-lock{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;color:var(--orange);background:rgba(224,168,0,.12);animation:jFloat 3s ease-in-out infinite}
+@keyframes jFloat{50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.jstep,.cert-card,.gate-card,.finish-bar,.jdot,.btn.pulse,.jlive i,.gate-lock,.unlock-pop{animation:none!important}}

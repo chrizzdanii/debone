@@ -19,13 +19,14 @@
   if (document.readyState === 'complete') whenPop(function () {}); else window.addEventListener('load', function () { whenPop(function () {}); });
   var es = new EventSource('/api/events');
   /* On the Vercel host the server cannot keep a live connection open. It tells the browser to stop (HTTP 204),
-     and the page then asks for fresh data every 20 seconds while the tab is visible. */
+     and the page then asks for fresh data every 8 seconds while the tab is visible. */
   var polling = false;
   es.addEventListener('error', function () {
     if (es.readyState !== 2 || polling) return;
     polling = true;
-    setInterval(function () { if (!document.hidden) window.dispatchEvent(new CustomEvent('debone:refresh')); }, 20000);
+    setInterval(function () { if (!document.hidden) window.dispatchEvent(new CustomEvent('debone:refresh')); }, 8000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) window.dispatchEvent(new CustomEvent('debone:refresh')); });
+    window.addEventListener('focus', function () { window.dispatchEvent(new CustomEvent('debone:refresh')); });
   });
   es.addEventListener('refresh', function () { window.dispatchEvent(new CustomEvent('debone:refresh')); });
   es.addEventListener('unlock', function (e) { window.dispatchEvent(new CustomEvent('debone:unlock', { detail: JSON.parse(e.data) })); });

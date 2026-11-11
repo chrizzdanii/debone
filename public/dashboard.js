@@ -132,6 +132,7 @@
     state.d = await api('/api/dashboard');
     document.getElementById('me-name').textContent = state.d.user.name;
     document.getElementById('me-email').textContent = state.d.user.email;
+    window.dispatchEvent(new CustomEvent('debone:user', { detail: state.d.user }));
     var adm = document.getElementById('admin-link');
     if (adm) adm.hidden = !(state.d.user.role === 'admin' || state.d.user.role === 'instructor');
     return state.d;
@@ -242,13 +243,14 @@
       '<a class="btn btn-solid btn-sm" href="#live">Go to live classes</a></section>';
   }
 
+  var LOCK_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   function lessonButton(l) {
     var status = l.completed ? 'Done' : (l.locked ? 'Locked' : 'Open');
-    return '<li><button class="lesson-btn' + (l.locked ? ' locked' : '') + (l.completed ? ' done' : '') +
-      '" type="button" data-lesson="' + esc(l.id) + '" aria-label="Lesson ' + l.number + ': ' + esc(l.title) + ', ' + status + '">' +
+    return '<li><button class="lesson-btn' + (l.locked ? ' locked' : '') + (l.gated ? ' gated' : '') + (l.completed ? ' done' : '') +
+      '" type="button" data-lesson="' + esc(l.id) + '" title="' + esc(l.lockReason || '') + '" aria-label="Lesson ' + l.number + ': ' + esc(l.title) + ', ' + status + '">' +
       '<span class="n">' + String(l.number).padStart(2, '0') + '</span>' +
       '<span class="t">' + esc(l.title) + '</span>' +
-      '<span class="st">' + status + '</span></button></li>';
+      '<span class="st">' + (l.locked ? LOCK_SVG : '') + status + '</span></button></li>';
   }
 
   function markActive(lid) {
@@ -284,6 +286,9 @@
             (c.enrolled ? '' : '<p class="muted" style="margin-top:14px;font-size:.9rem">Locked. Enrol to unlock the full course.</p>') +
           '</header>' +
           '<ol style="list-style:none;margin:0;padding:0">' + c.lessons.map(lessonButton).join('') + '</ol>' +
+          '<div class="cert-card" id="cert-card"' + (c.total > 0 && c.completed === c.total ? '' : ' hidden') + '>' +
+            '<b>All lessons complete</b><p>Well done. Request your certificate from the Certificates page. Our team checks your work and sends it to you once it is approved.</p>' +
+            '<a class="btn btn-solid btn-sm" href="#certificates">Go to certificates</a></div>' +
         '</aside>' +
         '<section class="lesson-pane" id="pane" aria-live="polite"></section>' +
       '</div>'
@@ -298,40 +303,112 @@
     }
   }
 
-  async function openLesson(lid, course) {
+  var lastLesson = { id: null, sig: '' };
+  async function openLesson(lid, course, quiet) {
     var pane = document.getElementById('pane');
+    if (!pane) return;
     markActive(lid);
-    pane.innerHTML = '<div class="skeleton" style="height:320px;border:0"></div>';
+    if (!quiet) pane.innerHTML = '<div class="skeleton" style="height:320px;border:0"></div>';
     try {
       var d = await api('/api/lessons/' + encodeURIComponent(lid));
+      lastLesson = { id: lid, sig: lessonSig(d) };
       renderLesson(d);
     } catch (e) {
+      if (e.status === 403 && e.data && e.data.gated) return renderGated(e.data);
       if (e.status === 403 && e.data && e.data.course) return renderPaywall(e.data.course);
       pane.innerHTML = emptyState(e.message);
     }
   }
+  function lessonSig(d) { return JSON.stringify([d.completed, d.journey]); }
+
+  function renderGated(g) {
+    var pane = document.getElementById('pane');
+    pane.innerHTML =
+      '<div class="gate-card"><div class="gate-lock">' + LOCK_SVG.replace('width="14" height="14"', 'width="34" height="34"') + '</div>' +
+      '<p class="eyebrow" style="justify-content:center">Locked</p>' +
+      '<h2>Finish lesson ' + esc(g.previous ? g.previous.number : '') + ' first</h2>' +
+      '<p class="muted">This lesson opens after you finish the previous one: read it, join its live class (or watch the recording if you missed it) and submit its assignment.</p>' +
+      (g.previous ? '<button class="btn btn-solid" type="button" data-go="' + esc(g.previous.id) + '">Go to lesson ' + esc(g.previous.number) + '</button>' : '') +
+      '</div>';
+  }
+
+  function fmtWhen(iso) {
+    if (!iso) return 'Date to be announced';
+    var d = new Date(iso);
+    return isNaN(d) ? iso : d.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function step(n, state, title, inner) {
+    return '<section class="jstep ' + state + '"><div class="jdot">' + (state === 'done' ? CHECK_SVG : n) + '</div>' +
+      '<div class="jbody"><h3>' + title + '</h3>' + inner + '</div></section>';
+  }
+  function classStep(j) {
+    var req = j.requirements;
+    if (!j.sessions.length) return step(3, 'done', 'Live class', '<p class="muted">There is no live class for this lesson.</p>');
+    var s = j.sessions[0];
+    var state = req.classDone ? 'done' : 'todo', inner = '<p class="jmeta"><b>' + esc(s.title) + '</b> · ' + esc(fmtWhen(s.startsAt)) + '</p>';
+    if (req.classDone) {
+      inner += '<p class="jok">' + (s.attended ? 'You are checked in for this class.' : 'Class done.') + ' ✓</p>';
+      if (s.recordingUrl) inner += '<button class="btn btn-ghost btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch the recording again</button>';
+    } else if (s.status === 'live' || s.liveOpen) {
+      inner += '<p class="jlive"><i></i>Class is live now</p><button class="btn btn-solid btn-sm pulse" type="button" data-join="' + esc(s.id) + '" data-url="' + esc(s.joinUrl || '') + '" data-yt="' + (s.youtubeId ? '1' : '') + '">Join live class</button>';
+    } else if (s.status === 'ended') {
+      inner += s.recordingUrl
+        ? '<p class="muted">You missed the live class. Watch the recording to complete this step.</p><button class="btn btn-solid btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch recorded class</button>'
+        : '<p class="muted">The class has ended. The recording will appear here as soon as your instructor uploads it.</p>';
+    } else {
+      inner += '<p class="muted">The join button appears here when the class starts.</p>' + (s.countdownTo ? '<p class="jcount" data-countdown="' + esc(s.countdownTo) + '"></p>' : '');
+    }
+    return step(3, state, 'Live class', inner);
+  }
+  function assignStep(j) {
+    if (!j.assignments.length) return step(4, 'done', 'Assignment', '<p class="muted">There is no assignment for this lesson.</p>');
+    var all = j.requirements.submitted;
+    var inner = j.assignments.map(function (a) {
+      var sub = a.submission;
+      var head = '<p class="jmeta"><b>' + esc(a.title) + '</b> · ' + a.maxMarks + ' marks' + (a.dueAt ? ' · due ' + esc(a.dueAt) : '') + '</p>' +
+        (a.instructions ? '<p class="jins">' + esc(a.instructions) + '</p>' : '');
+      if (sub && sub.graded) return '<div class="jassign">' + head + '<p class="jok">Marked: <b>' + sub.marks + ' / ' + a.maxMarks + '</b> ✓</p>' + (sub.feedback ? '<p class="muted">' + esc(sub.feedback) + '</p>' : '') + '</div>';
+      return '<form class="jassign" data-assign="' + esc(a.id) + '">' + head +
+        (sub ? '<p class="jok">Submitted ✓ You can update it until it is marked.</p>' : '') +
+        '<textarea class="input" name="text" rows="3" maxlength="5000" placeholder="Write your answer">' + esc(sub ? sub.text : '') + '</textarea>' +
+        '<input class="input" name="link" type="url" placeholder="Or paste a link to your work (optional)" value="' + esc(sub ? sub.link : '') + '">' +
+        '<button class="btn btn-ghost btn-sm" type="submit">' + (sub ? 'Update submission' : 'Submit assignment') + '</button></form>';
+    }).join('');
+    return step(4, all ? 'done' : 'todo', 'Assignment', inner);
+  }
 
   function renderLesson(d) {
-    var l = d.lesson;
+    var l = d.lesson, j = d.journey, req = j.requirements;
     var pane = document.getElementById('pane');
     var res = (d.resources || []).map(function (r) {
       return '<a class="lesson-res" href="' + esc(r.url) + '" target="_blank" rel="noopener"><span class="lesson-res-ico">↗</span>' + esc(r.title) + '</a>';
     }).join('');
+    var nextBtn = d.next
+      ? (d.completed
+        ? '<button class="btn btn-solid btn-sm unlock-pop" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>'
+        : '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="Finish this lesson to unlock the next one">' + LOCK_SVG + ' Next lesson locked</button>')
+      : '';
     pane.innerHTML =
       '<div class="lesson-top"><p class="eyebrow">' + esc(d.course.title) + '</p><span class="lesson-pos">Lesson ' + d.position + ' of ' + d.total + (d.minutes ? ' · ' + d.minutes + ' min' : '') + '</span></div>' +
       '<h2 class="lesson-title">' + esc(l.title) + '</h2>' +
-      '<div class="lesson-body">' + l.body.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</div>' +
-      (res ? '<div class="lesson-resources"><p class="rf2-label">Resources</p><div class="lesson-res-list">' + res + '</div></div>' : '') +
-      '<div class="lesson-notes"><div class="lesson-notes-head"><p class="rf2-label">My notes</p><span class="note-state" id="note-state">Saved privately</span></div>' +
-        '<textarea class="input" id="lesson-note" rows="4" maxlength="4000" placeholder="Write down what matters to you. Only you can see these notes.">' + esc(d.note || '') + '</textarea></div>' +
-      '<div class="lesson-nav">' +
-        '<div class="btn-row">' + (d.prev ? '<button class="btn btn-ghost btn-sm" type="button" data-go="' + esc(d.prev) + '">← Previous</button>' : '') + '</div>' +
-        '<div class="btn-row">' +
-          '<button class="btn btn-ghost btn-sm" type="button" data-lesson-done="' + esc(l.id) + '"' + (d.completed ? ' disabled' : '') + '>' +
-            (d.completed ? '✓ Completed' : 'Mark as complete') + '</button>' +
-          (d.next ? '<button class="btn btn-solid btn-sm" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>' : '') +
-        '</div>' +
-      '</div>';
+      '<div class="journey">' +
+        step(1, 'done', 'Read the lesson', '<div class="lesson-body">' + l.body.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</div>' +
+          (res ? '<div class="lesson-resources"><p class="rf2-label">Resources</p><div class="lesson-res-list">' + res + '</div></div>' : '')) +
+        step(2, req.noteDone ? 'done' : 'todo', 'Write your notes', '<div class="lesson-notes"><div class="lesson-notes-head"><p class="rf2-label">My notes</p><span class="note-state" id="note-state">Saved privately</span></div>' +
+          '<textarea class="input" id="lesson-note" rows="4" maxlength="4000" placeholder="Write down what matters to you. Only you can see these notes.">' + esc(d.note || '') + '</textarea></div>') +
+        classStep(j) + assignStep(j) +
+      '</div>' +
+      '<div class="finish-bar' + (d.completed ? ' is-done' : (req.ready ? ' is-ready' : '')) + '">' +
+        '<div class="fb-text">' + (d.completed
+          ? '<b>Lesson complete ✓</b><span>' + (j.nextTitle ? 'Next up: ' + esc(j.nextTitle) : 'You have finished the last lesson.') + '</span>'
+          : (req.ready ? '<b>You are ready to finish this lesson</b><span>' + (j.nextTitle ? 'This unlocks: ' + esc(j.nextTitle) : 'This is the last lesson.') + '</span>'
+            : '<b>Still to do</b><span>' + req.missing.map(esc).join(' · ') + '</span>')) + '</div>' +
+        '<button class="btn btn-solid btn-sm" type="button" data-lesson-done="' + esc(l.id) + '"' + (d.completed || !req.ready ? ' disabled' : '') + '>' + (d.completed ? '✓ Completed' : 'Finish lesson') + '</button>' +
+      '</div>' +
+      '<div class="lesson-nav"><div class="btn-row">' + (d.prev ? '<button class="btn btn-ghost btn-sm" type="button" data-go="' + esc(d.prev) + '">← Previous</button>' : '') + '</div>' +
+        '<div class="btn-row">' + nextBtn + '</div></div>';
+
     var ta = document.getElementById('lesson-note'), st = document.getElementById('note-state'), timer = null;
     ta.addEventListener('input', function () {
       st.textContent = 'Saving…';
@@ -341,6 +418,55 @@
           .then(function () { st.textContent = 'Saved'; }).catch(function () { st.textContent = 'Not saved. Check your connection.'; });
       }, 700);
     });
+    pane.querySelectorAll('[data-join]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var url = b.getAttribute('data-url'), yt = b.getAttribute('data-yt'), sid = b.getAttribute('data-join');
+        var w = url ? window.open('about:blank', '_blank') : null;
+        b.disabled = true;
+        try {
+          await api('/api/sessions/' + encodeURIComponent(sid) + '/attend', { method: 'POST', body: {} });
+          if (w) w.location = url;
+          toast('You are checked in. Enjoy the class!');
+          if (!url && yt) location.hash = '#live/' + sid;
+          else openLesson(l.id, null, true);
+        } catch (e) { if (w) w.close(); toast(e.message, 'err'); b.disabled = false; }
+      });
+    });
+    pane.querySelectorAll('[data-watch]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var w = window.open('about:blank', '_blank');
+        b.disabled = true;
+        try {
+          var r = await api('/api/sessions/' + encodeURIComponent(b.getAttribute('data-watch')) + '/watched', { method: 'POST', body: {} });
+          if (w) w.location = r.url;
+          toast('Recording opened. This step is now complete.');
+          openLesson(l.id, null, true);
+        } catch (e) { if (w) w.close(); toast(e.message, 'err'); b.disabled = false; }
+      });
+    });
+    pane.querySelectorAll('form[data-assign]').forEach(function (f) {
+      f.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var btn = f.querySelector('button[type=submit]'); btn.disabled = true;
+        try {
+          await api('/api/assignments/' + encodeURIComponent(f.getAttribute('data-assign')) + '/submit', { method: 'POST', body: { text: f.elements.text.value.trim(), link: f.elements.link.value.trim() } });
+          toast('Assignment submitted.');
+          openLesson(l.id, null, true);
+        } catch (err) { toast(err.message, 'err'); btn.disabled = false; }
+      });
+    });
+    var cd = pane.querySelector('[data-countdown]');
+    if (cd) {
+      var tick = function () {
+        if (!document.body.contains(cd)) return;
+        var ms = new Date(cd.getAttribute('data-countdown')).getTime() - Date.now();
+        if (ms <= 0) { cd.textContent = 'Starting now…'; return; }
+        var m = Math.floor(ms / 60000), h = Math.floor(m / 60), dd = Math.floor(h / 24);
+        cd.textContent = 'Starts in ' + (dd ? dd + 'd ' + (h % 24) + 'h' : h ? h + 'h ' + (m % 60) + 'm' : m + ' min');
+        setTimeout(tick, 15000);
+      };
+      tick();
+    }
   }
 
   function renderPaywall(course) {
@@ -361,6 +487,7 @@
   }
 
   async function refreshCourseHeader(courseId) {
+    if (!courseId) return;
     var c = (await api('/api/courses/' + encodeURIComponent(courseId))).course;
     var count = document.getElementById('course-count');
     var pct = document.getElementById('course-pct');
@@ -368,13 +495,33 @@
     if (count) count.textContent = c.completed + ' of ' + c.total + ' complete';
     if (pct) pct.textContent = c.progress + '%';
     if (meter) meter.style.width = c.progress + '%';
+    var cc = document.getElementById('cert-card');
+    if (cc) cc.hidden = !(c.total > 0 && c.completed === c.total);
     c.lessons.forEach(function (l) {
       var btn = document.querySelector('[data-lesson="' + l.id + '"]');
       if (!btn) return;
+      var wasLocked = btn.classList.contains('locked');
       btn.classList.toggle('done', l.completed);
+      btn.classList.toggle('locked', l.locked);
+      btn.classList.toggle('gated', !!l.gated);
+      btn.title = l.lockReason || '';
       var st = btn.querySelector('.st');
-      if (st) st.textContent = l.completed ? 'Done' : (l.locked ? 'Locked' : 'Open');
+      if (st) st.innerHTML = (l.locked ? LOCK_SVG : '') + (l.completed ? 'Done' : (l.locked ? 'Locked' : 'Open'));
+      if (wasLocked && !l.locked) { btn.classList.add('just-unlocked'); setTimeout(function () { btn.classList.remove('just-unlocked'); }, 1800); }
     });
+  }
+  /* Called on every live refresh: update the lock states, and the open lesson only if something changed and nobody is typing */
+  async function refreshCourseState() {
+    if (!currentCourseId || !document.getElementById('pane')) return;
+    await refreshCourseHeader(currentCourseId);
+    if (!lastLesson.id) return;
+    var ae = document.activeElement, pane = document.getElementById('pane');
+    if (ae && pane.contains(ae) && /^(TEXTAREA|INPUT)$/.test(ae.tagName)) return;
+    try {
+      var d = await api('/api/lessons/' + encodeURIComponent(lastLesson.id));
+      var sig = lessonSig(d);
+      if (sig !== lastLesson.sig) { lastLesson.sig = sig; renderLesson(d); }
+    } catch (e) { /* ignore: the page keeps what it has */ }
   }
 
   function celebrate(el) {
@@ -402,7 +549,8 @@
       celebrate(btn);
       await loadDash();
       await refreshCourseHeader(currentCourseId);
-      toast('Lesson complete. Nice work.');
+      toast('Lesson complete. The next lesson is now unlocked.');
+      setTimeout(function () { openLesson(lid, null, true); }, 700);
     } catch (e) {
       toast(e.message, 'err');
       btn.disabled = false;
@@ -623,12 +771,14 @@
       if (!file) return;
       if (file.size > 8 * 1024 * 1024) { toast('That photo is too large. Please choose one under 8 MB.', 'err'); return; }
       resizeToJpeg(file, 360).then(function (dataUrl) {
+        window.dispatchEvent(new CustomEvent('debone:avatar-preview', { detail: { src: dataUrl } }));   // show it at once
+        var big = document.querySelector('.pf-photo .pf-avatar'); if (big && big.tagName === 'IMG') big.src = dataUrl;
         return api('/api/me/avatar', { method: 'POST', body: { data: dataUrl } });
       }).then(function () {
         toast('Profile photo saved.');
         return loadDash();
       }).then(function () { renderProfile(); })
-        .catch(function (err) { toast(err.message, 'err'); });
+        .catch(function (err) { toast(err.message, 'err'); if (window.DShell) DShell.refreshUser(); });
     });
     var rm = document.getElementById('pf-remove');
     if (rm) rm.addEventListener('click', function () {
@@ -756,6 +906,12 @@
     var lessonBtn = e.target.closest('[data-lesson]');
     if (lessonBtn) {
       var lid = lessonBtn.getAttribute('data-lesson');
+      if (lessonBtn.classList.contains('gated')) {
+        lessonBtn.classList.add('shake'); setTimeout(function () { lessonBtn.classList.remove('shake'); }, 500);
+        toast(lessonBtn.title || 'Finish the previous lesson first.', 'warn');
+        markActive(lid);
+        return openLesson(lid);
+      }
       if (lessonBtn.classList.contains('locked')) {
         markActive(lid);
         return openLesson(lid);
@@ -809,7 +965,9 @@
         await loadDash();
         var name = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
         var busy = window.DModal && DModal.isOpen();
-        if (!busy && (READ_ONLY.indexOf(name) !== -1 || name === 'assignments')) route();
+        var ae = document.activeElement, typing = !!ae && /^(TEXTAREA|INPUT|SELECT)$/.test(ae.tagName);
+        if (name === 'course') { if (!busy) await refreshCourseState(); }
+        else if (!busy && !typing && (READ_ONLY.indexOf(name) !== -1 || name === 'assignments' || name === 'live' || name === 'certificates' || name === 'recordings')) route();
       } catch (e) {} finally { refreshing = false; }
     });
     window.addEventListener('debone:unlock', async function (ev) {

@@ -86,10 +86,10 @@
       var extras = '';
       if (selected.joinUrl && selected.joinOpen) extras += '<a class="btn btn-solid join-now" target="_blank" rel="noopener" href="' + esc(selected.joinUrl) + '"><span class="join-dot"></span>Join class now</a> ';
       else if (selected.joinUrl) extras += '<span class="join-wait">Join opens 15 minutes before the class</span> ';
-      if (selected.joinOpen && !selected.attended) extras += '<button class="btn btn-ghost btn-sm" type="button" id="attend-btn">I am attending</button> ';
+      if ((selected.joinOpen || selected.liveOpen) && !selected.attended) extras += '<button class="btn btn-ghost btn-sm" type="button" id="attend-btn">I am attending</button> ';
       if (selected.attended) extras += '<span class="gpill pass">You are checked in</span> ';
       if (selected.countdownTo) extras += '<div class="countdown" data-countdown="' + esc(selected.countdownTo) + '" aria-live="off"></div>';
-      if (selected.recordingUrl) extras += '<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="' + esc(selected.recordingUrl) + '">Watch recording</a> ';
+      if (selected.recordingUrl) extras += '<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" data-watched="' + esc(selected.id) + '" href="' + esc(selected.recordingUrl) + '">Watch recording</a> ';
       if (selected.watchUrl) extras += '<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="' + esc(selected.watchUrl) + '">Open on YouTube</a>';
       player = '<div class="player-head"><div><p class="eyebrow">' + esc(selected.courseTitle) + '</p><h2>' + esc(selected.title) + '</h2></div>' +
         '<span class="tag ' + (selected.status === 'live' ? 'live' : '') + '">' + STATUS[selected.status] + '</span></div>' +
@@ -112,6 +112,12 @@
       api('/api/sessions/' + encodeURIComponent(selected.id) + '/attend', { method: 'POST', body: {} })
         .then(function () { toast('Checked in. Enjoy the class!'); renderLive(selected.id); })
         .catch(function (err) { toast(err.message, 'err'); att.disabled = false; });
+    });
+    view.querySelectorAll('[data-watched]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        // Opening the recording counts as doing the class, so the next lesson can unlock
+        api('/api/sessions/' + encodeURIComponent(a.getAttribute('data-watched')) + '/watched', { method: 'POST', body: {} }).catch(function () {});
+      });
     });
     startCountdowns();
   }

@@ -100,17 +100,50 @@
       .then(function () { location.replace(kind === 'staff' ? 'staff-login.html' : 'login.html'); });
   });
 
-  function syncPhoto() {
-    fetch('/api/me', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-      if (!d || !d.user || !d.user.hasAvatar) return;
-      var el = document.getElementById('shell-avatar');
+  /* Show the photo (or the initials) in the top bar. Called on load, after every change and on every refresh. */
+  function setAvatar(src) {
+    var el = document.getElementById('shell-avatar');
+    if (!el) return;
+    if (src) {
       el.textContent = '';
       el.dataset.photo = '1';
-      el.style.backgroundImage = 'url(/api/me/avatar?v=' + Date.now() + ')';
+      el.style.backgroundImage = 'url(' + src + ')';
       el.style.backgroundSize = 'cover';
       el.style.backgroundPosition = 'center';
+    } else {
+      delete el.dataset.photo;
+      el.style.backgroundImage = '';
+      syncName();
+    }
+  }
+  function applyUser(u) {
+    if (!u) return;
+    if (u.name) {
+      document.getElementById('shell-name').textContent = u.name;
+      var side = document.getElementById('me-name'); if (side) side.textContent = u.name;
+    }
+    if (u.hasAvatar) setAvatar('/api/me/avatar?v=' + Date.now());
+    else {
+      setAvatar('');
+      var initials = (u.name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+      document.getElementById('shell-avatar').textContent = initials || '··';
+    }
+  }
+  function syncPhoto() {
+    return fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (d && d.user) applyUser(d.user);
     }).catch(function () {});
   }
+  window.DShell = { applyUser: applyUser, setAvatar: setAvatar, refreshUser: syncPhoto };
+  /* Changes made on this page show immediately (no waiting for a refresh) */
+  window.addEventListener('debone:user', function (e) { applyUser(e.detail); });
+  window.addEventListener('debone:avatar-preview', function (e) { setAvatar(e.detail && e.detail.src); });
+  /* Changes made elsewhere (another tab or device) arrive with the next refresh */
+  var lastUserSync = 0;
+  window.addEventListener('debone:refresh', function () {
+    if (Date.now() - lastUserSync < 5000) return;
+    lastUserSync = Date.now(); syncPhoto();
+  });
   syncPhoto();
   load();
   setInterval(load, 60000);

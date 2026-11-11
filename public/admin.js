@@ -92,141 +92,334 @@
         '<p class="muted" style="margin-top:12px">' + (isAdmin() ? 'You can manage courses, users, payments and announcements, as well as live classes and marking.' : 'You can run live classes, moderate the class chat, and mark assignments.') + '</p></section></div>');
   }
 
-  /* ---------- Live classes ---------- */
+  /* ---------- Live classes (v50 redesign) ---------- */
+  var liveTab = 'all';
+  var ICON = {
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/></svg>',
+    pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+    video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg>',
+    yt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10 9.5l4.5 2.5-4.5 2.5z"/></svg>',
+    rec: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+    empty: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="38" height="32" rx="7"/><path d="M44 28l14-8v24l-14-8"/><circle cx="25" cy="32" r="5"/></svg>'
+  };
+  function toLocalInput(v) {
+    if (!v) return '';
+    if (/Z$|[+-]\d\d:\d\d$/.test(v)) {
+      var d = new Date(v); if (isNaN(d)) return '';
+      var p = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    return String(v).slice(0, 16);
+  }
+  function countUp(el) {
+    var end = Number(el.getAttribute('data-n')) || 0;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !end) { el.textContent = end; return; }
+    var t0 = null;
+    (function step(ts) {
+      if (!t0) t0 = ts;
+      var p = Math.min((ts - t0) / 900, 1);
+      el.textContent = Math.round(end * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(step);
+    })(performance.now());
+  }
+  function dueNow(s) {
+    if (s.status !== 'scheduled' || !s.startsAt) return false;
+    var t = new Date(s.startsAt).getTime();
+    return !isNaN(t) && Date.now() >= t - 10 * 60000 && Date.now() <= t + (s.durationMinutes || 120) * 60000;
+  }
+  function lessonLabel(s, lessonsByCourse) {
+    if (!s.lessonId) return '';
+    var list = lessonsByCourse[s.courseId] || [];
+    var i = list.findIndex(function (l) { return l.id === s.lessonId; });
+    return i < 0 ? '' : 'Lesson ' + (i + 1) + ': ' + list[i].title;
+  }
+  function lessonOptions(lessons, selected) {
+    return '<option value="">Not linked to a lesson</option>' + lessons.map(function (l, i) {
+      return '<option value="' + esc(l.id) + '"' + (l.id === selected ? ' selected' : '') + '>Lesson ' + (i + 1) + ': ' + esc(l.title) + '</option>';
+    }).join('');
+  }
+
   async function renderLive() {
     crumb.textContent = 'Live classes';
     var courses = await allCourses();
-    var sessions = [];
+    var sessions = [], lessonsByCourse = {};
     for (var i = 0; i < courses.length; i++) {
       var c = (await api('/api/staff/courses/' + encodeURIComponent(courses[i].id))).course;
+      lessonsByCourse[courses[i].id] = c.lessons || [];
       c.sessions.forEach(function (s) { s.courseTitle = courses[i].title; sessions.push(s); });
     }
     sessions.sort(function (a, b) { return (b.startsAt || '').localeCompare(a.startsAt || ''); });
+    var firstCourse = courses[0] ? courses[0].id : '';
 
-    setView(head('Teaching', 'Live classes', 'Schedule YouTube Live or Google Meet sessions, record them, and moderate the class chat.') +
-      '<section class="box"><h2>Schedule a class</h2>' +
-      '<form class="form-grid" id="session-form">' +
-        '<div class="grid-2"><div class="field"><label>Course</label><select class="input" name="courseId" required>' + courseOptions(courses, '') + '</select></div>' +
-        '<div class="field"><label>Title</label><input class="input" name="title" required maxlength="120" placeholder="e.g. Week 3: Reading charts"></div></div>' +
-        '<div class="grid-3"><div class="field"><label>Date and time</label><input class="input" type="datetime-local" name="startsAt"></div>' +
-        '<div class="field"><label>Status</label><select class="input" name="status"><option value="scheduled">Scheduled</option><option value="live">Live now</option><option value="ended">Ended</option></select></div>' +
-        '<div class="field"><label>Class length (minutes)</label><input class="input" type="number" min="15" max="600" name="durationMinutes" value="120"></div>' +
-        '<div class="field"><label>Video room link</label><input class="input" name="joinUrl" type="url" placeholder="Google Meet or Zoom link"></div></div>' +
-        '<div class="grid-2"><div class="field"><label>YouTube live link</label><input class="input" name="youtubeUrl" placeholder="https://www.youtube.com/watch?v=…"><span class="hint">Students watch this inside their dashboard.</span></div>' +
-        '<div class="field"><label>Recording link</label><input class="input" name="recordingUrl" placeholder="YouTube link of the recording"></div></div>' +
-        '<div><button class="btn btn-solid" type="submit">Save class</button></div>' +
-      '</form></section>' +
-      '<section class="box"><h2>All classes</h2>' + (sessions.length ? sessions.map(sessionRow).join('') : '<p class="muted">No classes yet.</p>') + '</section>');
+    setView('<div class="lv">' +
+      '<section class="lv-hero"><div class="lv-hero-row"><div><p class="eyebrow">Teaching</p><h1>Live <span>classes</span></h1>' +
+        '<p class="muted">Schedule a class, link it to a lesson, go live with one tap, and keep the class chat tidy.</p></div>' +
+        '<button class="btn btn-solid lv-cta" type="button" id="lv-new">' + ICON.plus + 'Schedule a class</button></div></section>' +
+      '<div class="lv-stats" id="lv-stats"></div>' +
+      '<div class="lv-grid">' +
+        '<aside class="lv-compose" id="lv-compose"><h2><small>New session</small>Schedule a class</h2>' +
+        '<form id="session-form" class="lv-form" autocomplete="off">' +
+          '<div class="lv-sec"><h3><em>1</em>What is it about</h3>' +
+            '<div class="lv-f"><label>Course</label><select class="input" name="courseId" required>' + courseOptions(courses, firstCourse) + '</select></div>' +
+            '<div class="lv-f"><label>Lesson it belongs to</label><select class="input" name="lessonId">' + lessonOptions(lessonsByCourse[firstCourse] || [], '') + '</select>' +
+              '<span class="lv-hint">Students unlock the next lesson after this live class (or its recording) and the lesson assignment are done.</span></div>' +
+            '<div class="lv-f"><label>Title</label><div class="lv-ico">' + ICON.pen + '<input class="input with-ico" name="title" required maxlength="120" placeholder="e.g. Week 3: Reading charts"></div></div></div>' +
+          '<div class="lv-sec"><h3><em>2</em>When</h3>' +
+            '<div class="lv-f"><label>Date and time</label><div class="lv-ico">' + ICON.cal + '<input class="input with-ico" type="datetime-local" name="startsAt"></div></div>' +
+            '<div class="lv-f"><label>Class length (minutes)</label><div class="lv-chips" id="lv-len">' +
+              [60, 90, 120, 180].map(function (n) { return '<button type="button" class="lv-chip' + (n === 120 ? ' on' : '') + '" data-len="' + n + '">' + n + '</button>'; }).join('') + '</div>' +
+              '<input class="input" type="number" min="15" max="600" name="durationMinutes" value="120"></div>' +
+            '<div class="lv-f"><label>Status</label><div class="lv-seg" data-v="scheduled" id="lv-seg"><span class="pill"></span>' +
+              [['scheduled', 'Scheduled'], ['live', 'Live now'], ['ended', 'Ended']].map(function (x) { return '<input type="radio" name="status" id="st-' + x[0] + '" value="' + x[0] + '"' + (x[0] === 'scheduled' ? ' checked' : '') + '><label for="st-' + x[0] + '">' + x[1] + '</label>'; }).join('') + '</div></div></div>' +
+          '<div class="lv-sec"><h3><em>3</em>Links</h3>' +
+            '<div class="lv-f"><label>Video room link</label><div class="lv-ico">' + ICON.video + '<input class="input with-ico" name="joinUrl" type="url" placeholder="Google Meet or Zoom link"></div></div>' +
+            '<div class="lv-f"><label>YouTube live link</label><div class="lv-ico">' + ICON.yt + '<input class="input with-ico" name="youtubeUrl" placeholder="https://www.youtube.com/watch?v=…"></div><span class="lv-hint">Students watch this inside their dashboard.</span></div>' +
+            '<div class="lv-f"><label>Recording link</label><div class="lv-ico">' + ICON.rec + '<input class="input with-ico" name="recordingUrl" placeholder="YouTube link of the recording"></div><span class="lv-hint">Add it after the class. Students who missed it watch it from their lesson.</span></div></div>' +
+          '<button class="btn btn-solid lv-save" type="submit"><span>Save class</span></button>' +
+        '</form></aside>' +
+        '<section class="lv-main"><div class="lv-bar"><div class="lv-tabs" id="lv-tabs"><span class="ind"></span></div>' +
+          '<input class="input lv-search" id="lv-search" type="search" placeholder="Search classes…" aria-label="Search classes"></div>' +
+          '<div id="lv-list"></div></section>' +
+      '</div></div>');
 
+    var form = view.querySelector('#session-form');
+    var seg = view.querySelector('#lv-seg');
+    var query = '';
+
+    /* --- form behaviour --- */
+    form.elements.courseId.addEventListener('change', function () {
+      form.elements.lessonId.innerHTML = lessonOptions(lessonsByCourse[form.elements.courseId.value] || [], '');
+    });
+    form.querySelectorAll('input[name=status]').forEach(function (r) { r.addEventListener('change', function () { seg.setAttribute('data-v', r.value); }); });
+    form.querySelectorAll('[data-len]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        form.elements.durationMinutes.value = b.getAttribute('data-len');
+        form.querySelectorAll('[data-len]').forEach(function (x) { x.classList.toggle('on', x === b); });
+      });
+    });
+    form.elements.durationMinutes.addEventListener('input', function () {
+      form.querySelectorAll('[data-len]').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-len') === form.elements.durationMinutes.value); });
+    });
+    var saveBtn = form.querySelector('.lv-save');
+    saveBtn.addEventListener('pointerdown', function (e) {
+      var r = saveBtn.getBoundingClientRect(), d = Math.max(r.width, r.height), rip = document.createElement('i');
+      rip.className = 'rip'; rip.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + (e.clientX - r.left - d / 2) + 'px;top:' + (e.clientY - r.top - d / 2) + 'px';
+      saveBtn.appendChild(rip); setTimeout(function () { rip.remove(); }, 700);
+    });
+    view.querySelector('#lv-new').addEventListener('click', function () {
+      var box = view.querySelector('#lv-compose'); box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(function () { form.elements.title.focus({ preventScroll: true }); }, 450);
+    });
     bindForm('#session-form', async function (f) {
-      var body = { courseId: fv(f, 'courseId'), title: fv(f, 'title'), startsAt: fv(f, 'startsAt'), status: fv(f, 'status'), joinUrl: fv(f, 'joinUrl'), youtubeUrl: fv(f, 'youtubeUrl'), recordingUrl: fv(f, 'recordingUrl'), durationMinutes: fv(f, 'durationMinutes') };
-      await api('/api/staff/sessions', { method: 'POST', body: body });
+      var body = { courseId: fv(f, 'courseId'), lessonId: fv(f, 'lessonId'), title: fv(f, 'title'), startsAt: fv(f, 'startsAt'),
+        status: f.querySelector('input[name=status]:checked').value, joinUrl: fv(f, 'joinUrl'), youtubeUrl: fv(f, 'youtubeUrl'),
+        recordingUrl: fv(f, 'recordingUrl'), durationMinutes: fv(f, 'durationMinutes') };
+      var r = await api('/api/staff/sessions', { method: 'POST', body: body });
       toast('Class saved.');
-      renderLive();
+      saveBtn.classList.add('ok'); saveBtn.querySelector('span').textContent = 'Saved ✓';
+      setTimeout(function () { saveBtn.classList.remove('ok'); saveBtn.querySelector('span').textContent = 'Save class'; }, 1600);
+      var courseTitle = (courses.find(function (c) { return c.id === body.courseId; }) || {}).title || '';
+      r.session.courseTitle = courseTitle; sessions.unshift(r.session);
+      f.elements.title.value = ''; f.elements.youtubeUrl.value = ''; f.elements.joinUrl.value = ''; f.elements.recordingUrl.value = '';
+      draw(r.session.id);
     });
 
-    view.querySelectorAll('[data-save-session]').forEach(function (btn) {
-      btn.addEventListener('click', async function () {
-        var row = btn.closest('[data-row]');
-        var id = btn.getAttribute('data-save-session');
-        try {
-          await api('/api/staff/sessions/' + encodeURIComponent(id), { method: 'PATCH', body: {
-            status: row.querySelector('[name=status]').value,
-            youtubeUrl: row.querySelector('[name=youtubeUrl]').value.trim(),
-            joinUrl: row.querySelector('[name=joinUrl]').value.trim(),
-            durationMinutes: row.querySelector('[name=durationMinutes]').value,
-            recordingUrl: row.querySelector('[name=recordingUrl]').value.trim(),
-            chatOpen: row.querySelector('[name=chatOpen]').checked
-          } });
-          toast('Class updated.');
-          renderLive();
-        } catch (e) { toast(e.message, 'err'); }
+    /* --- list --- */
+    var TABS = [['all', 'All'], ['live', 'Live now'], ['scheduled', 'Upcoming'], ['ended', 'Ended']];
+    function counts() {
+      var n = { all: sessions.length, live: 0, scheduled: 0, ended: 0 };
+      sessions.forEach(function (s) { n[s.status] = (n[s.status] || 0) + 1; });
+      return n;
+    }
+    function drawStats(first) {
+      var n = counts(), att = sessions.reduce(function (t, s) { return t + (s.attendees || 0); }, 0);
+      view.querySelector('#lv-stats').innerHTML = [
+        ['is-live', 'Live now', n.live], ['is-up', 'Upcoming', n.scheduled], ['is-end', 'Completed', n.ended], ['is-att', 'Check-ins', att]
+      ].map(function (x, i) { return '<div class="lv-stat ' + x[0] + '" style="--i:' + i + '"><span><i class="dot"></i>' + x[1] + '</span><b data-n="' + x[2] + '">0</b></div>'; }).join('');
+      view.querySelectorAll('#lv-stats [data-n]').forEach(first ? countUp : function (el) { el.textContent = el.getAttribute('data-n'); });
+    }
+    function drawTabs() {
+      var n = counts(), box = view.querySelector('#lv-tabs');
+      box.querySelectorAll('button').forEach(function (b) { b.remove(); });
+      TABS.forEach(function (t) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.setAttribute('data-tab', t[0]); b.className = liveTab === t[0] ? 'on' : '';
+        b.innerHTML = esc(t[1]) + '<sup>' + (n[t[0]] || 0) + '</sup>';
+        b.addEventListener('click', function () { liveTab = t[0]; drawTabs(); drawList(); });
+        box.appendChild(b);
       });
-    });
-    view.querySelectorAll('[data-delete-session]').forEach(function (btn) {
-      btn.addEventListener('click', async function () {
-        if (!window.confirm('Delete this class and its chat history?')) return;
-        try { await api('/api/staff/sessions/' + encodeURIComponent(btn.getAttribute('data-delete-session')), { method: 'DELETE' }); toast('Class deleted.'); renderLive(); }
-        catch (e) { toast(e.message, 'err'); }
+      var on = box.querySelector('button.on'), ind = box.querySelector('.ind');
+      if (on) { ind.style.width = on.offsetWidth + 'px'; ind.style.transform = 'translateX(' + on.offsetLeft + 'px)'; }
+    }
+    function card(s, i) {
+      var d = s.startsAt ? new Date(s.startsAt) : null, valid = d && !isNaN(d);
+      var lab = lessonLabel(s, lessonsByCourse), len = s.durationMinutes || 120;
+      var pct = Math.min(100, Math.round(((s.attendees || 0) / Math.max(1, (courses.find(function (c) { return c.id === s.courseId; }) || {}).enrolledCount || 1)) * 100));
+      var lessons = lessonsByCourse[s.courseId] || [];
+      var action = s.status === 'live' ? '<button class="lv-btn stop" type="button" data-set-status="ended">' + ICON.stop + 'End class</button>'
+        : s.status === 'scheduled' ? '<button class="lv-btn go" type="button" data-set-status="live">' + ICON.play + 'Go live</button>' : '';
+      return '<article class="lv-card st-' + esc(s.status) + '" data-row data-id="' + esc(s.id) + '" style="--i:' + i + '">' +
+        '<div class="lv-row"><div class="lv-date">' + (valid ? '<b>' + d.getDate() + '</b><span>' + d.toLocaleString('en-GB', { month: 'short' }) + '</span><small>' + d.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</small>' : '<b>–</b><span>TBA</span>') + '</div>' +
+          '<div class="lv-info"><h3>' + esc(s.title) + '</h3><div class="lv-tags">' +
+            '<span class="lv-tag status ' + esc(s.status) + '">' + (s.status === 'live' ? '<i></i>' : '') + (s.status === 'scheduled' ? 'Upcoming' : s.status === 'live' ? 'Live now' : 'Ended') + '</span>' +
+            (dueNow(s) ? '<span class="lv-tag due">Time to start</span>' : '') +
+            '<span class="lv-tag">' + ICON.book.replace('<svg', '<svg width="13" height="13"') + esc(s.courseTitle || '') + '</span>' +
+            (lab ? '<span class="lv-tag">' + esc(lab) + '</span>' : '<span class="lv-tag">No lesson linked</span>') +
+            '<span class="lv-tag">' + ICON.clock.replace('<svg', '<svg width="13" height="13"') + len + ' min</span>' +
+            (s.recordingRaw ? '<span class="lv-tag">Recording added</span>' : '') + '</div>' +
+          '<div class="lv-meter"><div class="bar"><i data-w="' + pct + '"></i></div><span><b>' + (s.attendees || 0) + '</b> checked in</span></div></div>' +
+          '<div class="lv-actions">' + action +
+            '<button class="lv-btn" type="button" data-toggle="edit">' + ICON.edit + 'Edit</button>' +
+            '<button class="lv-btn" type="button" data-chat-session="' + esc(s.id) + '">' + ICON.chat + 'Chat</button>' + '</div></div>' +
+        '<div class="lv-drawer" data-drawer="edit"><div><div class="in">' +
+          '<div class="lv-two"><div class="lv-f"><label>Title</label><input class="input" name="title" maxlength="120" value="' + esc(s.title) + '"></div>' +
+            '<div class="lv-f"><label>Lesson</label><select class="input" name="lessonId">' + lessonOptions(lessons, s.lessonId) + '</select></div></div>' +
+          '<div class="lv-two"><div class="lv-f"><label>Date and time</label><input class="input" type="datetime-local" name="startsAt" value="' + esc(toLocalInput(s.startsAt)) + '"></div>' +
+            '<div class="lv-f"><label>Length (minutes)</label><input class="input" type="number" min="15" max="600" name="durationMinutes" value="' + len + '"></div></div>' +
+          '<div class="lv-two"><div class="lv-f"><label>Status</label><select class="input" name="status">' + ['scheduled', 'live', 'ended'].map(function (x) { return '<option value="' + x + '"' + (s.status === x ? ' selected' : '') + '>' + (x === 'scheduled' ? 'Scheduled' : x === 'live' ? 'Live now' : 'Ended') + '</option>'; }).join('') + '</select></div>' +
+            '<div class="lv-f"><label>Video room</label><input class="input" name="joinUrl" value="' + esc(s.joinUrl || '') + '" placeholder="Google Meet or Zoom link"></div></div>' +
+          '<div class="lv-two"><div class="lv-f"><label>YouTube live link</label><input class="input" name="youtubeUrl" value="' + esc(s.watchUrl || '') + '" placeholder="https://www.youtube.com/watch?v=…"></div>' +
+            '<div class="lv-f"><label>Recording link</label><input class="input" name="recordingUrl" value="' + esc(s.recordingRaw || '') + '" placeholder="YouTube link of the recording"></div></div>' +
+          '<label class="lv-switch"><input type="checkbox" name="chatOpen"' + (s.chatOpen === false ? '' : ' checked') + '><span class="tr"></span>Class chat is open</label>' +
+          '<div class="lv-actions" style="justify-content:flex-start"><button class="btn btn-solid btn-sm" type="button" data-save-session="' + esc(s.id) + '">Save changes</button>' +
+            (isAdmin() ? '<button class="lv-btn danger" type="button" data-delete-session="' + esc(s.id) + '">' + ICON.trash + 'Delete</button>' : '') + '</div>' +
+        '</div></div></div>' +
+        '<div class="lv-drawer" data-drawer="chat"><div><div class="in"><div class="lv-chatlog" data-chat-log></div></div></div></div>' +
+      '</article>';
+    }
+    function drawList(flash) {
+      var q = query.toLowerCase();
+      var rows = sessions.filter(function (s) {
+        return (liveTab === 'all' || s.status === liveTab) && (!q || (s.title + ' ' + (s.courseTitle || '')).toLowerCase().indexOf(q) !== -1);
       });
-    });
-    view.querySelectorAll('[data-chat-session]').forEach(function (btn) {
-      btn.addEventListener('click', function () { openChatModeration(btn.getAttribute('data-chat-session'), btn); });
-    });
-  }
+      var order = { live: 0, scheduled: 1, ended: 2 };
+      rows.sort(function (a, b) {
+        if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
+        return a.status === 'ended' ? (b.startsAt || '').localeCompare(a.startsAt || '') : (a.startsAt || '').localeCompare(b.startsAt || '');
+      });
+      var box = view.querySelector('#lv-list');
+      box.innerHTML = rows.length ? '<div style="display:grid;gap:14px">' + rows.map(card).join('') + '</div>'
+        : '<div class="lv-empty">' + ICON.empty + '<b>' + (sessions.length ? 'No classes match this view' : 'No classes yet') + '</b><span>' + (sessions.length ? 'Try another tab or clear the search.' : 'Schedule your first live class using the form.') + '</span></div>';
+      requestAnimationFrame(function () { requestAnimationFrame(function () { box.querySelectorAll('[data-w]').forEach(function (el) { el.style.width = el.getAttribute('data-w') + '%'; }); }); });
+      if (flash) { var el = box.querySelector('[data-id="' + flash + '"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      bindCards();
+    }
+    function draw(flash) { drawStats(false); drawTabs(); drawList(flash); }
 
-  function sessionRow(s) {
-    var canDelete = isAdmin();
-    return '<div class="sub-row" data-row style="grid-template-columns:1.4fr 1fr 1fr 1fr">' +
-      '<div><b>' + esc(s.title) + '</b><p class="muted" style="font-size:.85rem">' + esc(s.courseTitle || '') + ' · ' + esc(fmt(s.startsAt)) + ' · ' + (s.durationMinutes || 120) + ' min · <b>' + (s.attendees || 0) + '</b> checked in</p>' +
-        '<select class="input" name="status" style="margin-top:8px">' + ['scheduled', 'live', 'ended'].map(function (x) { return '<option value="' + x + '"' + (s.status === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select>' +
-        '<label class="check" style="margin-top:8px"><input type="checkbox" name="chatOpen" checked> Chat open</label></div>' +
-      '<div class="field"><label>YouTube link</label><input class="input" name="youtubeUrl" value="' + esc(s.watchUrl || '') + '"></div>' +
-      '<div class="field"><label>Video room</label><input class="input" name="joinUrl" value="' + esc(s.joinUrl || '') + '"></div>' +
-      '<div class="field"><label>Length (minutes)</label><input class="input" type="number" min="15" max="600" name="durationMinutes" value="' + (s.durationMinutes || 120) + '"></div>' +
-      '<div class="field"><label>Recording</label><input class="input" name="recordingUrl" value="' + esc(s.recordingUrl || '') + '">' +
-        '<div class="row-actions" style="margin-top:8px"><button class="btn btn-solid btn-sm" type="button" data-save-session="' + esc(s.id) + '">Save</button>' +
-        '<button class="btn btn-ghost btn-sm" type="button" data-chat-session="' + esc(s.id) + '">Chat</button>' +
-        (canDelete ? '<button class="btn btn-ghost btn-sm" type="button" data-delete-session="' + esc(s.id) + '">Delete</button>' : '') + '</div></div>' +
-      '</div>';
+    async function patch(id, body, okMsg) {
+      var r = await api('/api/staff/sessions/' + encodeURIComponent(id), { method: 'PATCH', body: body });
+      var i = sessions.findIndex(function (x) { return x.id === id; });
+      if (i >= 0) { var keep = sessions[i].courseTitle; sessions[i] = Object.assign({}, sessions[i], r.session, { courseTitle: keep, recordingRaw: body.recordingUrl !== undefined ? body.recordingUrl : sessions[i].recordingRaw }); }
+      toast(okMsg); draw();
+    }
+    function bindCards() {
+      view.querySelectorAll('[data-toggle=edit]').forEach(function (b) {
+        b.addEventListener('click', function () { b.closest('[data-row]').querySelector('[data-drawer=edit]').classList.toggle('open'); });
+      });
+      view.querySelectorAll('[data-set-status]').forEach(function (b) {
+        b.addEventListener('click', async function () {
+          b.disabled = true;
+          try { await patch(b.closest('[data-row]').getAttribute('data-id'), { status: b.getAttribute('data-set-status') }, b.getAttribute('data-set-status') === 'live' ? 'You are live. Students were notified.' : 'Class ended.'); }
+          catch (e) { toast(e.message, 'err'); b.disabled = false; }
+        });
+      });
+      view.querySelectorAll('[data-save-session]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var row = btn.closest('[data-row]'), q = function (n) { return row.querySelector('[name=' + n + ']'); };
+          btn.disabled = true;
+          try {
+            await patch(btn.getAttribute('data-save-session'), { title: q('title').value.trim(), lessonId: q('lessonId').value, startsAt: q('startsAt').value, status: q('status').value,
+              youtubeUrl: q('youtubeUrl').value.trim(), joinUrl: q('joinUrl').value.trim(), durationMinutes: q('durationMinutes').value,
+              recordingUrl: q('recordingUrl').value.trim(), chatOpen: q('chatOpen').checked }, 'Class updated.');
+          } catch (e) { toast(e.message, 'err'); btn.disabled = false; }
+        });
+      });
+      view.querySelectorAll('[data-delete-session]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          if (!window.confirm('Delete this class and its chat history?')) return;
+          var id = btn.getAttribute('data-delete-session'), row = btn.closest('[data-row]');
+          try {
+            await api('/api/staff/sessions/' + encodeURIComponent(id), { method: 'DELETE' });
+            row.classList.add('lv-leave');
+            setTimeout(function () { sessions = sessions.filter(function (x) { return x.id !== id; }); toast('Class deleted.'); draw(); }, 330);
+          } catch (e) { toast(e.message, 'err'); }
+        });
+      });
+      view.querySelectorAll('[data-chat-session]').forEach(function (btn) {
+        btn.addEventListener('click', function () { openChatModeration(btn.getAttribute('data-chat-session'), btn); });
+      });
+    }
+    view.querySelector('#lv-search').addEventListener('input', function (e) { query = e.target.value; drawList(); });
+
+    drawStats(true); drawTabs(); drawList();
+    window.addEventListener('resize', drawTabs, { once: true });
   }
 
   async function openChatModeration(sessionId, btn) {
     var box = btn.closest('[data-row]');
-    var existing = box.querySelector('.chat-mod');
-    if (existing) { existing.remove(); return; }
-    var panel = document.createElement('div');
-    panel.className = 'chat-mod';
-    panel.style.gridColumn = '1 / -1';
-    panel.innerHTML = '<p class="muted">Loading chat…</p>';
-    box.appendChild(panel);
+    var drawer = box.querySelector('[data-drawer=chat]');
+    var log = drawer.querySelector('[data-chat-log]');
+    if (drawer.classList.contains('open')) { drawer.classList.remove('open'); return; }
+    log.innerHTML = '<p class="muted">Loading chat…</p>';
+    drawer.classList.add('open');
     try {
       var r = await api('/api/staff/sessions/' + encodeURIComponent(sessionId) + '/chat');
-      panel.innerHTML = '<p class="eyebrow" style="margin-top:14px">Class chat (newest last)</p>' +
-        (r.messages.length ? r.messages.map(function (m) {
-          return '<div class="msg-row"><div><b>' + esc(m.name) + '</b> <span>' + esc(m.role) + ' · ' + esc(fmt(m.createdAt)) + '</span><p>' + esc(m.text) + '</p></div>' +
-            '<button class="btn btn-ghost btn-sm" type="button" data-del-msg="' + esc(m.id) + '">Remove</button></div>';
-        }).join('') : '<p class="muted">No messages yet.</p>');
-      panel.querySelectorAll('[data-del-msg]').forEach(function (b) {
+      log.innerHTML = r.messages.length ? r.messages.map(function (m) {
+        return '<div class="lv-msg"><div><b>' + esc(m.name) + '</b><span>' + esc(m.role) + ' · ' + esc(fmt(m.createdAt)) + '</span><p>' + esc(m.text) + '</p></div>' +
+          '<button class="lv-btn danger" type="button" data-del-msg="' + esc(m.id) + '">Remove</button></div>';
+      }).join('') : '<p class="muted">No messages yet.</p>';
+      log.querySelectorAll('[data-del-msg]').forEach(function (b) {
         b.addEventListener('click', async function () {
-          try { await api('/api/staff/chat/' + encodeURIComponent(b.getAttribute('data-del-msg')), { method: 'DELETE' }); b.closest('.msg-row').remove(); toast('Message removed.'); }
+          try { await api('/api/staff/chat/' + encodeURIComponent(b.getAttribute('data-del-msg')), { method: 'DELETE' }); b.closest('.lv-msg').remove(); toast('Message removed.'); }
           catch (e) { toast(e.message, 'err'); }
         });
       });
-    } catch (e) { panel.innerHTML = '<p class="muted">' + esc(e.message) + '</p>'; }
+    } catch (e) { log.innerHTML = '<p class="muted">' + esc(e.message) + '</p>'; }
   }
 
   /* ---------- Assignments and marking ---------- */
   async function renderAssignments() {
     crumb.textContent = 'Assignments';
     var courses = await allCourses();
-    var rows = [];
+    var rows = [], lessonsByCourse = {};
     for (var i = 0; i < courses.length; i++) {
       var c = (await api('/api/staff/courses/' + encodeURIComponent(courses[i].id))).course;
-      c.assignments.forEach(function (a) { a.courseTitle = courses[i].title; rows.push(a); });
+      lessonsByCourse[courses[i].id] = c.lessons || [];
+      c.assignments.forEach(function (a) { a.courseTitle = courses[i].title; a.lessonLabel = (function () { var k = (c.lessons || []).findIndex(function (l) { return l.id === a.lessonId; }); return k < 0 ? '' : ' · Lesson ' + (k + 1); })(); rows.push(a); });
     }
     setView(head('Teaching', 'Assignments', 'Set work, read submissions, and give marks and feedback.') +
       '<section class="box"><h2>New assignment</h2>' +
       '<form class="form-grid" id="assign-form">' +
-        '<div class="grid-2"><div class="field"><label>Course</label><select class="input" name="courseId" required>' + courseOptions(courses, '') + '</select></div>' +
-        '<div class="field"><label>Title</label><input class="input" name="title" required maxlength="120"></div></div>' +
+        '<div class="grid-2"><div class="field"><label>Course</label><select class="input" name="courseId" required>' + courseOptions(courses, courses[0] ? courses[0].id : '') + '</select></div>' +
+        '<div class="field"><label>Lesson</label><select class="input" name="lessonId">' + lessonOptions(lessonsByCourse[courses[0] ? courses[0].id : ''] || [], '') + '</select><span class="hint">Students must submit this to finish the lesson and unlock the next one.</span></div></div>' +
+        '<div class="field"><label>Title</label><input class="input" name="title" required maxlength="120"></div>' +
         '<div class="field"><label>Instructions</label><textarea class="input" name="instructions" maxlength="5000" placeholder="What should students do?"></textarea></div>' +
         '<div class="grid-2"><div class="field"><label>Due date</label><input class="input" type="date" name="dueAt"></div>' +
         '<div class="field"><label>Maximum marks</label><input class="input" type="number" name="maxMarks" min="1" max="1000" value="100"></div></div>' +
         '<div><button class="btn btn-solid" type="submit">Create assignment</button></div>' +
       '</form></section>' +
       '<section class="box"><h2>Assignments</h2>' + (rows.length ? rows.map(function (a) {
-        return '<div class="sub-row" style="grid-template-columns:2fr 1fr auto"><div><b>' + esc(a.title) + '</b><p class="muted" style="font-size:.85rem">' + esc(a.courseTitle) + ' · due ' + esc(a.dueAt || 'no date') + ' · ' + a.maxMarks + ' marks</p></div>' +
+        return '<div class="sub-row" style="grid-template-columns:2fr 1fr auto"><div><b>' + esc(a.title) + '</b><p class="muted" style="font-size:.85rem">' + esc(a.courseTitle) + esc(a.lessonLabel || '') + ' · due ' + esc(a.dueAt || 'no date') + ' · ' + a.maxMarks + ' marks</p></div>' +
           '<div></div><div class="row-actions"><button class="btn btn-solid btn-sm" type="button" data-grade="' + esc(a.id) + '">Submissions</button>' +
           (isAdmin() ? '<button class="btn btn-ghost btn-sm" type="button" data-del-assign="' + esc(a.id) + '">Delete</button>' : '') + '</div></div>';
       }).join('') : '<p class="muted">No assignments yet.</p>') + '</section>' +
       '<section class="box" id="grading" hidden></section>');
 
     bindForm('#assign-form', async function (f) {
-      await api('/api/staff/assignments', { method: 'POST', body: { courseId: fv(f, 'courseId'), title: fv(f, 'title'), instructions: fv(f, 'instructions'), dueAt: fv(f, 'dueAt'), maxMarks: Number(fv(f, 'maxMarks')) || 100 } });
+      await api('/api/staff/assignments', { method: 'POST', body: { courseId: fv(f, 'courseId'), lessonId: fv(f, 'lessonId'), title: fv(f, 'title'), instructions: fv(f, 'instructions'), dueAt: fv(f, 'dueAt'), maxMarks: Number(fv(f, 'maxMarks')) || 100 } });
       toast('Assignment created.');
       renderAssignments();
     });
+    var af = view.querySelector('#assign-form');
+    if (af) af.elements.courseId.addEventListener('change', function () { af.elements.lessonId.innerHTML = lessonOptions(lessonsByCourse[af.elements.courseId.value] || [], ''); });
     view.querySelectorAll('[data-grade]').forEach(function (b) {
       b.addEventListener('click', function () { loadSubmissions(b.getAttribute('data-grade')); });
     });
