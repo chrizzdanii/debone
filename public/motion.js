@@ -25,6 +25,7 @@
     try { url = new URL(a.href); } catch (err) { return; }
     if (url.origin !== location.origin) return;
     if (url.pathname === location.pathname && url.hash) return;
+    if (document.body.hasAttribute('data-shell') || /^\/?(admin|dashboard)(\.html)?$/.test(location.pathname)) return;
     e.preventDefault();
     veil.classList.remove('out', 'from-top', 'instant');
     veil.classList.add('cover');

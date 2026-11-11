@@ -37,10 +37,9 @@
   }
   function stopChat() { if (chatTimer) { clearInterval(chatTimer); chatTimer = null; } }
   function setView(html) {
+    if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return;
     stopChat();
-    if (window.DSilent && DSilent.hold(html)) return;
     view.innerHTML = html;
-    if (window.DSilent && DSilent.swapped()) return;
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
   }
   function head(eyebrow, title, sub) {
@@ -172,7 +171,7 @@
     api('/api/sessions/' + encodeURIComponent(sessionId) + '/chat').then(function (r) {
       drawMessages(r.messages, true);
     }).catch(function (e) { if (log) log.innerHTML = '<p class="muted">' + esc(e.message) + '</p>'; });
-    chatTimer = setInterval(function () { pollChat(sessionId); }, 3000);
+    chatTimer = setInterval(function () { pollChat(sessionId); }, 1000);
 
     var form = document.getElementById('chat-form');
     if (!form) return;

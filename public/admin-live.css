@@ -142,14 +142,3 @@
 @media (max-width:1060px){.lv-grid{grid-template-columns:1fr}.lv-compose{position:static}.lv-stats{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:640px){.lv-row{grid-template-columns:62px 1fr;gap:14px;padding:16px 14px 16px 18px}.lv-row .lv-actions{grid-column:1/-1}.lv-two{grid-template-columns:1fr}.lv-drawer .in{padding-inline:16px}}
 @media (prefers-reduced-motion:reduce){.lv *,.lv *::before,.lv *::after{animation:none!important;transition:none!important}}
-
-/* Silent redraw: nothing animates, so a live update is not noticed */
-body.silent *,body.silent *::before,body.silent *::after{animation:none!important;transition:none!important}
-
-/* Bundle picture field (admin) */
-.bd-pic{display:grid;gap:12px}
-.bd-pic-prev{aspect-ratio:16/9;max-width:380px;border-radius:16px;border:1px dashed var(--line);background:#0c0c0c center/cover no-repeat;display:grid;place-items:center;color:var(--ash);font-size:.85rem;transition:border-color .3s}
-.bd-pic-prev:hover{border-color:var(--orange)}
-.bd-pic-act{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.bd-row{display:flex;align-items:center;gap:12px}
-.bd-thumb{flex:0 0 56px;height:36px;border-radius:8px;background:#1a1a1a center/cover no-repeat;border:1px solid var(--line)}

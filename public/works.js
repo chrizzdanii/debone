@@ -188,7 +188,9 @@
 
   function load() {
     fetch('/api/works').then(function (r) { return r.json(); }).then(function (d) {
-      works = (d.works || []).filter(function (w) { return !!w.image; });
+      var nw = (d.works || []).filter(function (w) { return !!w.image; });
+      var sg = JSON.stringify(nw); if (sg === load.sig) return; load.sig = sg;
+      works = nw;
       draw(false);
       drawShowcase();
       var count = document.getElementById('work-count');

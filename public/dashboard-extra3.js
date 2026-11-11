@@ -17,11 +17,7 @@
   function toast(t, tone) { if (window.DModal) DModal.toast({ title: t, tone: tone || 'ok' }); }
   function head(eyebrow, title, sub) { return '<header class="view-head"><p class="eyebrow">' + esc(eyebrow) + '</p><h1>' + esc(title) + '</h1>' + (sub ? '<p class="muted">' + esc(sub) + '</p>' : '') + '</header>'; }
   function setView(html) {
-    if (window.DSilent && DSilent.hold(html)) return;
-    view.innerHTML = html;
-    if (window.DSilent && DSilent.swapped()) return;
-    view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
-  }
+    if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return; view.innerHTML = html; view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter'); }
 
   /* Downloads */
   async function renderDownloads() {

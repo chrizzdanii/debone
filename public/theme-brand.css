@@ -1810,7 +1810,10 @@ html [disabled],html .btn[disabled]{cursor:not-allowed!important}
 .theme-brand .view-head h1{text-shadow:0 10px 30px rgba(0,0,0,.45)}
 @media (prefers-reduced-motion:reduce){.theme-brand .am,.theme-brand .view-head::before,.theme-brand .view-head::after,.theme-brand .ag-tile{animation:none}}
 
-/* v50 nav: the arrow is its own tap target; the name is a link to the section page */
-.theme-brand .nav-trigger .nav-chev{box-sizing:content-box;padding:8px 6px;margin:-8px -6px -8px -2px;border-radius:50%;transition:transform .3s,background .25s}
-.theme-brand .nav-trigger .nav-chev:hover{background:rgba(224,168,0,.18)}
-.theme-brand .nav-trigger.has-page{cursor:pointer}
+.app a[href],.app button:not([disabled]),.app .btn:not([disabled]),.app summary,.app label[for],.app select,.app [role="button"],.app [data-view],.app [data-go],
+.app .chip-btn,.app .session-card,.app .dcourse,.app .pc-course,.app .tile,.app .burger,.app .bell,.app .dm-x,.app .dm-toast,.app .tour-dots button,.app .set-toggle,
+.app input[type="checkbox"],.app input[type="radio"],.app input[type="file"],.app .pf-upload,.app .side-nav a,.app .side-nav a *{cursor:pointer}
+.app button[disabled],.app .btn[disabled]{cursor:not-allowed}
+.app input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),.app textarea,.app [contenteditable]{cursor:text}
+.app .fx-dot,.app .fx-ring{display:none!important}
+html.fx-cursor .app a,html.fx-cursor .app button,html.fx-cursor .app .btn{cursor:pointer}

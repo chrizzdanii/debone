@@ -94,6 +94,6 @@
   });
   window.addEventListener('debone:refresh', function () {
     if (window.DModal && DModal.isOpen()) return;
-    fetch('/api/products').then(function (r) { return r.json(); }).then(function (d) { data = d; drawChips(); render(false); }).catch(function () {});
+    fetch('/api/products').then(function (r) { return r.json(); }).then(function (d) { if (JSON.stringify(d) === JSON.stringify(data)) return; data = d; drawChips(); render(false); }).catch(function () {});
   });
 })();

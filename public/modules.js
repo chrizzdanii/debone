@@ -61,6 +61,7 @@
     function load() {
       fetch('/api/webinars', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
         var list = d.webinars || [];
+        var sg = JSON.stringify(list); if (sg === load.sig) return; load.sig = sg;
         var up = list.filter(function (w) { return !w.past; });
         box.innerHTML = up.map(card).join('') || '<div class="empty-state">No webinars are scheduled right now. New dates are announced here and on WhatsApp.</div>';
         box.querySelectorAll('[data-reg]').forEach(function (b) {

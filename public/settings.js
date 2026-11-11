@@ -2,7 +2,10 @@
 (function () {
   'use strict';
   function digits(v) { return String(v || '').replace(/[^0-9+]/g, ''); }
-  fetch('/api/settings').then(function (r) { return r.json(); }).then(function (d) {
+  var lastSig = null;
+  function apply() {
+  fetch('/api/settings', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+    var sg = JSON.stringify(d.settings || {}); if (sg === lastSig) return; lastSig = sg;
     var s = d.settings || {};
     document.querySelectorAll('[data-setting]').forEach(function (el) {
       var key = el.getAttribute('data-setting');
@@ -13,6 +16,7 @@
       if (key === 'wa' && s.whatsapp) el.setAttribute('href', 'https://wa.me/' + digits(s.whatsapp).replace('+', ''));
       if ((key === 'phone1' || key === 'phone2') && s[key]) el.setAttribute('href', 'tel:' + digits(s[key]));
     });
+    var old = document.querySelector('.site-announce'); if (old) old.remove();
     if (s.announcementOn && s.announcement) {
       var bar = document.createElement('div');
       bar.className = 'site-announce';
@@ -24,4 +28,7 @@
       document.body.appendChild(bar);
     }
   }).catch(function () {});
+  }
+  apply();
+  window.addEventListener('debone:refresh', apply);
 })();

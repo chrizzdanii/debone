@@ -39,18 +39,24 @@
     }).catch(function () { $('st-grid').innerHTML = '<div class="empty-state">The store could not load. Please refresh.</div>'; });
   }
 
-  /* Bundles (v51): animated cards from bundle-ui.js */
+  /* Bundles */
   if (page === 'bundles') {
     req('/api/bundles').then(function (d) {
-      var box = $('bd-list');
-      if (!window.BundleUI) { box.innerHTML = '<div class="empty-state">The bundles could not load. Please refresh the page.</div>'; return; }
-      BundleUI.render(box, d.bundles || [], { onBuy: function (id, btn) {
-        var label = btn.querySelector('span'); btn.disabled = true; if (label) label.textContent = 'Opening…';
-        req('/api/bundles/' + encodeURIComponent(id) + '/buy', { method: 'POST', body: {} }).then(function (res) {
-          if (res.order) { location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); return; }
-          toast('You already have these courses.'); location.href = 'dashboard.html#courses';
-        }).catch(function (e) { if (e.status === 401) return goLogin('bundles.html'); toast(e.message, 'err'); btn.disabled = false; if (label) label.textContent = 'Buy the bundle'; });
-      } });
+      var list = d.bundles || [];
+      $('bd-list').innerHTML = list.map(function (b, i) {
+        return '<article class="bd-card" style="--i:' + i + '"><div class="bd-img" style="background-image:url(\'' + window.ACAD.img(i + 1) + '\')"></div><div class="bd-head"><p class="eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3><p class="muted">' + esc(b.description) + '</p></div>' +
+          '<ul class="bd-courses">' + b.courses.map(function (c) { return '<li><b>' + esc(c.title) + '</b><span>' + esc(c.startDate ? 'Starts ' + c.startDate : 'Start date to be announced') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</span></li>'; }).join('') + '</ul>' +
+          '<div class="bd-foot"><b>' + naira(b.price) + '</b><button class="btn btn-solid" type="button" data-bundle="' + esc(b.id) + '">Buy the bundle</button></div></article>';
+      }).join('') || '<div class="empty-state">No bundles are open yet. Individual courses are on the Digital Academy page.</div>';
+      $('bd-list').querySelectorAll('[data-bundle]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          btn.disabled = true; btn.textContent = 'Opening…';
+          req('/api/bundles/' + encodeURIComponent(btn.getAttribute('data-bundle')) + '/buy', { method: 'POST', body: {} }).then(function (res) {
+            if (res.order) { location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); return; }
+            toast('You already have these courses.'); location.href = 'dashboard.html#courses';
+          }).catch(function (e) { if (e.status === 401) return goLogin('bundles.html'); toast(e.message, 'err'); btn.disabled = false; btn.textContent = 'Buy the bundle'; });
+        });
+      });
     });
   }
 

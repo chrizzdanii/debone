@@ -183,6 +183,7 @@
   function load() {
     fetch('/api/services').then(function (r) { return r.json(); }).then(function (d) {
       var list = d.services || [];
+      var sg = JSON.stringify(list); if (sg === load.sig) return; load.sig = sg;
       if (mode === 'home') home(list);
       else if (mode === 'services') { listPage(list); jumpToHash(); }
       else if (mode === 'service') detail(list);

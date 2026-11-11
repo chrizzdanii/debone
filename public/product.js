@@ -10,8 +10,13 @@
   var box = document.getElementById('product');
   var related = document.getElementById('related');
 
-  window.addEventListener('debone:refresh', function () { if (!(window.DModal && DModal.isOpen())) location.reload(); });
-  fetch('/api/products').then(function (r) { return r.json(); }).then(function (data) {
+  var lastSig = null;
+  function loadProduct() {
+  fetch('/api/products', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (data) {
+    var sig = JSON.stringify(data);
+    if (sig === lastSig) return;
+    var first = lastSig === null;
+    lastSig = sig;
     var p = data.products.find(function (x) { return x.id === id; });
     if (!p) {
       box.innerHTML = '<div class="empty-state" style="grid-column:1/-1">We could not find that product. <a href="products.html">Back to the shop</a></div>';
@@ -60,7 +65,11 @@
         '<div class="prod-body"><p class="prod-cat">' + esc((data.categories.find(function (c) { return c.id === x.cat; }) || {}).label || '') + '</p>' +
         '<h3>' + esc(x.name) + '</h3><p>' + esc(x.summary) + '</p></div></a></article>';
     }).join('');
+    if (!first) document.querySelectorAll('#product .reveal, #related .reveal').forEach(function (el) { el.classList.add('in'); });
   }).catch(function () {
-    box.innerHTML = '<div class="empty-state" style="grid-column:1/-1">We could not load this product. Please refresh the page.</div>';
+    if (lastSig === null) box.innerHTML = '<div class="empty-state" style="grid-column:1/-1">We could not load this product. Please try again in a moment.</div>';
   });
+  }
+  loadProduct();
+  window.addEventListener('debone:refresh', function () { if (!(window.DModal && DModal.isOpen())) loadProduct(); });
 })();

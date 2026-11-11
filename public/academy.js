@@ -87,6 +87,7 @@
       fetch('/api/courses', { credentials: 'same-origin' }).then(function (r) { return r.json(); }),
       fetch('/api/course-categories').then(function (r) { return r.json(); }).catch(function () { return { categories: [] }; })
     ]).then(function (res) {
+      var sg = JSON.stringify(res); if (sg === load.sig) return; load.sig = sg;
       courses = res[0].courses || [];
       cats = res[1].categories || [];
       draw();
