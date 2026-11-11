@@ -350,13 +350,41 @@ function courseDetailInput(b, c) {
   if (seats && minS && minS > seats) throw httpError(400, 'The minimum number of students cannot be more than the maximum seats.');
   return out;
 }
+/* ---------- Lesson journey: a lesson opens only after the previous one is finished ----------
+   Finishing a lesson means: its live class is done (joined live, or the recording watched) and its assignment is submitted.
+   Staff are never held back. A lesson a student has already completed always stays open. */
+const REQUIRE_NOTE = false;   // set to true to also require a written note before a lesson can be finished
+function lessonSessions(course, lesson) {
+  return db.sessions.filter(s => s.courseId === course.id && s.lessonId === lesson.id)
+    .sort((a, b) => (a.startsAt || '').localeCompare(b.startsAt || ''));
+}
+function lessonRequirements(user, course, lesson) {
+  const sessions = lessonSessions(course, lesson);
+  const classDone = sessions.length === 0 || sessions.some(s => db.attendance.some(a => a.sessionId === s.id && a.userId === user.id));
+  const assignments = db.assignments.filter(a => a.courseId === course.id && a.lessonId === lesson.id);
+  const submitted = assignments.every(a => db.submissions.some(x => x.assignmentId === a.id && x.userId === user.id));
+  const note = (db.notes.find(n => n.userId === user.id && n.lessonId === lesson.id) || {}).text || '';
+  const noteDone = !REQUIRE_NOTE || note.trim().length > 0;
+  const missing = [];
+  if (!classDone) missing.push('Join the live class or watch its recording');
+  if (!submitted) missing.push('Submit the assignment for this lesson');
+  if (!noteDone) missing.push('Write your lesson note');
+  return { hasClass: sessions.length > 0, classDone, hasAssignment: assignments.length > 0, submitted, noteDone, ready: missing.length === 0, missing };
+}
 function courseView(course, user) {
   const enrolled = courseAccess(user, course);
   const done = new Set(user ? db.progress.filter(p => p.userId === user.id).map(p => p.lessonId) : []);
-  const lessons = course.lessons.map((l, i) => ({
-    id: l.id, number: i + 1, title: l.title, free: !!l.free,
-    locked: !(enrolled || l.free), completed: done.has(l.id)
-  }));
+  const held = !!user && !isStaff(user);
+  const lessons = course.lessons.map((l, i) => {
+    const prev = i > 0 ? course.lessons[i - 1] : null;
+    const preview = !!l.free && course.price > 0;   // a free preview lesson inside a paid course stays open
+    const gated = held && enrolled && !preview && !!prev && !done.has(prev.id) && !done.has(l.id);
+    return {
+      id: l.id, number: i + 1, title: l.title, free: !!l.free,
+      locked: !(enrolled || l.free) || gated, gated, completed: done.has(l.id),
+      lockReason: gated ? 'Finish lesson ' + i + ' (its live class and assignment) to unlock this lesson.' : ''
+    };
+  });
   const completed = lessons.filter(l => l.completed).length;
   return {
     id: course.id, title: course.title, subtitle: course.subtitle, summary: course.summary, level: course.level,
@@ -383,7 +411,7 @@ function sessionView(s, user) {
   const yid = youtubeId(s.youtubeUrl);
   const course = db.courses.find(c => c.id === s.courseId);
   return {
-    id: s.id, courseId: s.courseId, courseTitle: course ? course.title : '', title: s.title,
+    id: s.id, courseId: s.courseId, courseTitle: course ? course.title : '', title: s.title, lessonId: s.lessonId || null,
     startsAt: s.startsAt || null, status: s.status || 'scheduled',
     youtubeId: yid, embedUrl: yid ? `https://www.youtube-nocookie.com/embed/${yid}?rel=0` : null,
     watchUrl: yid ? `https://www.youtube.com/watch?v=${yid}` : null,
@@ -401,7 +429,7 @@ function sessionTiming(s, user) {
   const inWindow = start !== null && nowMs >= start - 15 * 60000 && nowMs <= start + dur;
   const joinOpen = !!s.joinUrl && (s.status === 'live' || inWindow);
   const attended = !!user && db.attendance.some(a => a.sessionId === s.id && a.userId === user.id);
-  return { joinOpen, countdownTo: start && start > nowMs ? s.startsAt : null, attended,
+  return { joinOpen, liveOpen: s.status === 'live' || inWindow, countdownTo: start && start > nowMs ? s.startsAt : null, attended,
     attendees: db.attendance.filter(a => a.sessionId === s.id).length };
 }
 // Reminders: enrolled students are told one hour before a class starts
@@ -1263,11 +1291,26 @@ route('POST', '/api/sessions/:id/attend', async ctx => {
   if (!s) throw httpError(404, 'Class not found');
   const course = db.courses.find(c => c.id === s.courseId);
   if (!course || !courseAccess(user, course)) throw httpError(403, 'Enrol in this course to check in.');
-  if (!sessionTiming(s, user).joinOpen) throw httpError(400, 'Check-in opens 15 minutes before the class starts.');
+  const t = sessionTiming(s, user);
+  if (!(t.joinOpen || t.liveOpen)) throw httpError(400, 'Check-in opens 15 minutes before the class starts.');
   if (!db.attendance.some(a => a.sessionId === s.id && a.userId === user.id)) {
-    db.attendance.push({ id: uid(8), sessionId: s.id, userId: user.id, at: now() }); save();
+    db.attendance.push({ id: uid(8), sessionId: s.id, userId: user.id, at: now(), how: 'live' }); save();
   }
   json(ctx.res, 200, { ok: true, attended: true });
+});
+/* A student who missed the live class opens the recording: that counts as doing the class */
+route('POST', '/api/sessions/:id/watched', async ctx => {
+  const user = requireUser(ctx);
+  const s = db.sessions.find(x => x.id === ctx.params.id);
+  if (!s) throw httpError(404, 'Class not found');
+  const course = db.courses.find(c => c.id === s.courseId);
+  if (!course || !courseAccess(user, course)) throw httpError(403, 'Enrol in this course to watch the recording.');
+  if (!s.recordingUrl || !replayOpen(s)) throw httpError(400, 'The recording is not available yet.');
+  if (s.status !== 'ended') throw httpError(400, 'The recording opens once the live class has ended.');
+  if (!db.attendance.some(a => a.sessionId === s.id && a.userId === user.id)) {
+    db.attendance.push({ id: uid(8), sessionId: s.id, userId: user.id, at: now(), how: 'recording' }); save();
+  }
+  json(ctx.res, 200, { ok: true, url: s.recordingUrl });
 });
 route('GET', '/api/staff/sessions/:id/attendance', async ctx => {
   requireStaff(ctx);
@@ -2288,7 +2331,23 @@ route('GET', '/api/lessons/:id', async ctx => {
   }
   const idx = course.lessons.findIndex(l => l.id === lesson.id);
   const done = !!db.progress.find(p => p.userId === user.id && p.lessonId === lesson.id);
+  const cv = courseView(course, user).lessons[idx];
+  if (cv && cv.gated) {
+    const prevL = course.lessons[idx - 1];
+    return json(ctx.res, 403, { error: 'This lesson is still locked.', gated: true, message: cv.lockReason, previous: { id: prevL.id, title: prevL.title, number: idx } });
+  }
+  const journey = {
+    requirements: lessonRequirements(user, course, lesson),
+    sessions: lessonSessions(course, lesson).map(s => sessionView(s, user)),
+    assignments: db.assignments.filter(a => a.courseId === course.id && a.lessonId === lesson.id).map(a => {
+      const mine = db.submissions.find(x => x.assignmentId === a.id && x.userId === user.id);
+      return { id: a.id, title: a.title, instructions: a.instructions, dueAt: a.dueAt || null, maxMarks: a.maxMarks,
+        submission: mine ? { text: mine.text, link: mine.link, submittedAt: mine.submittedAt, marks: mine.marks ?? null, feedback: mine.feedback || '', graded: mine.marks != null } : null };
+    }),
+    nextTitle: course.lessons[idx + 1] ? course.lessons[idx + 1].title : null
+  };
   json(ctx.res, 200, {
+    journey,
     lesson: { id: lesson.id, title: lesson.title, body: lesson.body },
     course: { id: course.id, title: course.title },
     prev: course.lessons[idx - 1]?.id || null, next: course.lessons[idx + 1]?.id || null, completed: done,
@@ -2304,6 +2363,13 @@ route('POST', '/api/lessons/:id/complete', async ctx => {
   const entry = findLesson(ctx.params.id);
   if (!entry) throw httpError(404, 'Lesson not found');
   if (!(entry.lesson.free || courseAccess(user, entry.course))) throw httpError(403, 'This lesson is locked.');
+  if (!isStaff(user) && !db.progress.find(p => p.userId === user.id && p.lessonId === entry.lesson.id)) {
+    const li = entry.course.lessons.findIndex(l => l.id === entry.lesson.id);
+    const cv = courseView(entry.course, user).lessons[li];
+    if (cv && cv.gated) throw httpError(403, cv.lockReason);
+    const req = lessonRequirements(user, entry.course, entry.lesson);
+    if (!req.ready) throw httpError(400, 'Not finished yet: ' + req.missing.join('; ') + '.');
+  }
   if (!db.progress.find(p => p.userId === user.id && p.lessonId === entry.lesson.id)) {
     db.progress.push({ userId: user.id, lessonId: entry.lesson.id, completedAt: now() }); save();
   }
@@ -2358,7 +2424,7 @@ route('GET', '/api/courses/:id/assignments', async ctx => {
   const list = db.assignments.filter(a => a.courseId === ctx.params.id).sort((a, b) => (a.dueAt || '').localeCompare(b.dueAt || '')).map(a => {
     const mine = db.submissions.find(s => s.assignmentId === a.id && s.userId === user.id);
     return {
-      id: a.id, title: a.title, instructions: a.instructions, dueAt: a.dueAt || null, maxMarks: a.maxMarks,
+      id: a.id, lessonId: a.lessonId || null, title: a.title, instructions: a.instructions, dueAt: a.dueAt || null, maxMarks: a.maxMarks,
       submission: mine ? { id: mine.id, text: mine.text, link: mine.link, submittedAt: mine.submittedAt, marks: mine.marks ?? null, feedback: mine.feedback || '', gradedAt: mine.gradedAt || null, grade: mine.marks == null ? null : gradeOf(mine.marks, a.maxMarks) } : null
     };
   });
@@ -2394,7 +2460,8 @@ route('POST', '/api/staff/sessions', async ctx => {
   const title = clean(b.title, 120);
   if (title.length < 3) throw httpError(400, 'Give the live class a title.');
   const status = SESSION_STATUS.includes(b.status) ? b.status : 'scheduled';
-  const s = { id: uid(), courseId: course.id, title, startsAt: clean(b.startsAt, 40) || null, status, durationMinutes: Math.min(600, Math.max(15, Math.round(Number(b.durationMinutes) || 120))), youtubeUrl: clean(b.youtubeUrl, 300), joinUrl: clean(b.joinUrl, 300), recordingUrl: clean(b.recordingUrl, 300), chatOpen: true, createdAt: now() };
+  const lessonId = b.lessonId && course.lessons.some(l => l.id === b.lessonId) ? b.lessonId : null;
+  const s = { id: uid(), courseId: course.id, lessonId, title, startsAt: clean(b.startsAt, 40) || null, status, durationMinutes: Math.min(600, Math.max(15, Math.round(Number(b.durationMinutes) || 120))), youtubeUrl: clean(b.youtubeUrl, 300), joinUrl: clean(b.joinUrl, 300), recordingUrl: clean(b.recordingUrl, 300), chatOpen: true, createdAt: now() };
   if (b.youtubeUrl && !youtubeId(b.youtubeUrl)) throw httpError(400, 'That YouTube link is not valid.');
   db.sessions.push(s); save();
   studentsWithAccess(course).forEach(u => notify(u.id, 'Live class scheduled', s.title + (s.startsAt ? '\nStarts ' + s.startsAt : ''), '#live', { kind: 'live', course: course.title }));
@@ -2415,8 +2482,19 @@ route('PATCH', '/api/staff/sessions/:id', async ctx => {
   }
   if (b.joinUrl !== undefined) s.joinUrl = clean(b.joinUrl, 300);
   if (b.recordingUrl !== undefined) s.recordingUrl = clean(b.recordingUrl, 300);
-  if (b.status !== undefined && SESSION_STATUS.includes(b.status)) s.status = b.status;
+  if (b.status !== undefined && SESSION_STATUS.includes(b.status)) {
+    const wasLive = s.status === 'live';
+    s.status = b.status;
+    if (s.status === 'live' && !wasLive) {
+      const c = db.courses.find(x => x.id === s.courseId);
+      if (c) studentsWithAccess(c).forEach(u => notify(u.id, 'Class is live now', s.title + '\nJoin from your lesson or the Live classes page.', '#live', { kind: 'live', course: c.title }));
+    }
+  }
   if (b.chatOpen !== undefined) s.chatOpen = !!b.chatOpen;
+  if (b.lessonId !== undefined) {
+    const c = db.courses.find(x => x.id === s.courseId);
+    s.lessonId = b.lessonId && c && c.lessons.some(l => l.id === b.lessonId) ? b.lessonId : null;
+  }
   save();
   json(ctx.res, 200, { session: sessionView(s, null) });
 });
@@ -2447,7 +2525,8 @@ route('POST', '/api/staff/assignments', async ctx => {
   const title = clean(b.title, 120);
   if (title.length < 3) throw httpError(400, 'Give the assignment a title.');
   const maxMarks = Math.max(1, Math.min(1000, Number(b.maxMarks) || 100));
-  const a = { id: uid(), courseId: course.id, title, instructions: clean(b.instructions, 5000), dueAt: clean(b.dueAt, 40) || null, maxMarks, createdAt: now() };
+  const lessonId = b.lessonId && course.lessons.some(l => l.id === b.lessonId) ? b.lessonId : null;
+  const a = { id: uid(), courseId: course.id, lessonId, title, instructions: clean(b.instructions, 5000), dueAt: clean(b.dueAt, 40) || null, maxMarks, createdAt: now() };
   db.assignments.push(a); save();
   studentsWithAccess(course).forEach(u => notify(u.id, 'New assignment: ' + a.title,
     [a.instructions ? a.instructions.slice(0, 220) : '', a.dueAt ? 'Due ' + a.dueAt : ''].filter(Boolean).join('\n') || 'Open your assignments to see the details.',
@@ -2464,6 +2543,10 @@ route('PATCH', '/api/staff/assignments/:id', async ctx => {
   if (b.instructions !== undefined) a.instructions = clean(b.instructions, 5000);
   if (b.dueAt !== undefined) a.dueAt = clean(b.dueAt, 40) || null;
   if (b.maxMarks !== undefined) a.maxMarks = Math.max(1, Math.min(1000, Number(b.maxMarks) || a.maxMarks));
+  if (b.lessonId !== undefined) {
+    const c = db.courses.find(x => x.id === a.courseId);
+    a.lessonId = b.lessonId && c && c.lessons.some(l => l.id === b.lessonId) ? b.lessonId : null;
+  }
   save(); json(ctx.res, 200, { assignment: a });
 });
 
@@ -2635,7 +2718,7 @@ route('GET', '/api/staff/courses/:id', async ctx => {
   requireStaff(ctx);
   const c = db.courses.find(x => x.id === ctx.params.id);
   if (!c) throw httpError(404, 'Course not found');
-  json(ctx.res, 200, { course: { ...courseView(c, null), lessons: c.lessons.map(l => ({ id: l.id, title: l.title, free: !!l.free, body: l.body.join('\n\n'), minutes: l.minutes || '', resources: (l.resources || []).map(r => r.title + ' | ' + r.url).join('\n') })), sessions: db.sessions.filter(s => s.courseId === c.id).map(s => sessionView(s, null)), assignments: db.assignments.filter(a => a.courseId === c.id) } });
+  json(ctx.res, 200, { course: { ...courseView(c, null), lessons: c.lessons.map(l => ({ id: l.id, title: l.title, free: !!l.free, body: l.body.join('\n\n'), minutes: l.minutes || '', resources: (l.resources || []).map(r => r.title + ' | ' + r.url).join('\n') })), sessions: db.sessions.filter(s => s.courseId === c.id).map(s => Object.assign(sessionView(s, null), { recordingRaw: s.recordingUrl || '' })), assignments: db.assignments.filter(a => a.courseId === c.id) } });
 });
 
 route('GET', '/api/staff/me', async ctx => {
