@@ -288,7 +288,7 @@ function completion(u) {
 }
 function publicUser(u) {
   return { id: u.id, name: u.name, email: u.email, phone: u.phone || '', role: u.role || 'student', createdAt: u.createdAt,
-    profile: u.profile || {}, hasAvatar: !!u.avatar, completion: completion(u), coupon: couponFor(u) };
+    profile: u.profile || {}, hasAvatar: !!u.avatar, avatarV: u.avatar ? (u.avatar.v || 1) : 0, completion: completion(u), coupon: couponFor(u) };
 }
 const isAdmin = u => !!u && u.role === 'admin';
 const isStaff = u => !!u && (u.role === 'admin' || u.role === 'instructor');
@@ -353,15 +353,48 @@ function courseDetailInput(b, c) {
 /* ---------- Lesson journey: a lesson opens only after the previous one is finished ----------
    Finishing a lesson means: its live class is done (joined live, or the recording watched) and its assignment is submitted.
    Staff are never held back. A lesson a student has already completed always stays open. */
+/* A later lesson opens only on the day its live class starts (Lagos time) */
+function lagosToday() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }); }
+function dayOfStart(v) {
+  if (!v) return null;
+  if (/Z$|[+-]\d\d:\d\d$/.test(v)) { const d = new Date(v); return isNaN(d) ? null : d.toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }); }
+  return String(v).slice(0, 10);
+}
+function niceDay(ymd) {
+  const d = new Date(ymd + 'T12:00:00Z');
+  return isNaN(d) ? ymd : d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+}
 const REQUIRE_NOTE = false;   // set to true to also require a written note before a lesson can be finished
+/* A class or assignment normally has a lesson chosen by the admin. If none was chosen, they follow the lesson order:
+   the first unlinked class goes with the first lesson that has no class, and so on. So nothing is ever left unguarded. */
+const validLesson = (course, id) => !!id && course.lessons.some(l => l.id === id);
+function autoMap(course, items, key) {
+  const taken = new Set(items.filter(x => validLesson(course, x[key])).map(x => x[key]));
+  const free = course.lessons.filter(l => !taken.has(l.id));
+  const map = new Map();
+  items.filter(x => !validLesson(course, x[key])).forEach((x, i) => { if (free[i]) map.set(x.id, free[i].id); });
+  return map;
+}
+function sessionLesson(course, s) {
+  if (validLesson(course, s.lessonId)) return s.lessonId;
+  const items = db.sessions.filter(x => x.courseId === course.id).sort((a, b) => (a.startsAt || '').localeCompare(b.startsAt || ''));
+  return autoMap(course, items, 'lessonId').get(s.id) || null;
+}
+function assignmentLesson(course, a) {
+  if (validLesson(course, a.lessonId)) return a.lessonId;
+  return autoMap(course, db.assignments.filter(x => x.courseId === course.id), 'lessonId').get(a.id) || null;
+}
 function lessonSessions(course, lesson) {
-  return db.sessions.filter(s => s.courseId === course.id && s.lessonId === lesson.id)
+  return db.sessions.filter(s => s.courseId === course.id && sessionLesson(course, s) === lesson.id)
     .sort((a, b) => (a.startsAt || '').localeCompare(b.startsAt || ''));
+}
+function lessonAssignments(course, lesson) {
+  return db.assignments.filter(a => a.courseId === course.id && assignmentLesson(course, a) === lesson.id);
 }
 function lessonRequirements(user, course, lesson) {
   const sessions = lessonSessions(course, lesson);
   const classDone = sessions.length === 0 || sessions.some(s => db.attendance.some(a => a.sessionId === s.id && a.userId === user.id));
-  const assignments = db.assignments.filter(a => a.courseId === course.id && a.lessonId === lesson.id);
+  const assignments = lessonAssignments(course, lesson);
   const submitted = assignments.every(a => db.submissions.some(x => x.assignmentId === a.id && x.userId === user.id));
   const note = (db.notes.find(n => n.userId === user.id && n.lessonId === lesson.id) || {}).text || '';
   const noteDone = !REQUIRE_NOTE || note.trim().length > 0;
@@ -371,6 +404,8 @@ function lessonRequirements(user, course, lesson) {
   if (!noteDone) missing.push('Write your lesson note');
   return { hasClass: sessions.length > 0, classDone, hasAssignment: assignments.length > 0, submitted, noteDone, ready: missing.length === 0, missing };
 }
+const DEFAULT_SEATS = 1000;   // a course with no seat limit set shows up to 1000 seats
+function courseSeats(course) { return course.seats > 0 ? course.seats : DEFAULT_SEATS; }
 function courseView(course, user) {
   const enrolled = courseAccess(user, course);
   const done = new Set(user ? db.progress.filter(p => p.userId === user.id).map(p => p.lessonId) : []);
@@ -378,11 +413,17 @@ function courseView(course, user) {
   const lessons = course.lessons.map((l, i) => {
     const prev = i > 0 ? course.lessons[i - 1] : null;
     const preview = !!l.free && course.price > 0;   // a free preview lesson inside a paid course stays open
-    const gated = held && enrolled && !preview && !!prev && !done.has(prev.id) && !done.has(l.id);
+    const waiting = held && enrolled && !preview && !!prev && !done.has(l.id);
+    const prevUnfinished = waiting && !done.has(prev.id);
+    const ss = lessonSessions(course, l);
+    const opensOn = waiting && ss.length ? dayOfStart(ss[0].startsAt) : null;
+    const dateLocked = !prevUnfinished && !!opensOn && opensOn > lagosToday();
+    const gated = prevUnfinished || dateLocked;
     return {
       id: l.id, number: i + 1, title: l.title, free: !!l.free,
-      locked: !(enrolled || l.free) || gated, gated, completed: done.has(l.id),
-      lockReason: gated ? 'Finish lesson ' + i + ' (its live class and assignment) to unlock this lesson.' : ''
+      locked: !(enrolled || l.free) || gated, gated, dateLocked, opensOn: dateLocked ? opensOn : null, completed: done.has(l.id),
+      lockReason: prevUnfinished ? 'Finish lesson ' + i + ' first: join its live class (or watch the recording) and submit its assignment.'
+        : dateLocked ? 'Opens on ' + niceDay(opensOn) + ', the day of its live class.' : ''
     };
   });
   const completed = lessons.filter(l => l.completed).length;
@@ -393,7 +434,7 @@ function courseView(course, user) {
     category: course.category || null, categoryLabel: (COURSE_CATEGORIES.find(c => c.id === course.category) || {}).label || null,
     instructor: course.instructor || null, startDate: course.startDate || null, duration: course.duration || null,
     schedule: course.schedule || null, classesPerWeek: course.classesPerWeek || null, sessionsTotal: course.sessionsTotal || null,
-    seats: course.price > 0 ? (course.seats || null) : null, seatsLeft: (course.price > 0 && course.seats) ? Math.max(0, course.seats - enrolledCount(course)) : null,
+    seats: courseSeats(course), seatsLeft: Math.max(0, courseSeats(course) - enrolledCount(course)),
     minStudents: course.minStudents || null, enrolledCount: enrolledCount(course),
     progress: lessons.length ? Math.round((completed / lessons.length) * 100) : 0,
     rating: ratingFor(course.id)
@@ -429,7 +470,9 @@ function sessionTiming(s, user) {
   const inWindow = start !== null && nowMs >= start - 15 * 60000 && nowMs <= start + dur;
   const joinOpen = !!s.joinUrl && (s.status === 'live' || inWindow);
   const attended = !!user && db.attendance.some(a => a.sessionId === s.id && a.userId === user.id);
-  return { joinOpen, liveOpen: s.status === 'live' || inWindow, countdownTo: start && start > nowMs ? s.startsAt : null, attended,
+  const rec = !!user && db.attendance.find(a => a.sessionId === s.id && a.userId === user.id);
+  const attendedHow = rec ? (rec.how === 'recording' ? 'recording' : 'live') : null;   // older check-ins count as live
+  return { joinOpen, liveOpen: s.status === 'live' || inWindow, countdownTo: start && start > nowMs ? s.startsAt : null, attended, attendedHow,
     attendees: db.attendance.filter(a => a.sessionId === s.id).length };
 }
 // Reminders: enrolled students are told one hour before a class starts
@@ -671,6 +714,11 @@ route('PATCH', '/api/me', async ctx => {
   json(ctx.res, 200, { user: publicUser(user) });
 });
 
+/* The pages ask this every second. It is tiny: just a token that changes when any data changes. */
+route('GET', '/api/pulse', async ctx => {
+  requireUser(ctx);
+  json(ctx.res, 200, { v: store.version() });
+});
 route('POST', '/api/me/avatar', async ctx => {
   const user = requireUser(ctx);
   const m = String(ctx.body.data || '').match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
@@ -681,7 +729,7 @@ route('POST', '/api/me/avatar', async ctx => {
     (m[1] === 'image/png' && buf.slice(1, 4).toString() === 'PNG') ||
     (m[1] === 'image/webp' && buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP');
   if (!valid) throw httpError(400, 'That file is not a valid image.');
-  user.avatar = { mime: m[1], b64: m[2] };
+  user.avatar = { mime: m[1], b64: m[2], v: Date.now() };
   save();
   json(ctx.res, 200, { ok: true });
 });
@@ -1544,9 +1592,25 @@ route('GET', '/api/staff/purchases', async ctx => {
 });
 
 /* ============ Course bundles ============ */
-function bundleView(b) {
+function bundleView(b, user) {
+  const courses = (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean);
+  const value = courses.reduce((t, c) => t + (c.price || 0), 0);
+  const savings = Math.max(0, value - b.price);
   return { id: b.id, title: b.title, description: b.description || '', price: b.price, active: b.active !== false,
-    courses: (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean).map(c => ({ id: c.id, title: c.title, startDate: c.startDate || null, schedule: c.schedule || null })) };
+    hasImage: !!b.image, imageV: b.image ? (b.image.v || 1) : 0, value, savings, savePct: value ? Math.round(savings / value * 100) : 0,
+    lessons: courses.reduce((t, c) => t + c.lessons.length, 0),
+    owned: !!user && courses.length > 0 && courses.every(c => !!enrollmentFor(user.id, c.id)),
+    courses: courses.map(c => ({ id: c.id, title: c.title, price: c.price || 0, lessons: c.lessons.length, startDate: c.startDate || null, schedule: c.schedule || null, level: c.level || null })) };
+}
+/* The bundle picture: a JPG, PNG or WebP of up to 380 KB (the admin page shrinks it before sending) */
+function applyBundleImage(b, body) {
+  if (body.removeImage === true || body.removeImage === 'true') delete b.image;
+  if (!body.image) return;
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+\/=]+)$/.exec(String(body.image));
+  if (!m) throw httpError(400, 'Please choose a JPG, PNG or WebP picture.');
+  const buf = Buffer.from(m[2], 'base64');
+  if (buf.length > 380 * 1024) throw httpError(400, 'That picture is too large. Please choose a smaller one.');
+  b.image = { mime: m[1], b64: m[2], v: Date.now() };
 }
 function bundleInput(b) {
   const title = clean(b.title, 120);
@@ -1565,7 +1629,13 @@ function bundleInput(b) {
   if (!price) throw httpError(400, 'Set the bundle price in naira.');
   return { title, description: clean(b.description, 1000), price, courseIds: ids, active: b.active !== false && b.active !== 'false' };
 }
-route('GET', '/api/bundles', async ctx => json(ctx.res, 200, { bundles: db.bundles.filter(b => b.active !== false).map(bundleView) }));
+route('GET', '/api/bundles', async ctx => json(ctx.res, 200, { bundles: db.bundles.filter(b => b.active !== false).map(b => bundleView(b, ctx.user)) }));
+route('GET', '/api/bundles/:id/image', async ctx => {
+  const b = db.bundles.find(x => x.id === ctx.params.id);
+  if (!b || !b.image) throw httpError(404, 'No picture');
+  ctx.res.writeHead(200, { 'Content-Type': b.image.mime, 'Cache-Control': 'public, max-age=300' });
+  ctx.res.end(Buffer.from(b.image.b64, 'base64'));
+});
 route('POST', '/api/bundles/:id/buy', async ctx => {
   const user = requireUser(ctx);
   const b = db.bundles.find(x => x.id === ctx.params.id && x.active !== false);
@@ -1576,13 +1646,14 @@ route('POST', '/api/bundles/:id/buy', async ctx => {
 route('GET', '/api/staff/bundles', async ctx => { requireStaff(ctx, true); json(ctx.res, 200, { bundles: db.bundles.map(b => Object.assign(bundleView(b), { courseIds: b.courseIds })) }); });
 route('POST', '/api/staff/bundles', async ctx => {
   requireStaff(ctx, true);
-  db.bundles.push(Object.assign({ id: uid(8), createdAt: now() }, bundleInput(ctx.body))); save(); json(ctx.res, 201, { ok: true });
+  const nb = Object.assign({ id: uid(8), createdAt: now() }, bundleInput(ctx.body)); applyBundleImage(nb, ctx.body);
+  db.bundles.push(nb); save(); json(ctx.res, 201, { ok: true });
 });
 route('PATCH', '/api/staff/bundles/:id', async ctx => {
   requireStaff(ctx, true);
   const b = db.bundles.find(x => x.id === ctx.params.id);
   if (!b) throw httpError(404, 'Bundle not found');
-  Object.assign(b, bundleInput(ctx.body)); save(); json(ctx.res, 200, { ok: true });
+  Object.assign(b, bundleInput(ctx.body)); applyBundleImage(b, ctx.body); save(); json(ctx.res, 200, { ok: true });
 });
 route('DELETE', '/api/staff/bundles/:id', async ctx => {
   requireStaff(ctx, true);
@@ -1791,35 +1862,150 @@ route('GET', '/api/staff/analytics', async ctx => {
     students: db.users.filter(u => u.role === 'student').length, subscribers: (db.newsletter || []).length });
 });
 
+/* One snapshot for the live Reports page: the page asks again every few seconds */
+route('GET', '/api/staff/reports/live', async ctx => {
+  requireStaff(ctx, true);
+  const lagos = iso => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' });
+  const days = []; for (let i = 29; i >= 0; i--) days.push(new Date(Date.now() - i * 86400000).toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }));
+  const idx = new Map(days.map((d, i) => [d, i]));
+  const zeros = () => days.map(() => 0);
+  const ok = db.payments.filter(p => p.status === 'success');
+  const revenue = zeros(), orders = zeros(), signups = zeros(), lessons = zeros(), submissions = zeros(), checkins = zeros();
+  const bump = (arr, iso, by) => { if (!iso) return; const i = idx.get(lagos(iso)); if (i !== undefined) arr[i] += by; };
+  ok.forEach(p => { bump(revenue, p.paidAt || p.createdAt, p.amountKobo / 100); bump(orders, p.paidAt || p.createdAt, 1); });
+  const students = db.users.filter(u => u.role === 'student');
+  students.forEach(u => bump(signups, u.createdAt, 1));
+  db.progress.forEach(x => bump(lessons, x.completedAt, 1));
+  db.submissions.forEach(x => bump(submissions, x.submittedAt, 1));
+  db.attendance.forEach(x => bump(checkins, x.at, 1));
+  const utcDays = []; for (let i = 29; i >= 0; i--) utcDays.push(new Date(Date.now() - i * 86400000).toISOString().slice(0, 10));
+  const views = utcDays.map(d => Object.keys(db.pageViews || {}).reduce((t, pg) => t + ((db.pageViews[pg] || {})[d] || 0), 0));
+  const pages = Object.keys(db.pageViews || {}).map(pg => ({ page: pg, views: utcDays.reduce((t, d) => t + ((db.pageViews[pg] || {})[d] || 0), 0) })).filter(x => x.views).sort((a, b) => b.views - a.views).slice(0, 7);
+  const label = p => p.kind === 'product' ? ((db.digitalProducts.find(x => x.id === p.productId) || {}).title || 'Product')
+    : p.kind === 'bundle' ? ((db.bundles.find(x => x.id === p.bundleId) || {}).title || 'Bundle')
+    : p.kind === 'deposit' ? 'Studio deposit' : ((db.courses.find(c => c.id === p.courseId) || {}).title || 'Course');
+  const byItem = {}, byKind = {};
+  ok.forEach(p => { const l = label(p); byItem[l] = byItem[l] || { item: l, count: 0, amount: 0 }; byItem[l].count++; byItem[l].amount += p.amountKobo / 100; const k = p.kind || 'course'; byKind[k] = (byKind[k] || 0) + p.amountKobo / 100; });
+  const gross = ok.reduce((t, p) => t + p.amountKobo / 100, 0);
+  const refunded = db.refunds.filter(r => r.status === 'paid').reduce((t, r) => t + r.amountKobo / 100, 0);
+  const first = n => ((db.users.find(u => u.id === n) || {}).name || 'Someone').split(' ')[0];
+  const feed = [];
+  ok.slice(-12).forEach(p => feed.push({ id: 'p' + p.id, type: 'sale', text: first(p.userId) + ' paid ' + Math.round(p.amountKobo / 100).toLocaleString('en-NG') + ' naira for ' + label(p), at: p.paidAt || p.createdAt }));
+  students.slice(-8).forEach(u => feed.push({ id: 'u' + u.id, type: 'signup', text: u.name.split(' ')[0] + ' joined as a student', at: u.createdAt }));
+  db.progress.slice(-10).forEach((x, i) => { const l = db.courses.flatMap(c => c.lessons).find(l => l.id === x.lessonId); feed.push({ id: 'l' + x.userId + x.lessonId, type: 'lesson', text: first(x.userId) + ' finished ' + (l ? l.title : 'a lesson'), at: x.completedAt }); });
+  db.submissions.slice(-8).forEach(x => feed.push({ id: 's' + x.id, type: 'assignment', text: first(x.userId) + ' submitted an assignment', at: x.submittedAt }));
+  db.attendance.slice(-8).forEach(x => feed.push({ id: 'a' + x.id, type: 'class', text: first(x.userId) + (x.how === 'recording' ? ' watched a class recording' : ' joined a live class'), at: x.at }));
+  feed.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+  const sum = (a, from, to) => a.slice(from, to).reduce((t, v) => t + v, 0);
+  json(ctx.res, 200, {
+    serverTime: now(), days,
+    kpi: { gross, refunded, net: gross - refunded, orders: ok.length, today: revenue[29], todayOrders: orders[29],
+      week: sum(revenue, 23, 30), prevWeek: sum(revenue, 16, 23), students: students.length, newToday: signups[29], newWeek: sum(signups, 23, 30),
+      views30: views.reduce((t, v) => t + v, 0), viewsToday: views[29], subscribers: (db.newsletter || []).length,
+      liveNow: db.sessions.filter(x => x.status === 'live').length, upcoming: db.sessions.filter(x => x.status === 'scheduled').length,
+      lessonsToday: lessons[29], submissionsToday: submissions[29], checkinsToday: checkins[29],
+      enrolled: db.enrollments.filter(e => e.status === 'active').length },
+    series: { revenue, orders, signups, lessons, submissions, checkins, views },
+    byKind: Object.keys(byKind).map(k => ({ kind: k, amount: byKind[k] })).sort((a, b) => b.amount - a.amount),
+    byItem: Object.values(byItem).sort((a, b) => b.amount - a.amount).slice(0, 7),
+    pages,
+    courses: db.courses.map(c => ({ title: c.title, students: enrolledCount(c), seats: courseSeats(c), completed: db.progress.filter(x => c.lessons.some(l => l.id === x.lessonId)).length })).sort((a, b) => b.students - a.students).slice(0, 7),
+    feed: feed.slice(0, 14)
+  });
+});
+
 /* ============ Community (course discussions with moderation) ============ */
+/* Community attachments: photos and files kept in storage, shown only to people who can see the course */
+const COMMUNITY_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'application/pdf': 'pdf', 'text/plain': 'txt',
+  'application/zip': 'zip', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-excel': 'xls', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.ms-powerpoint': 'ppt', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx' };
+async function saveAttachment(att) {
+  if (!att || !att.data) return null;
+  const m = /^data:([\w.+-]+\/[\w.+-]+);base64,([A-Za-z0-9+\/=]+)$/.exec(String(att.data));
+  if (!m || !COMMUNITY_TYPES[m[1]]) throw httpError(400, 'That file type is not allowed. Send a photo, PDF, Word, Excel, PowerPoint, text or ZIP file.');
+  const buf = Buffer.from(m[2], 'base64');
+  if (buf.length > 3 * 1024 * 1024) throw httpError(413, 'That file is larger than 3 MB. Please send a smaller one.');
+  if (m[1].startsWith('image/')) {
+    const ok = (m[1] === 'image/jpeg' && buf[0] === 0xFF && buf[1] === 0xD8) || (m[1] === 'image/png' && buf.slice(1, 4).toString() === 'PNG') ||
+      (m[1] === 'image/gif' && buf.slice(0, 3).toString() === 'GIF') || (m[1] === 'image/webp' && buf.slice(0, 4).toString() === 'RIFF');
+    if (!ok) throw httpError(400, 'That image looks damaged. Please try another one.');
+  }
+  const id = uid(10), file = id + '.' + COMMUNITY_TYPES[m[1]];
+  await store.putFile('community/' + file, buf, m[1]);
+  const rawName = clean(att.name, 120) || ('file.' + COMMUNITY_TYPES[m[1]]);
+  return { id, file, mime: m[1], name: rawName.replace(/[^\w .()\-]/g, '_'), size: buf.length };
+}
+const attView = a => a ? { id: a.id, name: a.name, mime: a.mime, size: a.size, image: a.mime.startsWith('image/') } : null;
+function dropAttachment(x) { if (x && x.att) { store.deleteFiles(['community/' + x.att.file]).catch(() => {}); } }
+
 route('GET', '/api/courses/:id/community', async ctx => {
   const user = ctx.user;
   if (!user || !canSeeCourse(user, ctx.params.id)) throw httpError(403, 'Join this course to see its community.');
   const threads = db.threads.filter(t => t.courseId === ctx.params.id && !t.hidden).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => ({
-    id: t.id, title: t.title, body: t.body, authorName: t.authorName, createdAt: t.createdAt, mine: t.userId === user.id,
-    replies: db.replies.filter(r => r.threadId === t.id && !r.hidden).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(r => ({ id: r.id, body: r.body, authorName: r.authorName, createdAt: r.createdAt, mine: r.userId === user.id })) }));
+    id: t.id, title: t.title, body: t.deleted ? '' : t.body, deleted: !!t.deleted, attachment: t.deleted ? null : attView(t.att), authorName: t.authorName, createdAt: t.createdAt, mine: t.userId === user.id,
+    replies: db.replies.filter(r => r.threadId === t.id && !r.hidden).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(r => ({ id: r.id, body: r.body, attachment: attView(r.att), authorName: r.authorName, createdAt: r.createdAt, mine: r.userId === user.id }))
+  }));
   json(ctx.res, 200, { threads });
 });
 route('POST', '/api/courses/:id/community/threads', async ctx => {
   const user = requireUser(ctx);
   if (!canSeeCourse(user, ctx.params.id)) throw httpError(403, 'Join this course to post.');
-  if (limited('post:' + user.id, 10, 10 * 60 * 1000)) throw httpError(429, 'You are posting very quickly. Please wait a few minutes.');
-  const title = clean(ctx.body.title, 120), body = clean(ctx.body.body, 2000);
-  if (title.length < 4) throw httpError(400, 'Give your question a short title.');
-  if (body.length < 5) throw httpError(400, 'Write your question or message.');
-  db.threads.push({ id: uid(8), courseId: ctx.params.id, userId: user.id, authorName: user.name.split(' ')[0], title, body, createdAt: now(), hidden: false });
+  if (limited('post:' + user.id, 15, 10 * 60 * 1000)) throw httpError(429, 'You are posting very quickly. Please wait a few minutes.');
+  const att = await saveAttachment(ctx.body.attachment);
+  let title = clean(ctx.body.title, 120), body = clean(ctx.body.body, 2000);
+  if (att && !body) { body = ''; title = title || 'Attachment'; }
+  else {
+    if (title.length < 4) title = body.slice(0, 60);
+    if (body.length < 1) throw httpError(400, 'Write a message or attach a file.');
+  }
+  db.threads.push({ id: uid(8), courseId: ctx.params.id, userId: user.id, authorName: user.name.split(' ')[0], title: title || 'Attachment', body, att: att || undefined, createdAt: now(), hidden: false });
   save(); json(ctx.res, 201, { ok: true });
 });
 route('POST', '/api/community/threads/:id/replies', async ctx => {
   const user = requireUser(ctx);
   const t = db.threads.find(x => x.id === ctx.params.id && !x.hidden);
-  if (!t) throw httpError(404, 'Thread not found');
+  if (!t) throw httpError(404, 'That message is no longer there.');
   if (!canSeeCourse(user, t.courseId)) throw httpError(403, 'Join this course to reply.');
-  if (limited('reply:' + user.id, 20, 10 * 60 * 1000)) throw httpError(429, 'You are replying very quickly. Please wait a few minutes.');
+  if (limited('reply:' + user.id, 30, 10 * 60 * 1000)) throw httpError(429, 'You are replying very quickly. Please wait a few minutes.');
+  const att = await saveAttachment(ctx.body.attachment);
   const body = clean(ctx.body.body, 2000);
-  if (body.length < 2) throw httpError(400, 'Write your reply.');
-  db.replies.push({ id: uid(8), threadId: t.id, userId: user.id, authorName: user.name.split(' ')[0], body, createdAt: now(), hidden: false });
+  if (!att && body.length < 1) throw httpError(400, 'Write your reply or attach a file.');
+  db.replies.push({ id: uid(8), threadId: t.id, userId: user.id, authorName: user.name.split(' ')[0], body, att: att || undefined, createdAt: now(), hidden: false });
   save(); json(ctx.res, 201, { ok: true });
+});
+/* Students can delete their own messages (staff can delete any). A message that has replies stays as "This message was deleted", like WhatsApp. */
+route('DELETE', '/api/community/threads/:id', async ctx => {
+  const user = requireUser(ctx);
+  const t = db.threads.find(x => x.id === ctx.params.id);
+  if (!t) throw httpError(404, 'That message is already gone.');
+  if (t.userId !== user.id && !isStaff(user)) throw httpError(403, 'You can only delete your own messages.');
+  dropAttachment(t);
+  if (db.replies.some(r => r.threadId === t.id)) { t.deleted = true; t.body = ''; t.title = 'Deleted message'; delete t.att; }
+  else db.threads = db.threads.filter(x => x.id !== t.id);
+  save(); json(ctx.res, 200, { ok: true });
+});
+route('DELETE', '/api/community/replies/:id', async ctx => {
+  const user = requireUser(ctx);
+  const r = db.replies.find(x => x.id === ctx.params.id);
+  if (!r) throw httpError(404, 'That message is already gone.');
+  if (r.userId !== user.id && !isStaff(user)) throw httpError(403, 'You can only delete your own messages.');
+  dropAttachment(r);
+  db.replies = db.replies.filter(x => x.id !== r.id);
+  save(); json(ctx.res, 200, { ok: true });
+});
+route('GET', '/api/community/files/:id', async ctx => {
+  const user = requireUser(ctx);
+  const t = db.threads.find(x => x.att && x.att.id === ctx.params.id);
+  const r = !t && db.replies.find(x => x.att && x.att.id === ctx.params.id);
+  const owner = t || r; const courseId = t ? t.courseId : r ? (db.threads.find(x => x.id === r.threadId) || {}).courseId : null;
+  if (!owner || !courseId || !canSeeCourse(user, courseId)) throw httpError(404, 'File not found');
+  const buf = await store.getFile('community/' + owner.att.file);
+  if (!buf) throw httpError(404, 'File not found');
+  const img = owner.att.mime.startsWith('image/');
+  ctx.res.writeHead(200, { 'Content-Type': owner.att.mime, 'Content-Length': buf.length, 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff',
+    'Content-Disposition': (img ? 'inline' : 'attachment') + '; filename="' + owner.att.name.replace(/"/g, '') + '"' });
+  ctx.res.end(buf);
 });
 route('GET', '/api/staff/community', async ctx => {
   requireStaff(ctx);
@@ -2207,15 +2393,13 @@ route('GET', '/api/auth/google', async ctx => {
   if (!process.env.GOOGLE_CLIENT_ID) return redirect(ctx.res, '/login.html?error=google');
   const state = crypto.randomBytes(16).toString('hex');
   const remember = ctx.query.get('remember') === '1' ? '1' : '0';
-  const ref = clean(ctx.query.get('ref'), 20).toUpperCase().replace(/[^A-Z0-9]/g, '');
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
     redirect_uri: `${PUBLIC_URL}/api/auth/google/callback`,
     response_type: 'code', scope: 'openid email profile', state, prompt: 'select_account'
   });
   redirect(ctx.res, 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString(),
-    { 'Set-Cookie': [`gstate=${state}.${remember}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`,
-      `gref=${ref}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`] });
+    { 'Set-Cookie': `gstate=${state}.${remember}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}` });
 });
 
 route('GET', '/api/auth/google/callback', async ctx => {
@@ -2237,12 +2421,8 @@ route('GET', '/api/auth/google/callback', async ctx => {
     const email = String(info.email).toLowerCase();
     let user = db.users.find(u => u.email === email);
     if (!user) {
-      const gr = (ctx.req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith('gref='));
-      const refCode = gr ? gr.slice(5).toUpperCase() : '';
-      const referrer = refCode ? db.users.find(u => u.referralCode === refCode && u.email !== email) : null;
       user = { id: uid(), name: clean(info.name || email.split('@')[0], 80), email, phone: '', role: 'student',
-        passHash: hashPassword(crypto.randomBytes(24).toString('hex')), createdAt: now(), profile: {},
-        referralCode: genReferralCode(), referredBy: referrer ? referrer.referralCode : null };
+        passHash: hashPassword(crypto.randomBytes(24).toString('hex')), createdAt: now(), profile: {} };
       db.users.push(user); save();
     }
     if (isStaff(user)) return redirect(ctx.res, '/staff-login.html');
@@ -2295,7 +2475,7 @@ route('POST', '/api/courses/:id/enroll', async ctx => {
   const course = db.courses.find(c => c.id === ctx.params.id);
   if (!course) throw httpError(404, 'Course not found');
   if (course.comingSoon) throw httpError(403, 'This course is coming soon. Enrolment will open later.');
-  if (course.price > 0 && course.seats && !courseAccess(user, course) && enrolledCount(course) >= course.seats) throw httpError(403, 'This course is full. Please check back for the next intake.');
+  if (course.price > 0 && !courseAccess(user, course) && enrolledCount(course) >= courseSeats(course)) throw httpError(403, 'This course is full. Please check back for the next intake.');
   if (course.price === 0) return json(ctx.res, 200, { free: true, courseId: course.id });
   if (enrollmentFor(user.id, course.id)) return json(ctx.res, 200, { alreadyEnrolled: true, courseId: course.id });
   let amountKobo = course.price * 100, couponCode = '';
@@ -2340,18 +2520,21 @@ route('GET', '/api/lessons/:id', async ctx => {
   const cv = courseView(course, user).lessons[idx];
   if (cv && cv.gated) {
     const prevL = course.lessons[idx - 1];
-    return json(ctx.res, 403, { error: 'This lesson is still locked.', gated: true, message: cv.lockReason, previous: { id: prevL.id, title: prevL.title, number: idx } });
+    return json(ctx.res, 403, { error: 'This lesson is still locked.', gated: true, dateLocked: !!cv.dateLocked, opensOn: cv.opensOn, message: cv.lockReason, previous: { id: prevL.id, title: prevL.title, number: idx } });
   }
   const journey = {
     requirements: lessonRequirements(user, course, lesson),
     sessions: lessonSessions(course, lesson).map(s => sessionView(s, user)),
-    assignments: db.assignments.filter(a => a.courseId === course.id && a.lessonId === lesson.id).map(a => {
+    assignments: lessonAssignments(course, lesson).map(a => {
       const mine = db.submissions.find(x => x.assignmentId === a.id && x.userId === user.id);
       return { id: a.id, title: a.title, instructions: a.instructions, dueAt: a.dueAt || null, maxMarks: a.maxMarks,
         submission: mine ? { text: mine.text, link: mine.link, submittedAt: mine.submittedAt, marks: mine.marks ?? null, feedback: mine.feedback || '', graded: mine.marks != null } : null };
     }),
-    nextTitle: course.lessons[idx + 1] ? course.lessons[idx + 1].title : null
+    nextTitle: course.lessons[idx + 1] ? course.lessons[idx + 1].title : null,
+    nextOpensOn: (() => { const nx = course.lessons[idx + 1]; if (!nx || (nx.free && course.price > 0)) return null; const ss = lessonSessions(course, nx); const day = ss.length ? dayOfStart(ss[0].startsAt) : null; return day && day > lagosToday() ? day : null; })(),
+    nextOpensLabel: null
   };
+  if (journey.nextOpensOn) journey.nextOpensLabel = niceDay(journey.nextOpensOn);
   json(ctx.res, 200, {
     journey,
     lesson: { id: lesson.id, title: lesson.title, body: lesson.body },
@@ -2724,7 +2907,7 @@ route('GET', '/api/staff/courses/:id', async ctx => {
   requireStaff(ctx);
   const c = db.courses.find(x => x.id === ctx.params.id);
   if (!c) throw httpError(404, 'Course not found');
-  json(ctx.res, 200, { course: { ...courseView(c, null), lessons: c.lessons.map(l => ({ id: l.id, title: l.title, free: !!l.free, body: l.body.join('\n\n'), minutes: l.minutes || '', resources: (l.resources || []).map(r => r.title + ' | ' + r.url).join('\n') })), sessions: db.sessions.filter(s => s.courseId === c.id).map(s => Object.assign(sessionView(s, null), { recordingRaw: s.recordingUrl || '' })), assignments: db.assignments.filter(a => a.courseId === c.id) } });
+  json(ctx.res, 200, { course: { ...courseView(c, null), lessons: c.lessons.map(l => ({ id: l.id, title: l.title, free: !!l.free, body: l.body.join('\n\n'), minutes: l.minutes || '', resources: (l.resources || []).map(r => r.title + ' | ' + r.url).join('\n') })), sessions: db.sessions.filter(s => s.courseId === c.id).map(s => Object.assign(sessionView(s, null), { recordingRaw: s.recordingUrl || '', autoLessonId: sessionLesson(c, s) })), assignments: db.assignments.filter(a => a.courseId === c.id).map(a => Object.assign({}, a, { autoLessonId: assignmentLesson(c, a) })) } });
 });
 
 route('GET', '/api/staff/me', async ctx => {
@@ -2893,7 +3076,7 @@ async function handler(req, res) {
         return json(res, exists ? 405 : 404, { error: exists ? 'Method not allowed' : 'Not found' });
       }
       const ctx = { req, res, params: found.m.groups || {}, query: url.searchParams, user: readSession(req), body: null };
-      if (['POST', 'PATCH', 'PUT'].includes(req.method) && !pathname.endsWith('/webhook')) ctx.body = await readJson(req, pathname.endsWith('/proof') ? 4.2 * 1024 * 1024 : (pathname.endsWith('/avatar') || pathname.endsWith('/image') || pathname.startsWith('/api/staff/works') || pathname.startsWith('/api/staff/products') || pathname.startsWith('/api/staff/services')) ? 400 * 1024 : 100 * 1024);
+      if (['POST', 'PATCH', 'PUT'].includes(req.method) && !pathname.endsWith('/webhook')) ctx.body = await readJson(req, (pathname.endsWith('/proof') || /\/community\/threads(\/[^/]+\/replies)?$/.test(pathname)) ? 4.4 * 1024 * 1024 : (pathname.endsWith('/avatar') || pathname.endsWith('/image') || pathname.startsWith('/api/staff/works') || pathname.startsWith('/api/staff/products') || pathname.startsWith('/api/staff/services') || pathname.startsWith('/api/staff/bundles')) ? 700 * 1024 : 100 * 1024);
       const out = await found.r.handler(ctx);
       if (req.method !== 'GET' && !/\/(chat|notifications|events)/.test(pathname)) broadcastRefresh();
       return out;
