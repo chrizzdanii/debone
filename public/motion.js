@@ -141,7 +141,7 @@
     parallax();
   }
 
-  if (!fine || !desktop) return;
+  if (!fine || !desktop || document.body.hasAttribute('data-shell')) return;
 
   /* D. Custom cursor */
   document.documentElement.classList.add('fx-cursor');
