@@ -1809,3 +1809,11 @@ html [disabled],html .btn[disabled]{cursor:not-allowed!important}
 .theme-brand .view-head::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:rgba(224,168,0,.18);filter:blur(40px);z-index:-1;animation:spFloat 12s ease-in-out infinite}
 .theme-brand .view-head h1{text-shadow:0 10px 30px rgba(0,0,0,.45)}
 @media (prefers-reduced-motion:reduce){.theme-brand .am,.theme-brand .view-head::before,.theme-brand .view-head::after,.theme-brand .ag-tile{animation:none}}
+
+.app a[href],.app button:not([disabled]),.app .btn:not([disabled]),.app summary,.app label[for],.app select,.app [role="button"],.app [data-view],.app [data-go],
+.app .chip-btn,.app .session-card,.app .dcourse,.app .pc-course,.app .tile,.app .burger,.app .bell,.app .dm-x,.app .dm-toast,.app .tour-dots button,.app .set-toggle,
+.app input[type="checkbox"],.app input[type="radio"],.app input[type="file"],.app .pf-upload,.app .side-nav a,.app .side-nav a *{cursor:pointer}
+.app button[disabled],.app .btn[disabled]{cursor:not-allowed}
+.app input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),.app textarea,.app [contenteditable]{cursor:text}
+.app .fx-dot,.app .fx-ring{display:none!important}
+html.fx-cursor .app a,html.fx-cursor .app button,html.fx-cursor .app .btn{cursor:pointer}
