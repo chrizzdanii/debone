@@ -308,8 +308,10 @@
         return a.status === 'ended' ? (b.startsAt || '').localeCompare(a.startsAt || '') : (a.startsAt || '').localeCompare(b.startsAt || '');
       });
       var box = view.querySelector('#lv-list');
-      box.innerHTML = rows.length ? '<div style="display:grid;gap:14px">' + rows.map(card).join('') + '</div>'
+      var listHtml = rows.length ? '<div style="display:grid;gap:14px">' + rows.map(card).join('') + '</div>'
         : '<div class="lv-empty">' + ICON.empty + '<b>' + (sessions.length ? 'No classes match this view' : 'No classes yet') + '</b><span>' + (sessions.length ? 'Try another tab or clear the search.' : 'Schedule your first live class using the form.') + '</span></div>';
+      if (window.DLive && DLive.silent && DLive.patch) DLive.patch(box, listHtml);
+      else box.innerHTML = listHtml;
       requestAnimationFrame(function () { requestAnimationFrame(function () { box.querySelectorAll('[data-w]').forEach(function (el) { el.style.width = el.getAttribute('data-w') + '%'; }); }); });
       if (flash) { var el = box.querySelector('[data-id="' + flash + '"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
       bindCards();

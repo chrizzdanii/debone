@@ -38,72 +38,95 @@
     try { r = fn(); } catch (e) { done(); throw e; }
     return Promise.resolve(r).then(function (v) { done(); return v; }, function (e) { done(); throw e; });
   };
-  /* Patch changed DOM nodes in place, instead of replacing a whole dashboard view.
-     This preserves the existing page, listeners, focused controls and scroll position. */
+  /* Reconcile the existing view without clearing it. This intentionally keeps the
+     original nodes (and their listeners) whenever their identity has not changed. */
   DLive.patch = function (host, html) {
     var template = document.createElement('template');
     template.innerHTML = html;
-    var focus = document.activeElement;
+    var focused = document.activeElement;
+    var scrolls = [];
+    host.querySelectorAll('*').forEach(function (el) {
+      if (el.scrollTop || el.scrollLeft) scrolls.push([el, el.scrollTop, el.scrollLeft]);
+    });
     function key(el) {
-      if (el.nodeType !== 1) return null;
+      if (!el || el.nodeType !== 1) return null;
       if (el.id) return 'id:' + el.id;
-      if (el.hasAttribute('data-id')) return 'data-id:' + el.tagName + ':' + el.getAttribute('data-id');
-      if (el.hasAttribute('data-row') && el.hasAttribute('data-id')) return 'row:' + el.getAttribute('data-id');
+      if (el.hasAttribute('data-id')) return el.tagName + ':id:' + el.getAttribute('data-id');
+      if (el.hasAttribute('data-key')) return el.tagName + ':key:' + el.getAttribute('data-key');
       return null;
     }
-    function protectedNode(el) {
-      return el.nodeType === 1 && (el.hasAttribute('data-live-preserve') ||
-        el.matches('video,audio,iframe,canvas,[contenteditable]') ||
-        (focus && (el === focus || (el.contains && el.contains(focus) &&
-          focus.matches('input,textarea,select,[contenteditable]')))));
+    function preserve(el) {
+      if (!el || el.nodeType !== 1) return false;
+      return el.hasAttribute('data-live-preserve') ||
+        el.matches('video,audio,iframe,canvas,[contenteditable],dialog') ||
+        (focused && el.contains(focused) &&
+         focused.matches('input,textarea,select,[contenteditable]'));
     }
-    function sync(old, fresh) {
-      if (old.nodeType !== fresh.nodeType || (old.nodeType === 1 && old.tagName !== fresh.tagName)) {
-        old.replaceWith(fresh.cloneNode(true)); return;
-      }
-      if (old.nodeType === 3) {
-        if (old.nodeValue !== fresh.nodeValue) old.nodeValue = fresh.nodeValue;
+    function compatible(a, b) {
+      return a && b && a.nodeType === b.nodeType &&
+        (a.nodeType !== 1 || a.tagName === b.tagName);
+    }
+    function sync(a, b) {
+      if (a.isEqualNode(b) || preserve(a)) return;
+      if (a.nodeType === 3 || a.nodeType === 8) {
+        if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue;
         return;
       }
-      if (old.nodeType !== 1 || protectedNode(old)) return;
-      // Keep local control state, CSS animations and interactive widgets stable.
-      if (old.matches('input,textarea,select,details')) return;
-      Array.from(old.attributes).forEach(function (attr) {
-        if (!fresh.hasAttribute(attr.name)) old.removeAttribute(attr.name);
+      if (a.nodeType !== 1) return;
+      // Preserve the live value and selection of all form controls.
+      if (a.matches('input,textarea,select')) return;
+      Array.from(a.attributes).forEach(function (attr) {
+        if (!b.hasAttribute(attr.name)) a.removeAttribute(attr.name);
       });
-      Array.from(fresh.attributes).forEach(function (attr) {
-        if (old.getAttribute(attr.name) !== attr.value) old.setAttribute(attr.name, attr.value);
+      Array.from(b.attributes).forEach(function (attr) {
+        if (a.getAttribute(attr.name) !== attr.value) a.setAttribute(attr.name, attr.value);
       });
-      syncChildren(old, fresh);
+      children(a, b);
     }
-    function syncChildren(parent, freshParent) {
-      var wanted = Array.from(freshParent.childNodes);
+    function children(parent, freshParent) {
+      var oldNodes = Array.from(parent.childNodes);
+      var newNodes = Array.from(freshParent.childNodes);
       var used = new Set();
       var keyed = new Map();
-      Array.from(parent.childNodes).forEach(function (child) {
-        var k = key(child);
-        if (k && !keyed.has(k)) keyed.set(k, child);
+      oldNodes.forEach(function (node) {
+        var k = key(node);
+        if (k && !keyed.has(k)) keyed.set(k, node);
       });
-      wanted.forEach(function (fresh, index) {
-        var k = key(fresh);
-        var current = k ? keyed.get(k) : parent.childNodes[index];
-        if (current && used.has(current)) current = null;
-        if (current && k && key(current) !== k) current = null;
-        if (current && !k && key(current)) current = null;
-        if (!current) {
-          current = fresh.cloneNode(true);
-          parent.insertBefore(current, parent.childNodes[index] || null);
-        } else {
-          sync(current, fresh);
-          if (parent.childNodes[index] !== current) parent.insertBefore(current, parent.childNodes[index] || null);
+      var cursor = parent.firstChild;
+      newNodes.forEach(function (fresh, index) {
+        var k = key(fresh), match = null;
+        if (k && keyed.has(k)) match = keyed.get(k);
+        if (!match && !k) {
+          // Prefer the node at this position, but look ahead before replacing
+          // an element when a sibling was inserted ahead of it.
+          var candidate = oldNodes[index];
+          if (candidate && !used.has(candidate) && !key(candidate) && compatible(candidate, fresh)) match = candidate;
+          if (!match) match = oldNodes.find(function (n) {
+            return !used.has(n) && !key(n) && compatible(n, fresh);
+          });
         }
-        used.add(current);
+        if (match && used.has(match)) match = null;
+        if (!match || !compatible(match, fresh)) {
+          match = fresh.cloneNode(true);
+          parent.insertBefore(match, cursor);
+        } else {
+          sync(match, fresh);
+          if (match !== cursor) parent.insertBefore(match, cursor);
+        }
+        used.add(match);
+        cursor = match.nextSibling;
       });
-      Array.from(parent.childNodes).forEach(function (child) {
-        if (!used.has(child) && !protectedNode(child)) child.remove();
+      oldNodes.forEach(function (node) {
+        if (!used.has(node) && node.parentNode === parent && !preserve(node)) node.remove();
       });
     }
-    syncChildren(host, template.content);
+    children(host, template.content);
+    scrolls.forEach(function (item) {
+      if (item[0].isConnected) {
+        if (item[0].scrollTop !== item[1]) item[0].scrollTop = item[1];
+        if (item[0].scrollLeft !== item[2]) item[0].scrollLeft = item[2];
+      }
+    });
   };
   var fireTimer = null;
   function fire() {
@@ -132,7 +155,7 @@
     if (polling) return;
     polling = true;
     check();
-    setInterval(check, 3000);
+    setInterval(check, 5000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
     window.addEventListener('focus', check);
     window.addEventListener('online', check);

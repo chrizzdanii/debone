@@ -70,6 +70,7 @@
   function setOverlay(on) { overlay.hidden = !on; }
 
   function animateCounters() {
+    if (window.DLive && DLive.silent) return;
     if (reduced()) {
       view.querySelectorAll('[data-count]').forEach(function (el) { el.textContent = Number(el.getAttribute('data-count')).toLocaleString('en-US'); });
       return;
@@ -89,6 +90,7 @@
   }
 
   function animateBars(root) {
+    if (window.DLive && DLive.silent) return;
     (root || view).querySelectorAll('[data-w]').forEach(function (el) {
       var target = el.getAttribute('data-w') + '%';
       if (reduced()) { el.style.width = target; return; }
