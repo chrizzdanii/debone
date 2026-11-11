@@ -44,7 +44,6 @@
   }
   function setView(html) {
     if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return;
-    if (window.DLive && DLive.silent && DLive.patch) { DLive.patch(view, html); return; }
     view.innerHTML = html;
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
   }
@@ -308,10 +307,8 @@
         return a.status === 'ended' ? (b.startsAt || '').localeCompare(a.startsAt || '') : (a.startsAt || '').localeCompare(b.startsAt || '');
       });
       var box = view.querySelector('#lv-list');
-      var listHtml = rows.length ? '<div style="display:grid;gap:14px">' + rows.map(card).join('') + '</div>'
+      box.innerHTML = rows.length ? '<div style="display:grid;gap:14px">' + rows.map(card).join('') + '</div>'
         : '<div class="lv-empty">' + ICON.empty + '<b>' + (sessions.length ? 'No classes match this view' : 'No classes yet') + '</b><span>' + (sessions.length ? 'Try another tab or clear the search.' : 'Schedule your first live class using the form.') + '</span></div>';
-      if (window.DLive && DLive.silent && DLive.patch) DLive.patch(box, listHtml);
-      else box.innerHTML = listHtml;
       requestAnimationFrame(function () { requestAnimationFrame(function () { box.querySelectorAll('[data-w]').forEach(function (el) { el.style.width = el.getAttribute('data-w') + '%'; }); }); });
       if (flash) { var el = box.querySelector('[data-id="' + flash + '"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
       bindCards();
@@ -1663,16 +1660,33 @@
   /* Live updates: when anything changes (a student pays, a setting is saved, another admin edits), redraw this view
      within a second. No page reload, no flicker, and never while you are typing or have unsaved edits. */
   var liveDirty = false, liveBusy = false, livePending = false;
-  /* Refresh all admin sections without replacing the whole page. */
+  /* Keep the admin shell and current view intact. On the overview, refresh only
+     the numeric summary cards instead of calling route(true), which rebuilt the page. */
   async function liveRefresh() {
-    if (!me || document.hidden) return;
-    if (liveBusy) { livePending = true; return; }
+    if (!me || (location.hash || '#overview').replace(/^#/, '').split('/')[0] !== 'overview') return;
+    if (liveBusy) return;
     if (liveDirty || (window.DLive && DLive.busy())) { livePending = true; return; }
     livePending = false; liveBusy = true;
     try {
-      await (window.DLive ? DLive.quiet(function () { return route(true); }) : route(true));
-    } catch (err) { console.warn('Admin live update:', err); }
-    finally { liveBusy = false; if (livePending && !document.hidden && !(window.DLive && DLive.busy())) { livePending = false; setTimeout(liveRefresh, 600); } }
+      var o = await api('/api/staff/overview');
+      var values = {
+        'Students': o.students,
+        'Instructors': o.instructors,
+        'Courses': o.courses,
+        'Live now': o.liveNow,
+        'Need marking': o.pendingGrading,
+        'Active enrolments': o.enrollments,
+        'Revenue': naira(o.revenue)
+      };
+      view.querySelectorAll('.stat-card').forEach(function (card) {
+        var label = card.querySelector('span');
+        var value = label && values[label.textContent.trim()];
+        if (value !== undefined) {
+          var number = card.querySelector('b');
+          if (number) number.textContent = typeof value === 'number' ? value.toLocaleString('en-US') : value;
+        }
+      });
+    } catch (_) {} finally { liveBusy = false; }
   }
   function liveWatch() {
     view.addEventListener('input', function (e) { if (e.target.closest && e.target.closest('form')) liveDirty = true; }, true);

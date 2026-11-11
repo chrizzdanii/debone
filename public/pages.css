@@ -482,11 +482,3 @@
 .auth-link{display:block;text-align:center;margin-top:14px;font-size:.88rem;color:var(--ash)}
 .auth-link a{color:var(--orange)}
 .live-silent .enter,.live-silent .enter *,.live-silent [data-reveal],.live-silent .sec-fx{animation:none!important}
-
-/* Background refreshes must never restart reveal, loading, or card animations. */
-.live-silent #view, .live-silent #view *,
-.live-silent #view *::before, .live-silent #view *::after {
-  animation-duration: 0s !important;
-  transition-duration: 0s !important;
-  scroll-behavior: auto !important;
-}
