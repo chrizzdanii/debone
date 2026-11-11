@@ -966,7 +966,7 @@
     var refreshing = false, dirty = false, pending = false;
     /* Refresh every student section. Only changed DOM nodes are patched in place. */
     async function liveRedraw() {
-      if (refreshing || document.hidden) return;
+      if (refreshing || document.hidden) { pending = true; return; }
       if (dirty || (window.DLive && DLive.busy())) { pending = true; return; }
       refreshing = true; pending = false;
       try {
@@ -979,7 +979,7 @@
           await (window.DLive ? DLive.quiet(function () { return route(); }) : route());
         }
       } catch (err) { console.warn('Student live update:', err); }
-      finally { refreshing = false; }
+      finally { refreshing = false; if (pending && !document.hidden && !(window.DLive && DLive.busy())) { pending = false; setTimeout(liveRedraw, 600); } }
     }
     view.addEventListener('input', function (e) { if (e.target.closest && e.target.closest('form')) dirty = true; }, true);
     view.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('form')) dirty = true; }, true);

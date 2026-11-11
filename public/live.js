@@ -44,40 +44,66 @@
     var template = document.createElement('template');
     template.innerHTML = html;
     var focus = document.activeElement;
-    var isEditing = function (el) {
-      return el === focus && (el.matches('input,textarea,select,[contenteditable]'));
-    };
+    function key(el) {
+      if (el.nodeType !== 1) return null;
+      if (el.id) return 'id:' + el.id;
+      if (el.hasAttribute('data-id')) return 'data-id:' + el.tagName + ':' + el.getAttribute('data-id');
+      if (el.hasAttribute('data-row') && el.hasAttribute('data-id')) return 'row:' + el.getAttribute('data-id');
+      return null;
+    }
+    function protectedNode(el) {
+      return el.nodeType === 1 && (el.hasAttribute('data-live-preserve') ||
+        el.matches('video,audio,iframe,canvas,[contenteditable]') ||
+        (focus && (el === focus || (el.contains && el.contains(focus) &&
+          focus.matches('input,textarea,select,[contenteditable]')))));
+    }
     function sync(old, fresh) {
       if (old.nodeType !== fresh.nodeType || (old.nodeType === 1 && old.tagName !== fresh.tagName)) {
         old.replaceWith(fresh.cloneNode(true)); return;
       }
-      if (old.nodeType === 3) { if (old.nodeValue !== fresh.nodeValue) old.nodeValue = fresh.nodeValue; return; }
-      if (old.nodeType !== 1) return;
-      if (old.hasAttribute('data-live-preserve') || isEditing(old)) return;
-      if (old.matches('video,audio,iframe,canvas')) return;
+      if (old.nodeType === 3) {
+        if (old.nodeValue !== fresh.nodeValue) old.nodeValue = fresh.nodeValue;
+        return;
+      }
+      if (old.nodeType !== 1 || protectedNode(old)) return;
+      // Keep local control state, CSS animations and interactive widgets stable.
+      if (old.matches('input,textarea,select,details')) return;
       Array.from(old.attributes).forEach(function (attr) {
         if (!fresh.hasAttribute(attr.name)) old.removeAttribute(attr.name);
       });
       Array.from(fresh.attributes).forEach(function (attr) {
         if (old.getAttribute(attr.name) !== attr.value) old.setAttribute(attr.name, attr.value);
       });
-      if (old.matches('input,textarea,select')) {
-        if (old.type !== 'file' && old.value !== fresh.value) old.value = fresh.value;
-        if ('checked' in old) old.checked = fresh.checked;
-      }
-      var a = Array.from(old.childNodes), b = Array.from(fresh.childNodes);
-      for (var i = 0; i < b.length; i++) {
-        if (!a[i]) { old.appendChild(b[i].cloneNode(true)); continue; }
-        sync(a[i], b[i]);
-      }
-      for (var j = a.length - 1; j >= b.length; j--) if (a[j].parentNode === old) old.removeChild(a[j]);
+      syncChildren(old, fresh);
     }
-    var before = Array.from(host.childNodes), after = Array.from(template.content.childNodes);
-    for (var i = 0; i < after.length; i++) {
-      if (!before[i]) host.appendChild(after[i].cloneNode(true));
-      else sync(before[i], after[i]);
+    function syncChildren(parent, freshParent) {
+      var wanted = Array.from(freshParent.childNodes);
+      var used = new Set();
+      var keyed = new Map();
+      Array.from(parent.childNodes).forEach(function (child) {
+        var k = key(child);
+        if (k && !keyed.has(k)) keyed.set(k, child);
+      });
+      wanted.forEach(function (fresh, index) {
+        var k = key(fresh);
+        var current = k ? keyed.get(k) : parent.childNodes[index];
+        if (current && used.has(current)) current = null;
+        if (current && k && key(current) !== k) current = null;
+        if (current && !k && key(current)) current = null;
+        if (!current) {
+          current = fresh.cloneNode(true);
+          parent.insertBefore(current, parent.childNodes[index] || null);
+        } else {
+          sync(current, fresh);
+          if (parent.childNodes[index] !== current) parent.insertBefore(current, parent.childNodes[index] || null);
+        }
+        used.add(current);
+      });
+      Array.from(parent.childNodes).forEach(function (child) {
+        if (!used.has(child) && !protectedNode(child)) child.remove();
+      });
     }
-    for (var j = before.length - 1; j >= after.length; j--) if (before[j].parentNode === host) host.removeChild(before[j]);
+    syncChildren(host, template.content);
   };
   var fireTimer = null;
   function fire() {

@@ -1663,13 +1663,14 @@
   var liveDirty = false, liveBusy = false, livePending = false;
   /* Refresh all admin sections without replacing the whole page. */
   async function liveRefresh() {
-    if (!me || liveBusy || document.hidden) return;
+    if (!me || document.hidden) return;
+    if (liveBusy) { livePending = true; return; }
     if (liveDirty || (window.DLive && DLive.busy())) { livePending = true; return; }
     livePending = false; liveBusy = true;
     try {
       await (window.DLive ? DLive.quiet(function () { return route(true); }) : route(true));
     } catch (err) { console.warn('Admin live update:', err); }
-    finally { liveBusy = false; }
+    finally { liveBusy = false; if (livePending && !document.hidden && !(window.DLive && DLive.busy())) { livePending = false; setTimeout(liveRefresh, 600); } }
   }
   function liveWatch() {
     view.addEventListener('input', function (e) { if (e.target.closest && e.target.closest('form')) liveDirty = true; }, true);
