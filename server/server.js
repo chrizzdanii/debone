@@ -2216,6 +2216,7 @@ route('GET', '/api/auth/google', async ctx => {
   redirect(ctx.res, 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString(),
     { 'Set-Cookie': [`gstate=${state}.${remember}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`,
       `gref=${ref}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`] });
+});
 
 route('GET', '/api/auth/google/callback', async ctx => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) return redirect(ctx.res, '/login.html?error=google');
