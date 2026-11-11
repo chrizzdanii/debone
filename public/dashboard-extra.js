@@ -38,7 +38,9 @@
   function stopChat() { if (chatTimer) { clearInterval(chatTimer); chatTimer = null; } }
   function setView(html) {
     stopChat();
+    if (window.DSilent && DSilent.hold(html)) return;
     view.innerHTML = html;
+    if (window.DSilent && DSilent.swapped()) return;
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
   }
   function head(eyebrow, title, sub) {

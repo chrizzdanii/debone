@@ -14,7 +14,12 @@
   }
   function toast(t, tone) { if (window.DModal) DModal.toast({ title: t, tone: tone || 'ok' }); }
   function head(eyebrow, title, sub) { return '<header class="view-head"><p class="eyebrow">' + esc(eyebrow) + '</p><h1>' + esc(title) + '</h1>' + (sub ? '<p class="muted">' + esc(sub) + '</p>' : '') + '</header>'; }
-  function setView(html) { view.innerHTML = html; view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter'); }
+  function setView(html) {
+    if (window.DSilent && DSilent.hold(html)) return;
+    view.innerHTML = html;
+    if (window.DSilent && DSilent.swapped()) return;
+    view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
+  }
   function dayLabel(iso) {
     var d = new Date(iso), now = new Date();
     var same = function (a, b) { return a.toDateString() === b.toDateString(); };
@@ -67,32 +72,90 @@
     var course = enrolled.find(function (c) { return c.id === cur; }) || enrolled[0];
     var d = await api('/api/courses/' + encodeURIComponent(course.id) + '/community');
     replyTo = null;
+    var pending = null;   // the photo or file waiting to be sent
     var last = null, log = '';
+    var TRASH = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+    function size(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+    function attHtml(a) {
+      if (!a) return '';
+      var url = '/api/community/files/' + encodeURIComponent(a.id);
+      if (a.image) return '<a class="wa-img" href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '" alt="' + esc(a.name) + '" loading="lazy"></a>';
+      var ext = (a.name.split('.').pop() || 'file').slice(0, 4).toUpperCase();
+      return '<a class="wa-file" href="' + url + '" download="' + esc(a.name) + '"><span class="ext">' + esc(ext) + '</span><span class="fn"><b>' + esc(a.name) + '</b><small>' + size(a.size) + ' · tap to download</small></span></a>';
+    }
+    function delBtn(kind, id) { return '<button type="button" class="wa-del" data-del="' + kind + '" data-id="' + esc(id) + '" aria-label="Delete message" title="Delete message">' + TRASH + '</button>'; }
     d.threads.slice().reverse().forEach(function (t) {
       var day = dayLabel(t.createdAt);
       if (day !== last) { log += '<div class="wa-day"><span>' + esc(day) + '</span></div>'; last = day; }
-      log += '<div class="wa-row' + (t.mine ? ' mine' : '') + '" data-thread="' + esc(t.id) + '"><div class="wa-bubble">' +
-        '<span class="wa-name">' + (t.mine ? 'You' : esc(t.authorName)) + '</span>' +
-        (t.body && t.body.indexOf(t.title) === 0 ? '' : '<b class="wa-title">' + esc(t.title) + '</b>') + '<p>' + esc(t.body || t.title) + '</p>' +
-        '<span class="wa-meta">' + timeLabel(t.createdAt) + '<button type="button" class="wa-reply-btn" data-reply="' + esc(t.id) + '" data-who="' + esc(t.authorName) + '">Reply</button></span></div></div>';
+      if (t.deleted) {
+        log += '<div class="wa-row' + (t.mine ? ' mine' : '') + '"><div class="wa-bubble gone"><p>🚫 This message was deleted</p><span class="wa-meta">' + timeLabel(t.createdAt) + '</span></div></div>';
+      } else {
+        log += '<div class="wa-row' + (t.mine ? ' mine' : '') + '" data-thread="' + esc(t.id) + '"><div class="wa-bubble">' +
+          '<span class="wa-name">' + (t.mine ? 'You' : esc(t.authorName)) + '</span>' + attHtml(t.attachment) +
+          (t.body ? '<p>' + esc(t.body) + '</p>' : '') +
+          '<span class="wa-meta">' + timeLabel(t.createdAt) + '<button type="button" class="wa-reply-btn" data-reply="' + esc(t.id) + '" data-who="' + esc(t.authorName) + '">Reply</button>' + (t.mine ? delBtn('threads', t.id) : '') + '</span></div></div>';
+      }
       t.replies.forEach(function (r) {
-        log += '<div class="wa-row reply' + (r.mine ? ' mine' : '') + '"><div class="wa-bubble"><span class="wa-name">' + (r.mine ? 'You' : esc(r.authorName)) + '</span><p>' + esc(r.body) + '</p><span class="wa-meta">' + timeLabel(r.createdAt) + '</span></div></div>';
+        log += '<div class="wa-row reply' + (r.mine ? ' mine' : '') + '"><div class="wa-bubble"><span class="wa-name">' + (r.mine ? 'You' : esc(r.authorName)) + '</span>' + attHtml(r.attachment) +
+          (r.body ? '<p>' + esc(r.body) + '</p>' : '') + '<span class="wa-meta">' + timeLabel(r.createdAt) + (r.mine ? delBtn('replies', r.id) : '') + '</span></div></div>';
       });
     });
-    if (!d.threads.length) log = '<div class="wa-empty"><div class="wa-empty-ring"></div><b>No messages yet</b><p>Start the conversation. Ask a question or share your progress.</p></div>';
-    setView(head('Learn together', 'Community', 'Ask questions, help classmates and share your progress.') +
+    if (!d.threads.length) log = '<div class="wa-empty"><div class="wa-empty-ring"></div><b>No messages yet</b><p>Start the conversation. Ask a question, share a photo or send a file.</p></div>';
+    setView(head('Learn together', 'Community', 'Ask questions, help classmates and share photos and files.') +
       '<section class="wa-shell">' +
-        '<div class="wa-top"><div class="wa-avatar">' + esc((course.title || 'C').charAt(0)) + '</div><div><b>' + esc(course.title) + '</b><span>' + d.threads.length + ' discussions · course group</span></div></div>' +
+        '<div class="wa-top"><div class="wa-avatar">' + esc((course.title || 'C').charAt(0)) + '</div><div><b>' + esc(course.title) + '</b><span>' + d.threads.length + ' messages · course group</span></div></div>' +
         '<div class="wa-courses">' + enrolled.map(function (c) { return '<a class="wa-chip' + (c.id === course.id ? ' on' : '') + '" href="#community/' + esc(c.id) + '">' + esc(c.title) + '</a>'; }).join('') + '</div>' +
         '<div class="wa-log" id="wa-log">' + log + '</div>' +
         '<div class="wa-composer"><div class="wa-replying" id="wa-replying" hidden><span>Replying to <b id="wa-to"></b></span><button type="button" id="wa-cancel" aria-label="Cancel reply">&times;</button></div>' +
-          '<form class="wa-form" id="wa-form"><textarea id="wa-text" rows="1" maxlength="2000" placeholder="Type a message"></textarea><button type="submit" class="wa-send" aria-label="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2-7-8-1z"/></svg></button></form></div>' +
+          '<div class="wa-pending" id="wa-pending" hidden></div>' +
+          '<form class="wa-form" id="wa-form"><input type="file" id="wa-file" hidden accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip">' +
+            '<button type="button" class="wa-clip" id="wa-clip" aria-label="Attach a photo or file" title="Attach a photo or file"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.8-8.8a3.7 3.7 0 0 1 5.2 5.2l-8.8 8.8a1.8 1.8 0 0 1-2.6-2.6l8-8"/></svg></button>' +
+            '<textarea id="wa-text" rows="1" maxlength="2000" placeholder="Type a message"></textarea>' +
+            '<button type="submit" class="wa-send" aria-label="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></form></div>' +
       '</section>');
     var logEl = document.getElementById('wa-log');
     logEl.scrollTop = logEl.scrollHeight;
-    var ta = document.getElementById('wa-text');
+    var ta = document.getElementById('wa-text'), pendBox = document.getElementById('wa-pending'), fileIn = document.getElementById('wa-file');
     ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'; });
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('wa-form').requestSubmit(); } });
+
+    function showPending() {
+      if (!pending) { pendBox.hidden = true; pendBox.innerHTML = ''; return; }
+      pendBox.hidden = false;
+      pendBox.innerHTML = (pending.isImage ? '<img src="' + pending.data + '" alt="">' : '<span class="ext">' + esc((pending.name.split('.').pop() || 'file').slice(0, 4).toUpperCase()) + '</span>') +
+        '<span class="pn"><b>' + esc(pending.name) + '</b><small>' + size(pending.bytes) + '</small></span><button type="button" id="wa-unpend" aria-label="Remove attachment">&times;</button>';
+      document.getElementById('wa-unpend').addEventListener('click', function () { pending = null; fileIn.value = ''; showPending(); });
+    }
+    function shrinkImage(file) {
+      return new Promise(function (resolve, reject) {
+        var img = new Image(), url = URL.createObjectURL(file);
+        img.onload = function () {
+          var max = 1280, k = Math.min(1, max / Math.max(img.width, img.height));
+          var c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That image could not be opened.')); };
+        img.src = url;
+      });
+    }
+    document.getElementById('wa-clip').addEventListener('click', function () { fileIn.click(); });
+    fileIn.addEventListener('change', async function () {
+      var f = fileIn.files[0]; if (!f) return;
+      try {
+        if (/^image\/(jpeg|png|webp)$/.test(f.type)) {
+          var data = await shrinkImage(f);
+          pending = { name: f.name.replace(/\.\w+$/, '') + '.jpg', data: data, isImage: true, bytes: Math.round(data.length * 0.75) };
+        } else {
+          if (f.size > 3 * 1048576) { toast('That file is larger than 3 MB. Please choose a smaller one.', 'err'); fileIn.value = ''; return; }
+          var fr = await new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = function () { rej(new Error('Could not read that file.')); }; r.readAsDataURL(f); });
+          if (!f.type && /\.(docx?|xlsx?|pptx?|zip|pdf|txt)$/i.test(f.name)) { /* browsers sometimes give no type */ }
+          pending = { name: f.name, data: fr, isImage: /^image\//.test(f.type), bytes: f.size };
+        }
+        showPending(); ta.focus();
+      } catch (e) { toast(e.message, 'err'); fileIn.value = ''; }
+    });
+
     view.querySelectorAll('[data-reply]').forEach(function (b) {
       b.addEventListener('click', function () {
         replyTo = b.getAttribute('data-reply');
@@ -101,17 +164,45 @@
         ta.focus();
       });
     });
+    view.querySelectorAll('[data-del]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (b.classList.contains('sure')) {
+          var row = b.closest('.wa-row'); b.disabled = true;
+          api('/api/community/' + b.getAttribute('data-del') + '/' + encodeURIComponent(b.getAttribute('data-id')), { method: 'DELETE' })
+            .then(function () { row.classList.add('leaving'); setTimeout(renderCommunity, 320); })
+            .catch(function (err) { toast(err.message, 'err'); b.disabled = false; b.classList.remove('sure'); b.innerHTML = TRASH; });
+          return;
+        }
+        b.classList.add('sure'); b.innerHTML = 'Delete?';
+        setTimeout(function () { if (b.isConnected && !b.disabled) { b.classList.remove('sure'); b.innerHTML = TRASH; } }, 3500);
+      });
+    });
     document.getElementById('wa-cancel').addEventListener('click', function () { replyTo = null; document.getElementById('wa-replying').hidden = true; });
     document.getElementById('wa-form').addEventListener('submit', async function (e) {
       e.preventDefault();
-      var text = ta.value.trim(); if (!text) return;
+      var text = ta.value.trim(); if (!text && !pending) return;
       var btn = view.querySelector('.wa-send'); btn.disabled = true;
+      var att = pending ? { name: pending.name, data: pending.data } : undefined;
       try {
-        if (replyTo) await api('/api/community/threads/' + encodeURIComponent(replyTo) + '/replies', { method: 'POST', body: { body: text } });
-        else await api('/api/courses/' + encodeURIComponent(course.id) + '/community/threads', { method: 'POST', body: { title: text.slice(0, 60), body: text } });
-        replyTo = null; renderCommunity();
+        if (replyTo) await api('/api/community/threads/' + encodeURIComponent(replyTo) + '/replies', { method: 'POST', body: { body: text, attachment: att } });
+        else await api('/api/courses/' + encodeURIComponent(course.id) + '/community/threads', { method: 'POST', body: { title: text.slice(0, 60), body: text, attachment: att } });
+        replyTo = null; pending = null; renderCommunity();
       } catch (err) { toast(err.message, 'err'); btn.disabled = false; }
     });
+  }
+
+  /* ---------- Course bundles ---------- */
+  async function renderBundlesPage() {
+    crumb.textContent = 'Course bundles';
+    var d = await api('/api/bundles');
+    setView(head('Save more', 'Course bundles', 'Learn more for less. Each bundle opens several courses at one discounted price.') + '<div id="bx-box"></div>');
+    BundleUI.render(document.getElementById('bx-box'), d.bundles, { dashboard: true, onBuy: function (id, btn) {
+      var label = btn.querySelector('span'); btn.disabled = true; if (label) label.textContent = 'Opening…';
+      api('/api/bundles/' + encodeURIComponent(id) + '/buy', { method: 'POST', body: {} }).then(function (res) {
+        if (res.order) { location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); return; }
+        toast('You already have these courses.'); location.hash = '#courses';
+      }).catch(function (e) { toast(e.message, 'err'); btn.disabled = false; if (label) label.textContent = 'Buy the bundle'; });
+    } });
   }
 
   /* ---------- Course reviews: clear stars, labelled form ---------- */
@@ -318,6 +409,7 @@
   window.DashExtras = Object.assign(window.DashExtras || {}, {
     render: function (name, arg) {
       if (name === 'community') return renderCommunity();
+      if (name === 'bundles') return renderBundlesPage();
       if (name === 'reviews') return renderReviews();
       if (name === 'referrals') return renderReferrals();
       if (name === 'certificates') return renderCertificates();

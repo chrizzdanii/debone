@@ -24,6 +24,7 @@
   es.addEventListener('error', function () {
     if (es.readyState !== 2 || polling) return;
     polling = true;
+    if (window.DPulse) return;   // pulse.js already checks once a second
     setInterval(function () { if (!document.hidden) window.dispatchEvent(new CustomEvent('debone:refresh')); }, 8000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) window.dispatchEvent(new CustomEvent('debone:refresh')); });
     window.addEventListener('focus', function () { window.dispatchEvent(new CustomEvent('debone:refresh')); });

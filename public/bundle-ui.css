@@ -1,0 +1,51 @@
+/* Course bundle cards (v51) */
+.bx-banner{display:inline-flex;align-items:center;gap:8px;margin:0 0 22px;padding:10px 18px;border-radius:999px;border:1px solid rgba(224,168,0,.5);background:rgba(224,168,0,.1);color:var(--bone,#f4f4f0);font-size:.9rem;animation:bxRise .6s both}
+.bx-banner b{color:var(--orange,#E0A800)}
+.bx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:24px;perspective:1200px}
+.bx-card{--rx:0deg;--ry:0deg;--mx:50%;--my:0%;position:relative;display:flex;flex-direction:column;border:1px solid var(--line,#2a2a2a);border-radius:26px;background:#121212;overflow:hidden;opacity:0;transform:translateY(34px) scale(.97);transition:opacity .7s cubic-bezier(.2,.7,.1,1),transform .7s cubic-bezier(.2,.7,.1,1),border-color .4s,box-shadow .5s;transition-delay:calc(var(--i)*90ms)}
+.bx-card.in{opacity:1;transform:perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));transition-delay:0s,0s,0s,0s}
+.bx-card.in:not(:hover){transition:transform .6s cubic-bezier(.2,.7,.1,1),border-color .4s,box-shadow .5s}
+.bx-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:radial-gradient(420px circle at var(--mx) var(--my),rgba(224,168,0,.16),transparent 60%);transition:opacity .4s}
+.bx-card:hover{border-color:rgba(224,168,0,.6);box-shadow:0 34px 70px -34px rgba(224,168,0,.5)}
+.bx-card:hover::after{opacity:1}
+.bx-media{position:relative;aspect-ratio:16/9;overflow:hidden;background:#0c0c0c}
+.bx-img{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform 1.2s cubic-bezier(.2,.7,.1,1)}
+.bx-card:hover .bx-img{transform:scale(1.09)}
+.bx-media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.75))}
+.bx-img.art{display:grid;place-content:center;text-align:center;background:radial-gradient(circle at 30% 20%,var(--b),transparent 55%),linear-gradient(135deg,var(--a),#0b0b0b)}
+.bx-img.art span{font:400 clamp(4rem,10vw,6rem)/1 Anton,Impact,sans-serif;color:#fff;text-shadow:0 10px 40px rgba(0,0,0,.5);animation:bxFloat 4s ease-in-out infinite}
+.bx-img.art em{font-style:normal;letter-spacing:.3em;text-transform:uppercase;font-size:.72rem;color:rgba(255,255,255,.75)}
+@keyframes bxFloat{50%{transform:translateY(-8px)}}
+.bx-save{position:absolute;z-index:2;top:16px;left:16px;padding:8px 14px;border-radius:999px;background:var(--orange,#E0A800);color:#0b0b0b;font:800 .74rem Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 8px 24px rgba(224,168,0,.45);animation:bxPulse 2.4s infinite}
+@keyframes bxPulse{0%{box-shadow:0 0 0 0 rgba(224,168,0,.6)}70%{box-shadow:0 0 0 16px rgba(224,168,0,0)}100%{box-shadow:0 0 0 0 rgba(224,168,0,0)}}
+.bx-count{position:absolute;z-index:2;left:16px;bottom:14px;color:#fff;font:600 .78rem Inter,sans-serif;letter-spacing:.06em}
+.bx-body{display:flex;flex-direction:column;gap:14px;padding:22px 24px 24px;flex:1}
+.bx-eyebrow{font:600 .68rem Inter,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--orange,#E0A800)}
+.bx-body h3{font-size:clamp(1.4rem,3vw,1.8rem);line-height:1.1}
+.bx-desc{color:var(--ash,#a3a3a3);font-size:.92rem;line-height:1.55}
+.bx-list{list-style:none;margin:4px 0;padding:0;display:grid;gap:10px}
+.bx-list li{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid transparent;opacity:0;transform:translateX(-14px);transition:all .5s cubic-bezier(.2,.7,.1,1);transition-delay:calc(var(--k)*90ms + .25s)}
+.bx-card.in .bx-list li{opacity:1;transform:none}
+.bx-list li:hover{border-color:rgba(224,168,0,.4);background:rgba(224,168,0,.07)}
+.bx-list .n{flex:0 0 26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(224,168,0,.18);color:var(--orange,#E0A800);font:700 .75rem Inter,sans-serif}
+.bx-list b{display:block;font-size:.92rem}.bx-list small{color:var(--ash,#a3a3a3);font-size:.76rem}
+.bx-price{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:auto;padding-top:6px}
+.bx-price s{display:block;color:var(--ash,#8a8a8a);font-size:.9rem}
+.bx-price b{font:400 clamp(1.9rem,4vw,2.5rem)/1 Anton,Impact,sans-serif;font-variant-numeric:tabular-nums}
+.bx-pill{padding:7px 12px;border-radius:999px;background:rgba(107,203,119,.15);color:var(--teal,#6BCB77);font:700 .76rem Inter,sans-serif;white-space:nowrap}
+.bx-btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;border:0;border-radius:999px;background:var(--orange,#E0A800);color:#0b0b0b;font:700 .95rem Inter,sans-serif;cursor:pointer;text-decoration:none;transition:transform .3s,box-shadow .3s}
+.bx-btn i{position:absolute;top:0;bottom:0;width:60px;left:-80px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-20deg);animation:bxShine 3.2s infinite}
+@keyframes bxShine{0%,55%{left:-80px}100%{left:120%}}
+.bx-btn:hover{transform:translateY(-3px);box-shadow:0 18px 36px -14px rgba(224,168,0,.7)}
+.bx-btn[disabled]{opacity:.7;pointer-events:none}
+.bx-btn.owned{background:transparent;color:var(--teal,#6BCB77);border:1px solid rgba(107,203,119,.5)}
+.bx-empty{display:grid;justify-items:center;gap:12px;text-align:center;padding:60px 20px;border:1px dashed var(--line,#2a2a2a);border-radius:26px;color:var(--ash,#a3a3a3)}
+.bx-empty .ring{width:64px;height:64px;border-radius:50%;border:3px solid rgba(224,168,0,.5);border-top-color:var(--orange,#E0A800);animation:bxSpin 2.4s linear infinite}
+@keyframes bxSpin{to{transform:rotate(360deg)}}
+@keyframes bxRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+body.silent .bx-card{opacity:1;transform:none;transition:none}
+body.silent .bx-list li{opacity:1;transform:none;transition:none}
+@media (prefers-reduced-motion:reduce){.bx-card,.bx-list li{opacity:1!important;transform:none!important;transition:none!important}.bx-img.art span,.bx-save,.bx-btn i,.bx-empty .ring{animation:none!important}}
+
+/* The website's old list layout is replaced by .bx-grid, so the container itself is a plain block */
+.theme-brand #bd-list,#bd-list{display:block}

@@ -43,7 +43,9 @@
     setTimeout(function () { t.classList.remove('show'); setTimeout(function () { t.remove(); }, 600); }, 3800);
   }
   function setView(html) {
+    if (window.DSilent && DSilent.hold(html)) return;
     view.innerHTML = html;
+    if (window.DSilent && DSilent.swapped()) return;
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
   }
   function head(eyebrow, title, sub) {
@@ -136,13 +138,14 @@
     return !isNaN(t) && Date.now() >= t - 10 * 60000 && Date.now() <= t + (s.durationMinutes || 120) * 60000;
   }
   function lessonLabel(s, lessonsByCourse) {
-    if (!s.lessonId) return '';
+    var id = s.lessonId || s.autoLessonId;
+    if (!id) return '';
     var list = lessonsByCourse[s.courseId] || [];
-    var i = list.findIndex(function (l) { return l.id === s.lessonId; });
-    return i < 0 ? '' : 'Lesson ' + (i + 1) + ': ' + list[i].title;
+    var i = list.findIndex(function (l) { return l.id === id; });
+    return i < 0 ? '' : 'Lesson ' + (i + 1) + ': ' + list[i].title + (s.lessonId ? '' : ' (by order)');
   }
   function lessonOptions(lessons, selected) {
-    return '<option value="">Not linked to a lesson</option>' + lessons.map(function (l, i) {
+    return '<option value="">Choose the lesson…</option>' + lessons.map(function (l, i) {
       return '<option value="' + esc(l.id) + '"' + (l.id === selected ? ' selected' : '') + '>Lesson ' + (i + 1) + ': ' + esc(l.title) + '</option>';
     }).join('');
   }
@@ -169,7 +172,7 @@
         '<form id="session-form" class="lv-form" autocomplete="off">' +
           '<div class="lv-sec"><h3><em>1</em>What is it about</h3>' +
             '<div class="lv-f"><label>Course</label><select class="input" name="courseId" required>' + courseOptions(courses, firstCourse) + '</select></div>' +
-            '<div class="lv-f"><label>Lesson it belongs to</label><select class="input" name="lessonId">' + lessonOptions(lessonsByCourse[firstCourse] || [], '') + '</select>' +
+            '<div class="lv-f"><label>Lesson it belongs to</label><select class="input" name="lessonId" required>' + lessonOptions(lessonsByCourse[firstCourse] || [], '') + '</select>' +
               '<span class="lv-hint">Students unlock the next lesson after this live class (or its recording) and the lesson assignment are done.</span></div>' +
             '<div class="lv-f"><label>Title</label><div class="lv-ico">' + ICON.pen + '<input class="input with-ico" name="title" required maxlength="120" placeholder="e.g. Week 3: Reading charts"></div></div></div>' +
           '<div class="lv-sec"><h3><em>2</em>When</h3>' +
@@ -1336,6 +1339,8 @@
       DModal.open({ size: 'md', eyebrow: isNew ? 'New bundle' : 'Edit bundle', title: isNew ? 'Create a bundle' : esc(it.title), body:
         '<form class="sub-form" id="bdf"><div class="field"><label>Bundle title</label><input class="input" name="title" required maxlength="120" value="' + esc(it.title || '') + '"></div>' +
         '<div class="field"><label>Description</label><textarea class="input" name="description" rows="2" maxlength="1000">' + esc(it.description || '') + '</textarea></div>' +
+        '<div class="field"><label>Bundle picture</label><div class="bd-pic"><div class="bd-pic-prev" id="bd-prev"' + (it.hasImage ? ' style="background-image:url(\'/api/bundles/' + encodeURIComponent(it.id) + '/image?v=' + it.imageV + '\')"' : '') + '>' + (it.hasImage ? '' : '<span>No picture yet</span>') + '</div>' +
+          '<div class="bd-pic-act"><input type="file" id="bd-file" accept="image/jpeg,image/png,image/webp" hidden><button type="button" class="btn btn-ghost btn-sm" id="bd-pick">Upload a picture</button><button type="button" class="btn btn-ghost btn-sm" id="bd-unpic"' + (it.hasImage ? '' : ' hidden') + '>Remove</button><span class="hint">Wide pictures look best (16:9). It is shrunk automatically.</span></div></div></div>' +
         '<div class="field"><label>Courses in the bundle (choose two or more)</label><div class="bd-pick">' + courses.filter(function (c) { return !c.comingSoon; }).map(function (c) {
           return '<label class="bd-opt"><input type="checkbox" name="courseIds" value="' + esc(c.id) + '"' + (it.courseIds.indexOf(c.id) !== -1 ? ' checked' : '') + '> ' + esc(c.title) + (c.startDate ? ' · starts ' + esc(c.startDate) : '') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</label>';
         }).join('') + '</div></div>' +
@@ -1344,12 +1349,27 @@
         '<p class="form-error" id="bdf-err" role="alert"></p><div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid">' + (isNew ? 'Create bundle' : 'Save changes') + '</button></div></form>',
         onMount: function (box, inst) {
           box.querySelector('[data-cancel]').addEventListener('click', inst.close);
+          var picData = null, picRemove = false, prev = box.querySelector('#bd-prev'), fileIn = box.querySelector('#bd-file'), unpic = box.querySelector('#bd-unpic');
+          box.querySelector('#bd-pick').addEventListener('click', function () { fileIn.click(); });
+          fileIn.addEventListener('change', function () {
+            var f = fileIn.files[0]; if (!f) return;
+            var img = new Image(), url = URL.createObjectURL(f);
+            img.onload = function () {
+              var k = Math.min(1, 1100 / img.width), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+              var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+              picData = c.toDataURL('image/jpeg', 0.82); picRemove = false; URL.revokeObjectURL(url);
+              prev.style.backgroundImage = 'url(' + picData + ')'; prev.innerHTML = ''; unpic.hidden = false;
+            };
+            img.onerror = function () { toast('That picture could not be opened.', 'err'); };
+            img.src = url;
+          });
+          unpic.addEventListener('click', function () { picData = null; picRemove = true; prev.style.backgroundImage = ''; prev.innerHTML = '<span>No picture yet</span>'; unpic.hidden = true; fileIn.value = ''; });
           box.querySelector('#bdf').addEventListener('submit', async function (e) {
             e.preventDefault();
             var f = e.target, err = box.querySelector('#bdf-err'); err.textContent = '';
             var ids = Array.prototype.slice.call(f.querySelectorAll('[name=courseIds]:checked')).map(function (x) { return x.value; });
             try {
-              await api(isNew ? '/api/staff/bundles' : '/api/staff/bundles/' + encodeURIComponent(it.id), { method: isNew ? 'POST' : 'PATCH', body: { title: fv(f, 'title'), description: fv(f, 'description'), price: fv(f, 'price'), active: fv(f, 'active') === 'true', courseIds: ids } });
+              await api(isNew ? '/api/staff/bundles' : '/api/staff/bundles/' + encodeURIComponent(it.id), { method: isNew ? 'POST' : 'PATCH', body: { title: fv(f, 'title'), description: fv(f, 'description'), price: fv(f, 'price'), active: fv(f, 'active') === 'true', courseIds: ids, image: picData || undefined, removeImage: picRemove } });
               inst.close(); toast('Bundle saved.'); renderBundles();
             } catch (ex) { err.textContent = ex.message; }
           });
@@ -1359,7 +1379,7 @@
       '<div class="dt-tools"><span class="muted">' + d.bundles.length + ' bundles</span><button class="btn btn-solid" type="button" id="bd-new">New bundle</button></div>' +
       '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th>Bundle</th><th>Courses</th><th>Price</th><th>Status</th><th></th></tr></thead><tbody>' +
       (d.bundles.length ? d.bundles.map(function (b, i) {
-        return '<tr style="--i:' + i + '"><td><b>' + esc(b.title) + '</b></td><td class="small">' + b.courseIds.map(function (id) { var c = courses.find(function (x) { return x.id === id; }); return esc(c ? c.title : id); }).join(', ') + '</td><td>' + naira(b.price) + '</td>' +
+        return '<tr style="--i:' + i + '"><td><div class="bd-row"><span class="bd-thumb"' + (b.hasImage ? ' style="background-image:url(\'/api/bundles/' + encodeURIComponent(b.id) + '/image?v=' + b.imageV + '\')"' : '') + '></span><b>' + esc(b.title) + '</b></div></td><td class="small">' + b.courseIds.map(function (id) { var c = courses.find(function (x) { return x.id === id; }); return esc(c ? c.title : id); }).join(', ') + '</td><td>' + naira(b.price) + '</td>' +
           '<td><span class="gpill ' + (b.active !== false ? 'pass' : 'none') + '">' + (b.active !== false ? 'Live' : 'Hidden') + '</span></td>' +
           '<td class="dt-act"><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(b.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(b.id) + '">Delete</button></td></tr>';
       }).join('') : '<tr><td colspan="5" class="muted">No bundles yet.</td></tr>') + '</tbody></table></div></section>');
@@ -1446,22 +1466,147 @@
     });
   }
 
-  /* ---------- Revenue and analytics (admin) ---------- */
+  /* ---------- Reports and analytics (v50): live, refreshes by itself ---------- */
+  function rpTween(el, to, fmtFn) {
+    var from = el._v == null ? 0 : el._v;
+    if (from === to && el._v != null) return;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (el._v != null && from !== to) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    el._v = to;
+    if (reduce) { el.textContent = fmtFn(to); return; }
+    var t0 = null, dur = from === 0 ? 1100 : 700;
+    cancelAnimationFrame(el._raf);
+    (function step(ts) {
+      if (!t0) t0 = ts;
+      var p = Math.min((ts - t0) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmtFn(from + (to - from) * e);
+      if (p < 1) el._raf = requestAnimationFrame(step);
+    })(performance.now());
+  }
+  function rpSmooth(pts) {
+    if (pts.length < 2) return '';
+    var d = 'M' + pts[0][0] + ',' + pts[0][1];
+    for (var i = 1; i < pts.length; i++) {
+      var mx = (pts[i - 1][0] + pts[i][0]) / 2;
+      d += ' C' + mx + ',' + pts[i - 1][1] + ' ' + mx + ',' + pts[i][1] + ' ' + pts[i][0] + ',' + pts[i][1];
+    }
+    return d;
+  }
+  function rpArea(box, vals, days, opts) {
+    var W = 640, H = 230, L = 10, R = 10, T = 16, B = 28, n = vals.length;
+    var max = Math.max.apply(null, vals.concat([1])), id = 'g' + Math.random().toString(36).slice(2, 7);
+    var pts = vals.map(function (v, i) { return [L + i * (W - L - R) / (n - 1), T + (H - T - B) * (1 - v / max)]; });
+    var line = rpSmooth(pts), area = line + ' L' + pts[n - 1][0] + ',' + (H - B) + ' L' + pts[0][0] + ',' + (H - B) + ' Z';
+    var grid = [0, .25, .5, .75, 1].map(function (f) { var y = T + (H - T - B) * f; return '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/>'; }).join('');
+    var xl = days.map(function (d, i) { return i % 6 === 0 || i === n - 1 ? '<text x="' + pts[i][0] + '" y="' + (H - 8) + '" text-anchor="middle">' + d.slice(8) + '/' + d.slice(5, 7) + '</text>' : ''; }).join('');
+    box.innerHTML = '<div class="rp2-chart' + (opts.first ? ' draw' : '') + '"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opts.label) + '">' +
+      '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + opts.color + '" stop-opacity=".45"/><stop offset="1" stop-color="' + opts.color + '" stop-opacity="0"/></linearGradient></defs>' +
+      '<g class="gr">' + grid + '</g><path class="ar" d="' + area + '" fill="url(#' + id + ')"/><path class="ln" pathLength="1" d="' + line + '" stroke="' + opts.color + '"/>' +
+      '<line class="cx" x1="0" x2="0" y1="' + T + '" y2="' + (H - B) + '"/><circle class="cd" r="5" fill="' + opts.color + '"/><g class="xl">' + xl + '</g></svg><div class="tip"></div></div>';
+    var wrap = box.firstChild, svg = wrap.querySelector('svg'), tip = wrap.querySelector('.tip'), cx = wrap.querySelector('.cx'), cd = wrap.querySelector('.cd');
+    svg.addEventListener('mousemove', function (e) {
+      var r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W;
+      var i = Math.max(0, Math.min(n - 1, Math.round((x - L) / ((W - L - R) / (n - 1)))));
+      cx.setAttribute('x1', pts[i][0]); cx.setAttribute('x2', pts[i][0]); cd.setAttribute('cx', pts[i][0]); cd.setAttribute('cy', pts[i][1]);
+      wrap.classList.add('hover');
+      tip.innerHTML = '<b>' + esc(opts.fmt(vals[i])) + '</b><span>' + esc(days[i]) + '</span>';
+      tip.style.left = Math.min(Math.max(pts[i][0] / W * 100, 12), 88) + '%';
+    });
+    svg.addEventListener('mouseleave', function () { wrap.classList.remove('hover'); });
+  }
+  function rpBars(box, vals, days, color, first) {
+    var max = Math.max.apply(null, vals.concat([1]));
+    box.innerHTML = '<div class="rp2-bars' + (first ? ' draw' : '') + '">' + vals.map(function (v, i) {
+      return '<div class="b" title="' + esc(days[i]) + ': ' + v + '" style="--i:' + i + '"><i style="height:' + Math.max(v ? 8 : 3, v / max * 100) + '%;background:' + color + '"></i></div>';
+    }).join('') + '</div>';
+  }
+  function rpDonut(box, items, total, first) {
+    var cols = ['#E0A800', '#6BCB77', '#7aa7ff', '#ff4d6d', '#b48cff'], off = 0, sum = items.reduce(function (t, x) { return t + x.amount; }, 0) || 1;
+    var arcs = items.map(function (x, i) {
+      var len = x.amount / sum * 100, c = '<circle r="15.9155" cx="21" cy="21" fill="none" stroke="' + cols[i % 5] + '" stroke-width="5" stroke-dasharray="' + (first ? 0 : Math.max(len - 1, .5)) + ' 100" data-len="' + Math.max(len - 1, .5) + '" stroke-dashoffset="' + (-off) + '"/>';
+      off += len; return c;
+    }).join('');
+    box.innerHTML = '<div class="rp2-donut"><svg viewBox="0 0 42 42"><circle r="15.9155" cx="21" cy="21" fill="none" stroke="#1d1d1d" stroke-width="5"/>' + arcs + '</svg><div class="mid"><b>' + esc(total) + '</b><span>total sales</span></div></div>' +
+      '<ul class="rp2-legend">' + (items.length ? items.map(function (x, i) { return '<li><i style="background:' + cols[i % 5] + '"></i>' + esc(x.kind) + '<b>' + naira(x.amount) + '</b></li>'; }).join('') : '<li class="muted">No sales yet</li>') + '</ul>';
+    if (first) setTimeout(function () { box.querySelectorAll('circle[data-len]').forEach(function (c) { c.setAttribute('stroke-dasharray', c.getAttribute('data-len') + ' 100'); }); }, 150);
+  }
+  function rpHBars(box, rows, fmtFn) {
+    var max = Math.max.apply(null, rows.map(function (r) { return r.v; }).concat([1]));
+    box.innerHTML = rows.length ? rows.map(function (r, i) {
+      return '<div class="hb" style="--i:' + i + '"><div class="hb-t"><span>' + esc(r.t) + '</span><b>' + esc(fmtFn(r)) + '</b></div><div class="hb-bar"><i data-w="' + Math.round(r.v / max * 100) + '"></i></div></div>';
+    }).join('') : '<p class="muted">Nothing to show yet.</p>';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { box.querySelectorAll('[data-w]').forEach(function (el) { el.style.width = el.getAttribute('data-w') + '%'; }); }); });
+  }
+  var FEED_ICON = { sale: '₦', signup: '+', lesson: '✓', assignment: '✎', class: '▶' };
+  function ago(iso) {
+    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    return s < 60 ? 'just now' : s < 3600 ? Math.floor(s / 60) + ' min ago' : s < 86400 ? Math.floor(s / 3600) + ' h ago' : Math.floor(s / 86400) + ' d ago';
+  }
   async function renderReports() {
     crumb.textContent = 'Reports and analytics';
-    var r = await api('/api/staff/reports/revenue'), a = await api('/api/staff/analytics');
-    var months = r.byMonth.map(function (m) { return '<div class="rp-bar"><i data-h="' + Math.max(4, Math.round(m.amount / Math.max(1, Math.max.apply(null, r.byMonth.map(function (x) { return x.amount; }))) * 100)) + '"></i><span>' + esc(m.month) + '</span><b>' + naira(m.amount) + '</b></div>'; }).join('') || '<p class="muted">No sales yet.</p>';
-    setView(head('Business', 'Reports and analytics', 'Sales, refunds and website activity.') +
-      '<div class="rp-stats"><div><span>Gross sales</span><b>' + naira(r.gross) + '</b></div><div><span>Refunded</span><b>' + naira(r.refunded) + '</b></div><div><span>Net</span><b>' + naira(r.net) + '</b></div><div><span>Orders</span><b>' + r.orders + '</b></div></div>' +
-      '<div class="rp-actions"><a class="btn btn-solid" href="/api/staff/reports/revenue?format=csv">Download sales report (CSV)</a></div>' +
-      '<div class="grid-2" style="margin-top:16px"><section class="box"><p class="eyebrow">Sales by month</p><div class="rp-chart">' + months + '</div></section>' +
-      '<section class="box"><p class="eyebrow">Sales by item</p><div class="dt-wrap"><table class="dt"><thead><tr><th>Item</th><th>Type</th><th>Orders</th><th>Amount</th></tr></thead><tbody>' +
-      (r.byItem.length ? r.byItem.map(function (i) { return '<tr><td>' + esc(i.item) + '</td><td class="muted small">' + esc(i.kind) + '</td><td>' + i.count + '</td><td>' + naira(i.amount) + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="muted">No sales yet.</td></tr>') + '</tbody></table></div></section></div>' +
-      '<div class="rp-stats" style="margin-top:16px"><div><span>Page views (30 days)</span><b>' + a.totalViews + '</b></div><div><span>Students</span><b>' + a.students + '</b></div><div><span>Newsletter subscribers</span><b>' + a.subscribers + '</b></div><div><span>New students (30 days)</span><b>' + a.signups.reduce(function (t, x) { return t + x.count; }, 0) + '</b></div></div>' +
-      '<div class="grid-2" style="margin-top:16px"><section class="box"><p class="eyebrow">Most visited pages</p><div class="dt-wrap"><table class="dt"><thead><tr><th>Page</th><th>Views</th></tr></thead><tbody>' + (a.pages.length ? a.pages.map(function (p) { return '<tr><td>' + esc(p.page) + '</td><td>' + p.views + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="muted">No visits yet.</td></tr>') + '</tbody></table></div></section>' +
-      '<section class="box"><p class="eyebrow">Courses and products</p><div class="dt-wrap"><table class="dt"><thead><tr><th>Course</th><th>Students</th></tr></thead><tbody>' + a.topCourses.map(function (c) { return '<tr><td>' + esc(c.title) + '</td><td>' + c.students + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-      '<div class="dt-wrap" style="margin-top:12px"><table class="dt"><thead><tr><th>Product</th><th>Sales</th></tr></thead><tbody>' + (a.topProducts.length ? a.topProducts.map(function (p) { return '<tr><td>' + esc(p.title) + '</td><td>' + p.sales + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="muted">No products yet.</td></tr>') + '</tbody></table></div></section></div>');
-    setTimeout(function () { view.querySelectorAll('[data-h]').forEach(function (el) { el.style.height = el.getAttribute('data-h') + '%'; }); }, 120);
+    var KP = [
+      ['net', 'Net revenue', 'money', 'gold'], ['today', 'Sales today', 'money', 'green'], ['orders', 'Paid orders', 'int', 'blue'], ['students', 'Students', 'int', 'gold'],
+      ['newToday', 'New students today', 'int', 'green'], ['views30', 'Page views (30 days)', 'int', 'blue'], ['liveNow', 'Live classes now', 'int', 'red'], ['lessonsToday', 'Lessons finished today', 'int', 'green']
+    ];
+    setView('<div class="rp2">' +
+      '<section class="rp2-hero"><div><p class="eyebrow">Business</p><h1>Reports <span>&amp; analytics</span></h1><p class="muted">Updates by itself every few seconds. Nothing to refresh.</p></div>' +
+      '<div class="rp2-hero-r"><span class="rp2-live"><i></i>Live</span><span class="rp2-upd" id="rp-upd">Connecting…</span><a class="btn btn-ghost btn-sm" href="/api/staff/reports/revenue?format=csv">Download sales (CSV)</a></div></section>' +
+      '<div class="rp2-kpis">' + KP.map(function (k, i) { return '<div class="rp2-kpi ' + k[3] + '" style="--i:' + i + '"><span>' + k[1] + '</span><b data-k="' + k[0] + '" data-f="' + k[2] + '">0</b><em data-sub="' + k[0] + '"></em></div>'; }).join('') + '</div>' +
+      '<div class="rp2-grid">' +
+        '<section class="rp2-card wide"><header><h3>Sales, last 30 days</h3><div class="tabs" id="rp-tabs"><button class="on" data-s="revenue">Revenue</button><button data-s="orders">Orders</button><button data-s="views">Page views</button></div></header><div id="rp-main"></div></section>' +
+        '<section class="rp2-card"><header><h3>Where the money comes from</h3></header><div id="rp-donut"></div></section>' +
+        '<section class="rp2-card"><header><h3>New students</h3><span class="muted small">last 30 days</span></header><div id="rp-signups"></div></section>' +
+        '<section class="rp2-card"><header><h3>Learning activity</h3><span class="muted small">lessons finished per day</span></header><div id="rp-lessons"></div></section>' +
+        '<section class="rp2-card"><header><h3>Best sellers</h3></header><div id="rp-items"></div></section>' +
+        '<section class="rp2-card"><header><h3>Courses</h3><span class="muted small">students and seats</span></header><div id="rp-courses"></div></section>' +
+        '<section class="rp2-card"><header><h3>Most visited pages</h3></header><div id="rp-pages"></div></section>' +
+        '<section class="rp2-card feedc"><header><h3>Happening now</h3><span class="rp2-live sm"><i></i>Live</span></header><ul class="rp2-feed" id="rp-feed"></ul></section>' +
+      '</div></div>');
+    var first = true, seen = new Set(), tab = 'revenue', last = null;
+    var money = function (v) { return naira(Math.round(v)); }, intf = function (v) { return Math.round(v).toLocaleString('en-NG'); };
+    function drawMain() {
+      if (!last) return;
+      var s = last.series[tab], f = tab === 'revenue' ? money : intf, col = tab === 'revenue' ? '#E0A800' : tab === 'orders' ? '#6BCB77' : '#7aa7ff';
+      rpArea(document.getElementById('rp-main'), s, tab === 'views' ? last.days : last.days, { color: col, fmt: f, label: tab, first: first });
+    }
+    view.querySelectorAll('#rp-tabs button').forEach(function (b) {
+      b.addEventListener('click', function () { tab = b.getAttribute('data-s'); view.querySelectorAll('#rp-tabs button').forEach(function (x) { x.classList.toggle('on', x === b); }); first = true; drawMain(); first = false; });
+    });
+    async function pull() {
+      var d = await api('/api/staff/reports/live'); last = d;
+      var k = d.kpi;
+      view.querySelectorAll('[data-k]').forEach(function (el) { rpTween(el, k[el.getAttribute('data-k')] || 0, el.getAttribute('data-f') === 'money' ? money : intf); });
+      var g = k.prevWeek ? Math.round((k.week - k.prevWeek) / k.prevWeek * 100) : null;
+      var sub = { net: g === null ? (k.week ? 'New this week' : '') : (g >= 0 ? '▲ ' : '▼ ') + Math.abs(g) + '% vs last week', today: k.todayOrders + ' order' + (k.todayOrders === 1 ? '' : 's') + ' today',
+        orders: 'Refunded ' + money(k.refunded), students: k.newWeek + ' joined this week', newToday: k.enrolled + ' active enrolments', views30: k.viewsToday + ' today',
+        liveNow: k.upcoming + ' upcoming', lessonsToday: k.submissionsToday + ' assignment' + (k.submissionsToday === 1 ? '' : 's') + ' · ' + k.checkinsToday + ' check-in' + (k.checkinsToday === 1 ? '' : 's') };
+      view.querySelectorAll('[data-sub]').forEach(function (el) { var t = sub[el.getAttribute('data-sub')] || ''; el.textContent = t; el.className = t.indexOf('▼') === 0 ? 'down' : t.indexOf('▲') === 0 ? 'up' : ''; });
+      drawMain();
+      rpBars(document.getElementById('rp-signups'), d.series.signups, d.days, '#6BCB77', first);
+      rpBars(document.getElementById('rp-lessons'), d.series.lessons, d.days, '#7aa7ff', first);
+      rpDonut(document.getElementById('rp-donut'), d.byKind, money(k.gross), first);
+      rpHBars(document.getElementById('rp-items'), d.byItem.map(function (x) { return { t: x.item, v: x.amount, n: x.count }; }), function (r) { return money(r.v) + ' · ' + r.n; });
+      rpHBars(document.getElementById('rp-courses'), d.courses.map(function (c) { return { t: c.title, v: c.students, s: c.seats }; }), function (r) { return r.v + ' / ' + r.s; });
+      rpHBars(document.getElementById('rp-pages'), d.pages.map(function (p) { return { t: p.page, v: p.views }; }), function (r) { return intf(r.v); });
+      var feed = document.getElementById('rp-feed');
+      feed.innerHTML = d.feed.length ? d.feed.map(function (x) {
+        var isNew = !first && !seen.has(x.id);
+        return '<li class="' + (isNew ? 'new' : '') + '"><span class="ic ' + x.type + '">' + (FEED_ICON[x.type] || '•') + '</span><div><p>' + esc(x.text) + '</p><small>' + esc(ago(x.at)) + '</small></div></li>';
+      }).join('') : '<li class="muted">Activity will show up here as it happens.</li>';
+      d.feed.forEach(function (x) { seen.add(x.id); });
+      document.getElementById('rp-upd').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB');
+      first = false;
+    }
+    await pull();
+    var pulling = false;
+    window.__rpHandler = function () {
+      if (pulling || !document.getElementById('rp-main')) return;
+      pulling = true; pull().catch(function () {}).then(function () { pulling = false; });
+    };
+    window.addEventListener('debone:refresh', window.__rpHandler);
+    window.__rpTimer = setInterval(function () {            // safety net: page views are counted without a save
+      if (!document.hidden && document.getElementById('rp-main')) window.__rpHandler();
+    }, 3000);
   }
 
   /* ---------- Community moderation and suspensions (admin) ---------- */
@@ -1615,13 +1760,15 @@
     side.classList.toggle('open', open); scrim.classList.toggle('show', open); burger.setAttribute('aria-expanded', String(open));
   }
   async function route() {
+    clearInterval(window.__rpTimer);
+    if (window.__rpHandler) { window.removeEventListener('debone:refresh', window.__rpHandler); window.__rpHandler = null; }
     var parts = (location.hash || '#overview').replace(/^#/, '').split('/');
     var name = parts[0] || 'overview', arg = parts[1] ? decodeURIComponent(parts[1]) : null;
     if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers'].includes(name)) name = 'overview';
     document.querySelectorAll('.side-nav a[data-view]').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('data-view') === name);
     });
-    openSide(false);
+    if (!(window.DSilent && DSilent.active)) openSide(false);
     try {
       if (name === 'overview') return await renderOverview();
       if (name === 'live') return await renderLive();
@@ -1674,6 +1821,20 @@
       location.replace('login.html');
     });
     window.addEventListener('hashchange', route);
+    // Live updates: pulse.js says "something changed" within a second; the page redraws in place, never over typing or a pop-up
+    var adminBusy = false;
+    window.addEventListener('debone:refresh', async function () {
+      if (adminBusy) return;
+      adminBusy = true;
+      try {
+        var name = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
+        if (name === 'reports') return;                              // the reports page updates its own numbers
+        if (window.DModal && DModal.isOpen()) return;
+        if (window.DSilent && DSilent.dirty(view)) return;
+        if (window.DSilent) DSilent.begin();
+        await route();
+      } catch (e) { /* the next change will try again */ } finally { adminBusy = false; }
+    });
     if (!location.hash) history.replaceState(null, '', 'admin.html#overview');
     route();
   }

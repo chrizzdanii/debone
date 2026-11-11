@@ -94,7 +94,9 @@
   }
 
   function setView(html) {
+    if (window.DSilent && DSilent.hold(html)) return;
     view.innerHTML = html;
+    if (window.DSilent && DSilent.swapped()) return;
     view.classList.remove('enter');
     void view.offsetWidth;
     view.classList.add('enter');
@@ -303,6 +305,7 @@
     }
   }
 
+  var REQUIRE_NOTE_UI = false;
   var lastLesson = { id: null, sig: '' };
   async function openLesson(lid, course, quiet) {
     var pane = document.getElementById('pane');
@@ -323,8 +326,17 @@
 
   function renderGated(g) {
     var pane = document.getElementById('pane');
+    var lockIcon = LOCK_SVG.replace('width="14" height="14"', 'width="34" height="34"');
+    if (g.dateLocked) {
+      pane.innerHTML = '<div class="gate-card"><div class="gate-lock">' + lockIcon + '</div>' +
+        '<p class="eyebrow" style="justify-content:center">Opens on class day</p>' +
+        '<h2>' + esc(g.message || 'Not open yet') + '</h2>' +
+        '<p class="muted">You have finished the previous lesson. This lesson opens on the day its live class starts, so everyone learns it together.</p>' +
+        (g.previous ? '<button class="btn btn-ghost" type="button" data-go="' + esc(g.previous.id) + '">Back to lesson ' + esc(g.previous.number) + '</button>' : '') + '</div>';
+      return;
+    }
     pane.innerHTML =
-      '<div class="gate-card"><div class="gate-lock">' + LOCK_SVG.replace('width="14" height="14"', 'width="34" height="34"') + '</div>' +
+      '<div class="gate-card"><div class="gate-lock">' + lockIcon + '</div>' +
       '<p class="eyebrow" style="justify-content:center">Locked</p>' +
       '<h2>Finish lesson ' + esc(g.previous ? g.previous.number : '') + ' first</h2>' +
       '<p class="muted">This lesson opens after you finish the previous one: read it, join its live class (or watch the recording if you missed it) and submit its assignment.</p>' +
@@ -348,7 +360,9 @@
     var s = j.sessions[0];
     var state = req.classDone ? 'done' : 'todo', inner = '<p class="jmeta"><b>' + esc(s.title) + '</b> · ' + esc(fmtWhen(s.startsAt)) + '</p>';
     if (req.classDone) {
-      inner += '<p class="jok">' + (s.attended ? 'You are checked in for this class.' : 'Class done.') + ' ✓</p>';
+      inner += s.attendedHow === 'recording'
+        ? '<p class="jok">You have watched the recorded video ✓</p>'
+        : '<p class="jok">Live class joined ✓</p>';
       if (s.recordingUrl) inner += '<button class="btn btn-ghost btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch the recording again</button>';
     } else if (s.status === 'live' || s.liveOpen) {
       inner += '<p class="jlive"><i></i>Class is live now</p><button class="btn btn-solid btn-sm pulse" type="button" data-join="' + esc(s.id) + '" data-url="' + esc(s.joinUrl || '') + '" data-yt="' + (s.youtubeId ? '1' : '') + '">Join live class</button>';
@@ -385,23 +399,34 @@
       return '<a class="lesson-res" href="' + esc(r.url) + '" target="_blank" rel="noopener"><span class="lesson-res-ico">↗</span>' + esc(r.title) + '</a>';
     }).join('');
     var nextBtn = d.next
-      ? (d.completed
+      ? (d.completed && !j.nextOpensOn
         ? '<button class="btn btn-solid btn-sm unlock-pop" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>'
-        : '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="Finish this lesson to unlock the next one">' + LOCK_SVG + ' Next lesson locked</button>')
+        : d.completed
+          ? '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="The next lesson opens on the day of its live class">' + LOCK_SVG + ' Opens ' + esc(j.nextOpensLabel || j.nextOpensOn) + '</button>'
+          : '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="Finish this lesson to unlock the next one">' + LOCK_SVG + ' Next lesson locked</button>')
       : '';
+    function rule(ok, text) { return '<li class="' + (ok ? 'ok' : '') + '"><i>' + (ok ? CHECK_SVG : '') + '</i><span>' + text + '</span></li>'; }
+    var classOk = req.classDone, sess0 = j.sessions[0];
+    var rules = '<div class="rules"><p class="rules-t">To finish this lesson and unlock the next one</p><ul>' +
+      rule(true, 'Read the lesson') +
+      (j.sessions.length ? rule(classOk, classOk ? (sess0 && sess0.attendedHow === 'recording' ? 'You have watched the recorded video' : 'Live class joined') : 'Join the live class, or watch the recorded video if you missed it') : '') +
+      (j.assignments.length ? rule(req.submitted, req.submitted ? 'Assignment submitted' : 'Submit the assignment') : '') +
+      (REQUIRE_NOTE_UI ? rule(req.noteDone, 'Write your lesson note') : '') +
+      '</ul><p class="rules-n">' + (j.nextOpensOn ? 'The next lesson opens on ' + esc(j.nextOpensLabel) + ', the day of its live class.' : (j.nextTitle ? 'The next lesson opens only after all of the above are done.' : '')) + '</p></div>';
     pane.innerHTML =
       '<div class="lesson-top"><p class="eyebrow">' + esc(d.course.title) + '</p><span class="lesson-pos">Lesson ' + d.position + ' of ' + d.total + (d.minutes ? ' · ' + d.minutes + ' min' : '') + '</span></div>' +
       '<h2 class="lesson-title">' + esc(l.title) + '</h2>' +
+      rules +
       '<div class="journey">' +
         step(1, 'done', 'Read the lesson', '<div class="lesson-body">' + l.body.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</div>' +
           (res ? '<div class="lesson-resources"><p class="rf2-label">Resources</p><div class="lesson-res-list">' + res + '</div></div>' : '')) +
-        step(2, req.noteDone ? 'done' : 'todo', 'Write your notes', '<div class="lesson-notes"><div class="lesson-notes-head"><p class="rf2-label">My notes</p><span class="note-state" id="note-state">Saved privately</span></div>' +
+        step(2, (d.note && d.note.trim()) ? 'done' : 'todo', 'Write your notes (optional)', '<div class="lesson-notes"><div class="lesson-notes-head"><p class="rf2-label">My notes</p><span class="note-state" id="note-state">Saved privately</span></div>' +
           '<textarea class="input" id="lesson-note" rows="4" maxlength="4000" placeholder="Write down what matters to you. Only you can see these notes.">' + esc(d.note || '') + '</textarea></div>') +
         classStep(j) + assignStep(j) +
       '</div>' +
       '<div class="finish-bar' + (d.completed ? ' is-done' : (req.ready ? ' is-ready' : '')) + '">' +
         '<div class="fb-text">' + (d.completed
-          ? '<b>Lesson complete ✓</b><span>' + (j.nextTitle ? 'Next up: ' + esc(j.nextTitle) : 'You have finished the last lesson.') + '</span>'
+          ? '<b>Lesson complete ✓</b><span>' + (j.nextTitle ? (j.nextOpensOn ? 'Next lesson opens ' + esc(j.nextOpensLabel) : 'Next up: ' + esc(j.nextTitle)) : 'You have finished the last lesson.') + '</span>'
           : (req.ready ? '<b>You are ready to finish this lesson</b><span>' + (j.nextTitle ? 'This unlocks: ' + esc(j.nextTitle) : 'This is the last lesson.') + '</span>'
             : '<b>Still to do</b><span>' + req.missing.map(esc).join(' · ') + '</span>')) + '</div>' +
         '<button class="btn btn-solid btn-sm" type="button" data-lesson-done="' + esc(l.id) + '"' + (d.completed || !req.ready ? ' disabled' : '') + '>' + (d.completed ? '✓ Completed' : 'Finish lesson') + '</button>' +
@@ -858,7 +883,7 @@
   }
 
   /* ---------- Router ---------- */
-  var TITLES = { overview: 'Overview', courses: 'My courses', browse: 'Browse courses', live: 'Live classes', assignments: 'Assignments', payments: 'Payments', profile: 'Profile', performance: 'Performance', certificates: 'Certificates', reviews: 'Course reviews', downloads: 'Downloads', recordings: 'Recordings', requests: 'Requests and refunds', referrals: 'Refer a friend', community: 'Community', portfolio: 'Talent profile', course: 'Course' };
+  var TITLES = { overview: 'Overview', bundles: 'Course bundles', courses: 'My courses', browse: 'Browse courses', live: 'Live classes', assignments: 'Assignments', payments: 'Payments', profile: 'Profile', performance: 'Performance', certificates: 'Certificates', reviews: 'Course reviews', downloads: 'Downloads', recordings: 'Recordings', requests: 'Requests and refunds', referrals: 'Refer a friend', community: 'Community', portfolio: 'Talent profile', course: 'Course' };
 
   function openSide(open) {
     side.classList.toggle('open', open);
@@ -877,9 +902,9 @@
       var target = name === 'course' ? 'courses' : name;
       a.classList.toggle('active', a.getAttribute('data-view') === target);
     });
-    openSide(false);
+    if (!(window.DSilent && DSilent.active)) openSide(false);
 
-    if (name === 'live' || name === 'assignments' || name === 'performance' || name === 'certificates' || name === 'reviews' || name === 'downloads' || name === 'recordings' || name === 'requests' || name === 'referrals' || name === 'community' || name === 'portfolio') return window.DashExtras.render(name, arg);
+    if (name === 'live' || name === 'assignments' || name === 'performance' || name === 'certificates' || name === 'reviews' || name === 'downloads' || name === 'recordings' || name === 'requests' || name === 'referrals' || name === 'community' || name === 'portfolio' || name === 'bundles') return window.DashExtras.render(name, arg);
     if (name === 'overview') return renderOverview();
     if (name === 'courses') return renderCourses();
     if (name === 'browse') return renderBrowse();
@@ -955,19 +980,26 @@
       await handlePaystackReturn(ref);
     }
     window.addEventListener('hashchange', route);
-    // Live updates: the page refreshes straight away when something changes
-    var READ_ONLY = ['overview', 'courses', 'browse', 'payments', 'performance'];
-    var refreshing = false;
+    // Live updates: pulse.js says "something changed" within a second. The page then redraws itself in place:
+    // no fade-in, no jump to the top, and never while the person is typing or has a pop-up open.
+    var refreshing = false, again = false;
     window.addEventListener('debone:refresh', async function () {
-      if (refreshing) return;
+      if (refreshing) { again = true; return; }
       refreshing = true;
       try {
-        await loadDash();
-        var name = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
-        var busy = window.DModal && DModal.isOpen();
-        var ae = document.activeElement, typing = !!ae && /^(TEXTAREA|INPUT|SELECT)$/.test(ae.tagName);
-        if (name === 'course') { if (!busy) await refreshCourseState(); }
-        else if (!busy && !typing && (READ_ONLY.indexOf(name) !== -1 || name === 'assignments' || name === 'live' || name === 'certificates' || name === 'recordings')) route();
+        do {
+          again = false;
+          await loadDash();
+          var parts = (location.hash || '#overview').replace(/^#/, '').split('/'), name = parts[0];
+          var busy = window.DModal && DModal.isOpen();
+          if (busy) continue;
+          if (name === 'course') { await refreshCourseState(); continue; }
+          if (name === 'profile') continue;                          // a form: only the photo and name change, and shell.js does that
+          if (name === 'live' && parts[1]) continue;                 // inside a live room: the room updates itself
+          if (window.DSilent && DSilent.dirty(view)) continue;       // never wipe something half written
+          if (window.DSilent) DSilent.begin();
+          route();
+        } while (again);
       } catch (e) {} finally { refreshing = false; }
     });
     window.addEventListener('debone:unlock', async function (ev) {

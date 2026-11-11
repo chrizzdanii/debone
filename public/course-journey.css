@@ -49,3 +49,41 @@
 .gate-lock{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;color:var(--orange);background:rgba(224,168,0,.12);animation:jFloat 3s ease-in-out infinite}
 @keyframes jFloat{50%{transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){.jstep,.cert-card,.gate-card,.finish-bar,.jdot,.btn.pulse,.jlive i,.gate-lock,.unlock-pop{animation:none!important}}
+
+.rules{margin:18px 0 6px;padding:18px 20px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,rgba(224,168,0,.08),transparent 60%)}
+.rules-t{font:600 .72rem Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);margin-bottom:12px}
+.rules ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.rules li{display:flex;align-items:center;gap:12px;color:var(--ash);transition:color .4s}
+.rules li i{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:#0B0B0B;transition:all .4s}
+.rules li i svg{width:13px;height:13px}
+.rules li.ok{color:var(--bone)}
+.rules li.ok i{background:var(--teal);border-color:var(--teal);animation:jPop .5s}
+.rules-n{margin-top:12px;font-size:.82rem;color:var(--ash)}
+
+/* Community: attachments, delete, composer (v50) */
+.wa-img{display:block;margin:4px 0 6px;border-radius:12px;overflow:hidden;max-width:min(300px,100%)}
+.wa-img img{display:block;width:100%;height:auto;max-height:340px;object-fit:cover;transition:transform .4s}
+.wa-img:hover img{transform:scale(1.03)}
+.wa-file{display:flex;align-items:center;gap:12px;margin:4px 0 6px;padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.25);color:inherit;text-decoration:none;min-width:200px;transition:background .25s}
+.wa-file:hover{background:rgba(0,0,0,.4)}
+.wa-file .ext,.wa-pending .ext{flex:0 0 42px;height:42px;border-radius:10px;display:grid;place-items:center;background:var(--orange);color:#0B0B0B;font:700 .72rem Inter,sans-serif}
+.wa-file .fn{display:grid;min-width:0}.wa-file .fn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem}.wa-file .fn small{opacity:.7;font-size:.72rem}
+.wa-bubble.gone{opacity:.65;font-style:italic}
+.wa-del{margin-left:8px;border:0;background:none;color:inherit;opacity:.55;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font:600 .72rem Inter,sans-serif;padding:2px 4px;border-radius:6px;transition:all .25s;vertical-align:middle}
+.wa-del:hover{opacity:1;color:#ff6b81}
+.wa-del.sure{opacity:1;background:#ff4d6d;color:#fff;padding:3px 9px;animation:jPop .35s}
+.wa-row.leaving{animation:waLeave .32s forwards}
+@keyframes waLeave{to{opacity:0;transform:translateX(40px) scale(.9);max-height:0}}
+.wa-row{animation:waIn .35s both}
+@keyframes waIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.wa-form{align-items:flex-end}
+.wa-clip{flex:0 0 auto;width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:#8696A0;cursor:pointer;display:grid;place-items:center;transition:all .25s}
+.wa-clip:hover{color:var(--orange);background:rgba(224,168,0,.12);transform:rotate(-12deg)}
+.wa-pending{display:flex;align-items:center;gap:12px;margin:0 12px 8px;padding:10px 12px;border-radius:14px;background:#1F2C34;animation:jRise .3s both}
+.wa-pending[hidden]{display:none}
+.wa-pending img{width:54px;height:54px;border-radius:10px;object-fit:cover}
+.wa-pending .pn{display:grid;min-width:0;flex:1}.wa-pending .pn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.86rem}.wa-pending .pn small{color:#8696A0;font-size:.72rem}
+.wa-pending button{border:0;background:none;color:#8696A0;font-size:1.4rem;cursor:pointer}
+
+/* Silent redraw: nothing animates, so a live update is not noticed */
+body.silent *,body.silent *::before,body.silent *::after{animation:none!important;transition:none!important}

@@ -25,10 +25,13 @@
     return '<header class="view-head"><p class="eyebrow">' + esc(eyebrow) + '</p><h1>' + esc(title) + '</h1>' + (sub ? '<p class="muted">' + esc(sub) + '</p>' : '') + '</header>';
   }
   function setView(html) {
+    if (window.DSilent && DSilent.hold(html)) return;
     view.innerHTML = html;
+    if (window.DSilent && DSilent.swapped()) return;
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
   }
   function countUp(el, to) {
+    if (window.DSilent && DSilent.active) { el.textContent = to; return; }
     var t0 = null, dur = 1200;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = to; return; }
     requestAnimationFrame(function step(ts) {

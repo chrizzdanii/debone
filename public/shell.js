@@ -116,17 +116,25 @@
       syncName();
     }
   }
+  var shownV = null;
   function applyUser(u) {
     if (!u) return;
     if (u.name) {
       document.getElementById('shell-name').textContent = u.name;
       var side = document.getElementById('me-name'); if (side) side.textContent = u.name;
     }
-    if (u.hasAvatar) setAvatar('/api/me/avatar?v=' + Date.now());
-    else {
-      setAvatar('');
-      var initials = (u.name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
-      document.getElementById('shell-avatar').textContent = initials || '··';
+    var v = u.hasAvatar ? String(u.avatarV || 1) : '0';
+    if (v !== shownV) {                      // only touch the picture when it actually changed
+      shownV = v;
+      if (u.hasAvatar) {
+        var src = '/api/me/avatar?v=' + v;
+        setAvatar(src);
+        document.querySelectorAll('img.pf-avatar').forEach(function (im) { if (im.getAttribute('src') !== src) im.src = src; });
+      } else {
+        setAvatar('');
+        var initials = (u.name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+        document.getElementById('shell-avatar').textContent = initials || '··';
+      }
     }
   }
   function syncPhoto() {
@@ -137,12 +145,12 @@
   window.DShell = { applyUser: applyUser, setAvatar: setAvatar, refreshUser: syncPhoto };
   /* Changes made on this page show immediately (no waiting for a refresh) */
   window.addEventListener('debone:user', function (e) { applyUser(e.detail); });
-  window.addEventListener('debone:avatar-preview', function (e) { setAvatar(e.detail && e.detail.src); });
+  window.addEventListener('debone:avatar-preview', function (e) { shownV = null; setAvatar(e.detail && e.detail.src); });
   /* Changes made elsewhere (another tab or device) arrive with the next refresh */
-  var lastUserSync = 0;
+  var syncing = false;
   window.addEventListener('debone:refresh', function () {
-    if (Date.now() - lastUserSync < 5000) return;
-    lastUserSync = Date.now(); syncPhoto();
+    if (!syncing) { syncing = true; syncPhoto().then(function () { syncing = false; }, function () { syncing = false; }); }
+    if (!panel.hidden) load(); else load();   // keeps the bell count current
   });
   syncPhoto();
   load();
