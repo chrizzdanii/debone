@@ -44,7 +44,7 @@
     req('/api/bundles').then(function (d) {
       var list = d.bundles || [];
       $('bd-list').innerHTML = list.map(function (b, i) {
-        return '<article class="bd-card" style="--i:' + i + '"><div class="bd-img" style="background-image:url(\'' + window.ACAD.img(i + 1) + '\')"></div><div class="bd-head"><p class="eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3><p class="muted">' + esc(b.description) + '</p></div>' +
+        return '<article class="bd-card" style="--i:' + i + '"><div class="bd-img" style="background-image:url(\'' + (b.image || window.ACAD.img(i + 1)) + '\')"></div><div class="bd-head"><p class="eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3><p class="muted">' + esc(b.description) + '</p></div>' +
           '<ul class="bd-courses">' + b.courses.map(function (c) { return '<li><b>' + esc(c.title) + '</b><span>' + esc(c.startDate ? 'Starts ' + c.startDate : 'Start date to be announced') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</span></li>'; }).join('') + '</ul>' +
           '<div class="bd-foot"><b>' + naira(b.price) + '</b><button class="btn btn-solid" type="button" data-bundle="' + esc(b.id) + '">Buy the bundle</button></div></article>';
       }).join('') || '<div class="empty-state">No bundles are open yet. Individual courses are on the Digital Academy page.</div>';

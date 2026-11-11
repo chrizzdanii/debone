@@ -57,6 +57,13 @@
     });
   }
 
+  function attachmentHtml(a) {
+    if (!a || !a.data || !a.name) return '';
+    var href = esc(a.data), name = esc(a.name);
+    return a.type && a.type.indexOf('image/') === 0
+      ? '<a href="' + href + '" download="' + name + '" class="wa-attachment"><img src="' + href + '" alt="' + name + '" style="max-width:240px;max-height:200px;border-radius:12px;display:block"></a>'
+      : '<a href="' + href + '" download="' + name + '" class="wa-attachment">📎 ' + name + '</a>';
+  }
   /* ---------- Community: a chat for each course ---------- */
   var replyTo = null;
   async function renderCommunity() {
@@ -75,7 +82,7 @@
       log += '<div class="wa-row' + (t.mine ? ' mine' : '') + '" data-thread="' + esc(t.id) + '"><div class="wa-bubble">' +
         '<span class="wa-name">' + (t.mine ? 'You' : esc(t.authorName)) + '</span>' +
         (t.body && t.body.indexOf(t.title) === 0 ? '' : '<b class="wa-title">' + esc(t.title) + '</b>') + '<p>' + esc(t.body || t.title) + '</p>' +
-        '<span class="wa-meta">' + timeLabel(t.createdAt) + '<button type="button" class="wa-reply-btn" data-reply="' + esc(t.id) + '" data-who="' + esc(t.authorName) + '">Reply</button></span></div></div>';
+        attachmentHtml(t.attachment) + '<span class="wa-meta">' + timeLabel(t.createdAt) + (t.mine ? '<button type="button" class="wa-reply-btn" data-delete-thread="' + esc(t.id) + '">Delete</button>' : '') + '<button type="button" class="wa-reply-btn" data-reply="' + esc(t.id) + '" data-who="' + esc(t.authorName) + '">Reply</button></span></div></div>';
       t.replies.forEach(function (r) {
         log += '<div class="wa-row reply' + (r.mine ? ' mine' : '') + '"><div class="wa-bubble"><span class="wa-name">' + (r.mine ? 'You' : esc(r.authorName)) + '</span><p>' + esc(r.body) + '</p><span class="wa-meta">' + timeLabel(r.createdAt) + '</span></div></div>';
       });
@@ -87,13 +94,22 @@
         '<div class="wa-courses">' + enrolled.map(function (c) { return '<a class="wa-chip' + (c.id === course.id ? ' on' : '') + '" href="#community/' + esc(c.id) + '">' + esc(c.title) + '</a>'; }).join('') + '</div>' +
         '<div class="wa-log" id="wa-log">' + log + '</div>' +
         '<div class="wa-composer"><div class="wa-replying" id="wa-replying" hidden><span>Replying to <b id="wa-to"></b></span><button type="button" id="wa-cancel" aria-label="Cancel reply">&times;</button></div>' +
-          '<form class="wa-form" id="wa-form"><textarea id="wa-text" rows="1" maxlength="2000" placeholder="Type a message"></textarea><button type="submit" class="wa-send" aria-label="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2-7-8-1z"/></svg></button></form></div>' +
+          '<form class="wa-form" id="wa-form"><label class="wa-reply-btn" title="Attach image or file" style="cursor:pointer">📎<input id="wa-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" style="display:none"></label><textarea id="wa-text" rows="1" maxlength="2000" placeholder="Type a message"></textarea><button type="submit" class="wa-send" aria-label="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2-7-8-1z"/></svg></button></form></div>' +
       '</section>');
     var logEl = document.getElementById('wa-log');
     logEl.scrollTop = logEl.scrollHeight;
     var ta = document.getElementById('wa-text');
     ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'; });
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('wa-form').requestSubmit(); } });
+    view.querySelectorAll('[data-delete-thread], [data-delete-reply]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        if (!window.confirm('Delete this message?')) return;
+        var isReply = b.hasAttribute('data-delete-reply');
+        var id = b.getAttribute(isReply ? 'data-delete-reply' : 'data-delete-thread');
+        try { await api('/api/community/' + (isReply ? 'replies/' : 'threads/') + encodeURIComponent(id), { method: 'DELETE' }); renderCommunity(); }
+        catch (e) { toast(e.message, 'err'); }
+      });
+    });
     view.querySelectorAll('[data-reply]').forEach(function (b) {
       b.addEventListener('click', function () {
         replyTo = b.getAttribute('data-reply');
@@ -105,11 +121,16 @@
     document.getElementById('wa-cancel').addEventListener('click', function () { replyTo = null; document.getElementById('wa-replying').hidden = true; });
     document.getElementById('wa-form').addEventListener('submit', async function (e) {
       e.preventDefault();
-      var text = ta.value.trim(); if (!text) return;
+      var text = ta.value.trim(), file = document.getElementById('wa-file').files[0]; if (!text && !file) return;
       var btn = view.querySelector('.wa-send'); btn.disabled = true;
       try {
-        if (replyTo) await api('/api/community/threads/' + encodeURIComponent(replyTo) + '/replies', { method: 'POST', body: { body: text } });
-        else await api('/api/courses/' + encodeURIComponent(course.id) + '/community/threads', { method: 'POST', body: { title: text.slice(0, 60), body: text } });
+        var attachment = null;
+        if (file) {
+          if (file.size > 55 * 1024) throw new Error('File must be 55 KB or smaller.');
+          attachment = { name: file.name, data: await new Promise(function(resolve,reject) { var reader = new FileReader(); reader.onload = function() { resolve(reader.result); }; reader.onerror = reject; reader.readAsDataURL(file); }) };
+        }
+        if (replyTo) await api('/api/community/threads/' + encodeURIComponent(replyTo) + '/replies', { method: 'POST', body: { body: text, attachment: attachment } });
+        else await api('/api/courses/' + encodeURIComponent(course.id) + '/community/threads', { method: 'POST', body: { title: (text || file.name).slice(0, 60), body: text, attachment: attachment } });
         replyTo = null; renderCommunity();
       } catch (err) { toast(err.message, 'err'); btn.disabled = false; }
     });

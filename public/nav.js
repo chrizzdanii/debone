@@ -28,9 +28,12 @@
       e.preventDefault();
       e.stopPropagation();
       if (desktop.matches) {
-        // On a computer the first click opens the section; it does not close what the hover opened
-        closeAll(g);
-        setOpen(g, true);
+        // Main label navigates; hovering or the chevron still opens the menu.
+        if (e.target.closest('.nav-chev')) { closeAll(g); setOpen(g, !g.classList.contains('open')); return; }
+        var label = (t.textContent || '').trim().toLowerCase();
+        var destinations = {academy:'academy.html', about:'about.html', services:'services.html', shop:'products.html'};
+        if (destinations[label]) window.location.href = destinations[label];
+        else { closeAll(g); setOpen(g, true); }
       } else {
         var open = !g.classList.contains('open');
         closeAll(g);

@@ -1817,3 +1817,9 @@ html [disabled],html .btn[disabled]{cursor:not-allowed!important}
 .app input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),.app textarea,.app [contenteditable]{cursor:text}
 .app .fx-dot,.app .fx-ring{display:none!important}
 html.fx-cursor .app a,html.fx-cursor .app button,html.fx-cursor .app .btn{cursor:pointer}
+/* Community attachments and responsive messaging controls */
+.theme-brand .wa-attachment{display:inline-flex;max-width:100%;overflow-wrap:anywhere;padding:6px 0;color:#F1C453;text-decoration:underline;text-underline-offset:3px}
+.theme-brand .wa-attachment img{max-width:100%;height:auto;object-fit:contain}
+.theme-brand .wa-form label{align-self:center;padding:10px;color:#F1C453;transition:transform .2s ease}
+.theme-brand .wa-form label:hover{transform:translateY(-2px) scale(1.08)}
+@media(prefers-reduced-motion:reduce){.theme-brand .wa-form label{transition:none}}

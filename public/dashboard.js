@@ -352,7 +352,7 @@
     var s = j.sessions[0];
     var state = req.classDone ? 'done' : 'todo', inner = '<p class="jmeta"><b>' + esc(s.title) + '</b> · ' + esc(fmtWhen(s.startsAt)) + '</p>';
     if (req.classDone) {
-      inner += '<p class="jok">' + (s.attended ? 'You are checked in for this class.' : 'Class done.') + ' ✓</p>';
+      inner += '<p class="jok">' + (s.attendanceType === 'live' ? 'Live joined' : s.attendanceType === 'recording' ? 'You have watched the recorded video.' : 'Class done.') + ' ✓</p>';
       if (s.recordingUrl) inner += '<button class="btn btn-ghost btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch the recording again</button>';
     } else if (s.status === 'live' || s.liveOpen) {
       inner += '<p class="jlive"><i></i>Class is live now</p><button class="btn btn-solid btn-sm pulse" type="button" data-join="' + esc(s.id) + '" data-url="' + esc(s.joinUrl || '') + '" data-yt="' + (s.youtubeId ? '1' : '') + '">Join live class</button>';
@@ -390,7 +390,7 @@
     }).join('');
     var nextBtn = d.next
       ? (d.completed
-        ? '<button class="btn btn-solid btn-sm unlock-pop" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>'
+        ? (j.nextLocked ? '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="' + esc(j.nextLockReason || 'Next class has not started') + '">Next class not started</button>' : '<button class="btn btn-solid btn-sm unlock-pop" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>')
         : '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="Finish this lesson to unlock the next one">' + LOCK_SVG + ' Next lesson locked</button>')
       : '';
     pane.innerHTML =

@@ -1336,6 +1336,7 @@
       var isNew = !b, it = b || { courseIds: [] };
       DModal.open({ size: 'md', eyebrow: isNew ? 'New bundle' : 'Edit bundle', title: isNew ? 'Create a bundle' : esc(it.title), body:
         '<form class="sub-form" id="bdf"><div class="field"><label>Bundle title</label><input class="input" name="title" required maxlength="120" value="' + esc(it.title || '') + '"></div>' +
+        '<div class="field"><label>Bundle cover image (PNG/JPEG/WebP, max 500 KB)</label><input class="input" type="file" name="bundleImage" accept="image/png,image/jpeg,image/webp"></div>' +
         '<div class="field"><label>Description</label><textarea class="input" name="description" rows="2" maxlength="1000">' + esc(it.description || '') + '</textarea></div>' +
         '<div class="field"><label>Courses in the bundle (choose two or more)</label><div class="bd-pick">' + courses.filter(function (c) { return !c.comingSoon; }).map(function (c) {
           return '<label class="bd-opt"><input type="checkbox" name="courseIds" value="' + esc(c.id) + '"' + (it.courseIds.indexOf(c.id) !== -1 ? ' checked' : '') + '> ' + esc(c.title) + (c.startDate ? ' · starts ' + esc(c.startDate) : '') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</label>';
@@ -1350,7 +1351,13 @@
             var f = e.target, err = box.querySelector('#bdf-err'); err.textContent = '';
             var ids = Array.prototype.slice.call(f.querySelectorAll('[name=courseIds]:checked')).map(function (x) { return x.value; });
             try {
-              await api(isNew ? '/api/staff/bundles' : '/api/staff/bundles/' + encodeURIComponent(it.id), { method: isNew ? 'POST' : 'PATCH', body: { title: fv(f, 'title'), description: fv(f, 'description'), price: fv(f, 'price'), active: fv(f, 'active') === 'true', courseIds: ids } });
+              var file = f.querySelector('[name=bundleImage]').files[0];
+              var image = it.image || '';
+              if (file) {
+                if (file.size > 500000 || !['image/png','image/jpeg','image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPEG or WebP under 500 KB.');
+                image = await new Promise(function (resolve, reject) { var reader = new FileReader(); reader.onload = function () { resolve(reader.result); }; reader.onerror = reject; reader.readAsDataURL(file); });
+              }
+              await api(isNew ? '/api/staff/bundles' : '/api/staff/bundles/' + encodeURIComponent(it.id), { method: isNew ? 'POST' : 'PATCH', body: { title: fv(f, 'title'), image: image, description: fv(f, 'description'), price: fv(f, 'price'), active: fv(f, 'active') === 'true', courseIds: ids } });
               inst.close(); toast('Bundle saved.'); renderBundles();
             } catch (ex) { err.textContent = ex.message; }
           });
@@ -1463,6 +1470,9 @@
       '<section class="box"><p class="eyebrow">Courses and products</p><div class="dt-wrap"><table class="dt"><thead><tr><th>Course</th><th>Students</th></tr></thead><tbody>' + a.topCourses.map(function (c) { return '<tr><td>' + esc(c.title) + '</td><td>' + c.students + '</td></tr>'; }).join('') + '</tbody></table></div>' +
       '<div class="dt-wrap" style="margin-top:12px"><table class="dt"><thead><tr><th>Product</th><th>Sales</th></tr></thead><tbody>' + (a.topProducts.length ? a.topProducts.map(function (p) { return '<tr><td>' + esc(p.title) + '</td><td>' + p.sales + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="muted">No products yet.</td></tr>') + '</tbody></table></div></section></div>');
     setTimeout(function () { view.querySelectorAll('[data-h]').forEach(function (el) { el.style.height = el.getAttribute('data-h') + '%'; }); }, 120);
+    // Refresh only while reports remain visible; no manual reload required.
+    if (window.deboneReportTimer) clearTimeout(window.deboneReportTimer);
+    window.deboneReportTimer = setTimeout(function () { if (location.hash.replace(/^#/, '').split('/')[0] === 'reports') renderReports().catch(function (e) { console.warn('Report refresh failed', e); }); }, 15000);
   }
 
   /* ---------- Community moderation and suspensions (admin) ---------- */
@@ -1513,6 +1523,7 @@
       var isNew = !c, it = c || {};
       DModal.open({ size: 'md', eyebrow: isNew ? 'New challenge' : 'Edit challenge', title: isNew ? 'Start a challenge' : esc(it.title), body:
         '<form class="sub-form" id="chf"><div class="field"><label>Title</label><input class="input" name="title" required maxlength="120" value="' + esc(it.title || '') + '"></div>' +
+        '<div class="field"><label>Bundle cover image (PNG/JPEG/WebP, max 500 KB)</label><input class="input" type="file" name="bundleImage" accept="image/png,image/jpeg,image/webp"></div>' +
         '<div class="field"><label>Description</label><textarea class="input" name="description" rows="2" maxlength="1000">' + esc(it.description || '') + '</textarea></div>' +
         '<div class="field"><label>Rules</label><textarea class="input" name="rules" rows="2" maxlength="1000">' + esc(it.rules || '') + '</textarea></div>' +
         '<div class="grid-2"><div class="field"><label>Category</label><input class="input" name="category" maxlength="60" value="' + esc(it.category || '') + '" placeholder="Best AI video"></div>' +

@@ -379,11 +379,13 @@ function courseView(course, user) {
   const lessons = course.lessons.map((l, i) => {
     const prev = i > 0 ? course.lessons[i - 1] : null;
     const preview = !!l.free && course.price > 0;   // a free preview lesson inside a paid course stays open
+    const nextStart = lessonSessions(course, l).map(s => Date.parse(s.startsAt)).filter(Number.isFinite).sort((a,b) => a-b)[0];
+    const dateLocked = held && enrolled && !preview && !done.has(l.id) && i > 0 && Number.isFinite(nextStart) && Date.now() < new Date(nextStart).setHours(0,0,0,0);
     const gated = held && enrolled && !preview && !!prev && !done.has(prev.id) && !done.has(l.id);
     return {
       id: l.id, number: i + 1, title: l.title, free: !!l.free,
-      locked: !(enrolled || l.free) || gated, gated, completed: done.has(l.id),
-      lockReason: gated ? 'Finish lesson ' + i + ' (its live class and assignment) to unlock this lesson.' : ''
+      locked: !(enrolled || l.free) || gated || dateLocked, gated: gated || dateLocked, completed: done.has(l.id),
+      lockReason: dateLocked ? 'The next lesson opens on its scheduled class date.' : gated ? 'Finish lesson ' + i + ' (its live class and assignment) to unlock this lesson.' : ''
     };
   });
   const completed = lessons.filter(l => l.completed).length;
@@ -429,8 +431,9 @@ function sessionTiming(s, user) {
   const nowMs = Date.now();
   const inWindow = start !== null && nowMs >= start - 15 * 60000 && nowMs <= start + dur;
   const joinOpen = !!s.joinUrl && (s.status === 'live' || inWindow);
-  const attended = !!user && db.attendance.some(a => a.sessionId === s.id && a.userId === user.id);
-  return { joinOpen, liveOpen: s.status === 'live' || inWindow, countdownTo: start && start > nowMs ? s.startsAt : null, attended,
+  const attendanceRecord = user && db.attendance.find(a => a.sessionId === s.id && a.userId === user.id);
+  const attended = !!attendanceRecord;
+  return { joinOpen, attendanceType: attendanceRecord ? attendanceRecord.how : null, liveOpen: s.status === 'live' || inWindow, countdownTo: start && start > nowMs ? s.startsAt : null, attended,
     attendees: db.attendance.filter(a => a.sessionId === s.id).length };
 }
 // Reminders: enrolled students are told one hour before a class starts
@@ -1311,7 +1314,7 @@ route('POST', '/api/sessions/:id/watched', async ctx => {
   if (!db.attendance.some(a => a.sessionId === s.id && a.userId === user.id)) {
     db.attendance.push({ id: uid(8), sessionId: s.id, userId: user.id, at: now(), how: 'recording' }); save();
   }
-  json(ctx.res, 200, { ok: true, url: s.recordingUrl });
+  json(ctx.res, 200, { ok: true, message: 'You have watched the recorded video.', url: s.recordingUrl });
 });
 route('GET', '/api/staff/sessions/:id/attendance', async ctx => {
   requireStaff(ctx);
@@ -1546,7 +1549,7 @@ route('GET', '/api/staff/purchases', async ctx => {
 
 /* ============ Course bundles ============ */
 function bundleView(b) {
-  return { id: b.id, title: b.title, description: b.description || '', price: b.price, active: b.active !== false,
+  return { id: b.id, title: b.title, description: b.description || '', image: b.image || '', price: b.price, active: b.active !== false,
     courses: (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean).map(c => ({ id: c.id, title: c.title, startDate: c.startDate || null, schedule: c.schedule || null })) };
 }
 function bundleInput(b) {
@@ -1564,7 +1567,10 @@ function bundleInput(b) {
   }
   const price = Math.max(0, Math.round(Number(b.price) || 0));
   if (!price) throw httpError(400, 'Set the bundle price in naira.');
-  return { title, description: clean(b.description, 1000), price, courseIds: ids, active: b.active !== false && b.active !== 'false' };
+  const image = String(b.image || '');
+  if (image && !/^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(image)) throw httpError(400, 'Upload a PNG, JPEG or WebP image.');
+  if (image.length > 700000) throw httpError(400, 'Bundle image is too large (maximum 500 KB).');
+  return { title, image, description: clean(b.description, 1000), price, courseIds: ids, active: b.active !== false && b.active !== 'false' };
 }
 route('GET', '/api/bundles', async ctx => json(ctx.res, 200, { bundles: db.bundles.filter(b => b.active !== false).map(bundleView) }));
 route('POST', '/api/bundles/:id/buy', async ctx => {
@@ -1792,23 +1798,33 @@ route('GET', '/api/staff/analytics', async ctx => {
     students: db.users.filter(u => u.role === 'student').length, subscribers: (db.newsletter || []).length });
 });
 
+/* Small, validated chat attachments; keep payloads below the existing JSON request limit. */
+function communityAttachment(raw) {
+  if (!raw) return null;
+  if (typeof raw !== 'object') throw httpError(400, 'Invalid attachment.');
+  const name = clean(raw.name, 100);
+  const data = String(raw.data || '');
+  const match = /^data:(image\/(?:png|jpeg|webp|gif)|application\/pdf|text\/plain);base64,([A-Za-z0-9+/]+={0,2})$/.exec(data);
+  if (!match || !name || Buffer.byteLength(match[2], 'base64') > 55 * 1024) throw httpError(400, 'Upload a PNG, JPG, WebP, GIF, PDF or TXT file up to 55 KB.');
+  return { name, type: match[1], data };
+}
 /* ============ Community (course discussions with moderation) ============ */
 route('GET', '/api/courses/:id/community', async ctx => {
   const user = ctx.user;
   if (!user || !canSeeCourse(user, ctx.params.id)) throw httpError(403, 'Join this course to see its community.');
   const threads = db.threads.filter(t => t.courseId === ctx.params.id && !t.hidden).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => ({
-    id: t.id, title: t.title, body: t.body, authorName: t.authorName, createdAt: t.createdAt, mine: t.userId === user.id,
-    replies: db.replies.filter(r => r.threadId === t.id && !r.hidden).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(r => ({ id: r.id, body: r.body, authorName: r.authorName, createdAt: r.createdAt, mine: r.userId === user.id })) }));
+    id: t.id, title: t.title, body: t.body, attachment: t.attachment || null, authorName: t.authorName, createdAt: t.createdAt, mine: t.userId === user.id,
+    replies: db.replies.filter(r => r.threadId === t.id && !r.hidden).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(r => ({ id: r.id, body: r.body, attachment: r.attachment || null, authorName: r.authorName, createdAt: r.createdAt, mine: r.userId === user.id })) }));
   json(ctx.res, 200, { threads });
 });
 route('POST', '/api/courses/:id/community/threads', async ctx => {
   const user = requireUser(ctx);
   if (!canSeeCourse(user, ctx.params.id)) throw httpError(403, 'Join this course to post.');
   if (limited('post:' + user.id, 10, 10 * 60 * 1000)) throw httpError(429, 'You are posting very quickly. Please wait a few minutes.');
-  const title = clean(ctx.body.title, 120), body = clean(ctx.body.body, 2000);
+  const title = clean(ctx.body.title, 120), body = clean(ctx.body.body, 2000), attachment = communityAttachment(ctx.body.attachment);
   if (title.length < 4) throw httpError(400, 'Give your question a short title.');
-  if (body.length < 5) throw httpError(400, 'Write your question or message.');
-  db.threads.push({ id: uid(8), courseId: ctx.params.id, userId: user.id, authorName: user.name.split(' ')[0], title, body, createdAt: now(), hidden: false });
+  if (body.length < 5 && !attachment) throw httpError(400, 'Write a message or attach a file.');
+  db.threads.push({ id: uid(8), courseId: ctx.params.id, userId: user.id, authorName: user.name.split(' ')[0], title, body, attachment, createdAt: now(), hidden: false });
   save(); json(ctx.res, 201, { ok: true });
 });
 route('POST', '/api/community/threads/:id/replies', async ctx => {
@@ -1817,15 +1833,32 @@ route('POST', '/api/community/threads/:id/replies', async ctx => {
   if (!t) throw httpError(404, 'Thread not found');
   if (!canSeeCourse(user, t.courseId)) throw httpError(403, 'Join this course to reply.');
   if (limited('reply:' + user.id, 20, 10 * 60 * 1000)) throw httpError(429, 'You are replying very quickly. Please wait a few minutes.');
-  const body = clean(ctx.body.body, 2000);
-  if (body.length < 2) throw httpError(400, 'Write your reply.');
-  db.replies.push({ id: uid(8), threadId: t.id, userId: user.id, authorName: user.name.split(' ')[0], body, createdAt: now(), hidden: false });
+  const body = clean(ctx.body.body, 2000), attachment = communityAttachment(ctx.body.attachment);
+  if (body.length < 2 && !attachment) throw httpError(400, 'Write your reply or attach a file.');
+  db.replies.push({ id: uid(8), threadId: t.id, userId: user.id, authorName: user.name.split(' ')[0], body, attachment, createdAt: now(), hidden: false });
   save(); json(ctx.res, 201, { ok: true });
+});
+route('DELETE', '/api/community/threads/:id', async ctx => {
+  const user = requireUser(ctx);
+  const thread = db.threads.find(t => t.id === ctx.params.id);
+  if (!thread) throw httpError(404, 'Message not found');
+  if (thread.userId !== user.id && !isStaff(user)) throw httpError(403, 'You can only delete your own messages.');
+  db.threads = db.threads.filter(t => t.id !== thread.id);
+  db.replies = db.replies.filter(r => r.threadId !== thread.id);
+  save(); json(ctx.res, 200, { ok: true });
+});
+route('DELETE', '/api/community/replies/:id', async ctx => {
+  const user = requireUser(ctx);
+  const reply = db.replies.find(r => r.id === ctx.params.id);
+  if (!reply) throw httpError(404, 'Reply not found');
+  if (reply.userId !== user.id && !isStaff(user)) throw httpError(403, 'You can only delete your own messages.');
+  db.replies = db.replies.filter(r => r.id !== reply.id);
+  save(); json(ctx.res, 200, { ok: true });
 });
 route('GET', '/api/staff/community', async ctx => {
   requireStaff(ctx);
-  json(ctx.res, 200, { threads: db.threads.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => ({ id: t.id, title: t.title, body: t.body, authorName: t.authorName, hidden: !!t.hidden, createdAt: t.createdAt,
-    course: (db.courses.find(c => c.id === t.courseId) || {}).title || '', replies: db.replies.filter(r => r.threadId === t.id).map(r => ({ id: r.id, body: r.body, authorName: r.authorName, hidden: !!r.hidden })) })) });
+  json(ctx.res, 200, { threads: db.threads.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => ({ id: t.id, title: t.title, body: t.body, attachment: t.attachment || null, authorName: t.authorName, hidden: !!t.hidden, createdAt: t.createdAt,
+    course: (db.courses.find(c => c.id === t.courseId) || {}).title || '', replies: db.replies.filter(r => r.threadId === t.id).map(r => ({ id: r.id, body: r.body, attachment: r.attachment || null, authorName: r.authorName, hidden: !!r.hidden })) })) });
 });
 route('PATCH', '/api/staff/community/:kind/:id', async ctx => {
   requireStaff(ctx);
@@ -2351,7 +2384,9 @@ route('GET', '/api/lessons/:id', async ctx => {
       return { id: a.id, title: a.title, instructions: a.instructions, dueAt: a.dueAt || null, maxMarks: a.maxMarks,
         submission: mine ? { text: mine.text, link: mine.link, submittedAt: mine.submittedAt, marks: mine.marks ?? null, feedback: mine.feedback || '', graded: mine.marks != null } : null };
     }),
-    nextTitle: course.lessons[idx + 1] ? course.lessons[idx + 1].title : null
+    nextTitle: course.lessons[idx + 1] ? course.lessons[idx + 1].title : null,
+    nextLocked: !!(course.lessons[idx + 1] && courseView(course, user).lessons[idx + 1].locked),
+    nextLockReason: course.lessons[idx + 1] ? courseView(course, user).lessons[idx + 1].lockReason : ''
   };
   json(ctx.res, 200, {
     journey,
