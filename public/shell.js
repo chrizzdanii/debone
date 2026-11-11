@@ -111,7 +111,7 @@
       el.style.backgroundSize = 'cover';
       el.style.backgroundPosition = 'center';
     } else {
-      delete el.dataset.photo;
+      delete el.dataset.photo; delete el.dataset.src;
       el.style.backgroundImage = '';
       syncName();
     }
@@ -119,10 +119,10 @@
   function applyUser(u) {
     if (!u) return;
     if (u.name) {
-      document.getElementById('shell-name').textContent = u.name;
-      var side = document.getElementById('me-name'); if (side) side.textContent = u.name;
+      var sn = document.getElementById('shell-name'); if (sn.textContent !== u.name) sn.textContent = u.name;
+      var side = document.getElementById('me-name'); if (side && side.textContent !== u.name) side.textContent = u.name;
     }
-    if (u.hasAvatar) setAvatar('/api/me/avatar?v=' + Date.now());
+    if (u.hasAvatar) { var av = '/api/me/avatar?v=' + (u.avatarV || 'x'); var cur = document.getElementById('shell-avatar'); if (!(cur && cur.dataset.photo && cur.dataset.src === av)) { setAvatar(av); if (cur) cur.dataset.src = av; } }
     else {
       setAvatar('');
       var initials = (u.name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
