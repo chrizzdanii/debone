@@ -150,6 +150,25 @@
       (suffix ? '<em>' + esc(suffix) + '</em>' : '') + '</div>';
   }
 
+  function updateOverviewFigures() {
+    if (!state.d || !view.querySelector('.kpis .kpi')) return;
+    var stats = state.d.stats || {};
+    var cards = view.querySelectorAll('.kpis .kpi');
+    var values = [stats.enrolled, stats.completedLessons, stats.avgProgress];
+    cards.forEach(function (card, index) {
+      var value = Number(values[index] || 0);
+      var number = card.querySelector('b[data-count]');
+      if (number) {
+        number.setAttribute('data-count', String(value));
+        number.textContent = value.toLocaleString('en-US');
+      }
+    });
+    if (cards[1]) {
+      var suffix = cards[1].querySelector('em');
+      if (suffix) suffix.textContent = '/ ' + Number(stats.totalLessons || 0).toLocaleString('en-US');
+    }
+  }
+
   function renderOverview() {
     var d = state.d;
     var first = (d.user.name || '').split(' ')[0] || 'there';
@@ -971,7 +990,10 @@
       var run = async function () {
         await loadDash();
         var name = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
-        if (name === 'course') await refreshCourseState();
+        if (name === 'overview') {
+          // Keep the overview DOM in place; update only its three KPI values.
+          updateOverviewFigures();
+        } else if (name === 'course') await refreshCourseState();
         else if (LIVE_VIEWS.indexOf(name) !== -1 && !(name === 'live' && document.getElementById('chat-log'))) await Promise.resolve(route());
       };
       (window.DLive ? DLive.quiet(run) : run()).catch(function () {}).then(function () {

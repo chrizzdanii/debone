@@ -93,6 +93,26 @@
         '<p class="muted" style="margin-top:12px">' + (isAdmin() ? 'You can manage courses, users, payments and announcements, as well as live classes and marking.' : 'You can run live classes, moderate the class chat, and mark assignments.') + '</p></section></div>');
   }
 
+  async function refreshOverviewFigures() {
+    var o = await api('/api/staff/overview');
+    var values = {
+      'Students': o.students,
+      'Instructors': o.instructors,
+      'Courses': o.courses,
+      'Live now': o.liveNow,
+      'Need marking': o.pendingGrading,
+      'Active enrolments': o.enrollments,
+      'Revenue': naira(o.revenue)
+    };
+    view.querySelectorAll('.stat-card').forEach(function (card) {
+      var label = card.querySelector('span');
+      var number = card.querySelector('b');
+      if (!label || !number || !Object.prototype.hasOwnProperty.call(values, label.textContent.trim())) return;
+      var value = values[label.textContent.trim()];
+      number.textContent = typeof value === 'number' ? value.toLocaleString('en-US') : value;
+    });
+  }
+
   /* ---------- Live classes (v50 redesign) ---------- */
   var liveTab = 'all';
   var ICON = {
@@ -1665,7 +1685,11 @@
     if (liveBusy) { livePending = true; return; }
     if (liveDirty || (window.DLive && DLive.busy())) { livePending = true; return; }
     livePending = false; liveBusy = true;
-    var run = function () { return route(true); };
+    var run = function () {
+      var current = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
+      // On the overview, fetch fresh statistics but preserve the existing page DOM.
+      return current === 'overview' ? refreshOverviewFigures() : route(true);
+    };
     (window.DLive ? DLive.quiet(run) : run()).catch(function () {}).then(function () {
       liveBusy = false;
       if (livePending) setTimeout(liveRefresh, 250);

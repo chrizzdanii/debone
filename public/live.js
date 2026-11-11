@@ -44,9 +44,8 @@
     fireTimer = setTimeout(function () { window.dispatchEvent(new CustomEvent('debone:refresh')); }, 60);
   }
 
-  /* Changes reach the page within about a second:
-     1. a live connection (instant) where the server allows one;
-     2. otherwise the page asks "has anything changed?" every half a second (this is what runs on Vercel). */
+  /* Changes reach the page instantly over SSE where available. On serverless hosting,
+     check periodically without repeatedly rebuilding the dashboard DOM. */
   var polling = false, rev = null, inflight = false;
   function check() {
     if (inflight || document.hidden) return;
@@ -65,7 +64,7 @@
     if (polling) return;
     polling = true;
     check();
-    setInterval(check, 500);
+    setInterval(check, 3000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
     window.addEventListener('focus', check);
     window.addEventListener('online', check);
