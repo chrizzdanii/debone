@@ -2207,14 +2207,15 @@ route('GET', '/api/auth/google', async ctx => {
   if (!process.env.GOOGLE_CLIENT_ID) return redirect(ctx.res, '/login.html?error=google');
   const state = crypto.randomBytes(16).toString('hex');
   const remember = ctx.query.get('remember') === '1' ? '1' : '0';
+  const ref = clean(ctx.query.get('ref'), 20).toUpperCase().replace(/[^A-Z0-9]/g, '');
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
     redirect_uri: `${PUBLIC_URL}/api/auth/google/callback`,
     response_type: 'code', scope: 'openid email profile', state, prompt: 'select_account'
   });
   redirect(ctx.res, 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString(),
-    { 'Set-Cookie': `gstate=${state}.${remember}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}` });
-});
+    { 'Set-Cookie': [`gstate=${state}.${remember}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`,
+      `gref=${ref}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`] });
 
 route('GET', '/api/auth/google/callback', async ctx => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) return redirect(ctx.res, '/login.html?error=google');
@@ -2235,8 +2236,12 @@ route('GET', '/api/auth/google/callback', async ctx => {
     const email = String(info.email).toLowerCase();
     let user = db.users.find(u => u.email === email);
     if (!user) {
+      const gr = (ctx.req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith('gref='));
+      const refCode = gr ? gr.slice(5).toUpperCase() : '';
+      const referrer = refCode ? db.users.find(u => u.referralCode === refCode && u.email !== email) : null;
       user = { id: uid(), name: clean(info.name || email.split('@')[0], 80), email, phone: '', role: 'student',
-        passHash: hashPassword(crypto.randomBytes(24).toString('hex')), createdAt: now(), profile: {} };
+        passHash: hashPassword(crypto.randomBytes(24).toString('hex')), createdAt: now(), profile: {},
+        referralCode: genReferralCode(), referredBy: referrer ? referrer.referralCode : null };
       db.users.push(user); save();
     }
     if (isStaff(user)) return redirect(ctx.res, '/staff-login.html');
