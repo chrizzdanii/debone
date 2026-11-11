@@ -482,6 +482,3 @@
 .auth-link{display:block;text-align:center;margin-top:14px;font-size:.88rem;color:var(--ash)}
 .auth-link a{color:var(--orange)}
 .live-silent .enter,.live-silent .enter *,.live-silent [data-reveal],.live-silent .sec-fx{animation:none!important}
-
-/* Live redraws must never fade cards out and back in */
-.live-silent [data-reveal],.live-silent .enter,.live-silent .enter *{opacity:1!important;transform:none!important;transition:none!important;animation:none!important}

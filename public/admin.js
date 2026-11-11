@@ -44,9 +44,6 @@
   }
   function setView(html) {
     if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return;
-    /* Live redraw: if nothing visible changed, leave the page exactly as it is (no flicker) */
-    if (window.DLive && DLive.silent && view.__lastHtml === html) return;
-    view.__lastHtml = html;
     view.innerHTML = html;
     view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
   }
@@ -1679,9 +1676,7 @@
     view.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('form')) liveDirty = true; }, true);
     view.addEventListener('submit', function () { liveDirty = false; }, true);
     window.addEventListener('hashchange', function () { liveDirty = false; livePending = false; });
-    document.addEventListener('focusout', function () { if (livePending) setTimeout(function () { if (livePending) liveRefresh(); }, 350); });
-    window.addEventListener('debone:refresh', liveRefresh);
-    window.addEventListener('debone:notice', function () { setTimeout(liveRefresh, 300); });
+    /* Auto-refresh disabled: the dashboard no longer redraws itself when data changes. */
   }
 
   async function boot() {

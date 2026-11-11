@@ -44,7 +44,7 @@
       });
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
     var track = function (el) {
-      if (el.__rv || (window.DLive && DLive.silent) || document.documentElement.classList.contains('live-silent') || el.closest('.side, .topbar, .rvs-stage, .ft-top, .site-footer, .auth-quote, #services, .services')) return;
+      if (el.__rv || el.closest('.side, .topbar, .rvs-stage, .ft-top, .site-footer, .auth-quote, #services, .services')) return;
       el.__rv = true;
       el.setAttribute('data-reveal', '');
       io.observe(el);
