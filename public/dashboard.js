@@ -98,6 +98,9 @@
 
   function setView(html) {
     if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return;
+    /* Live redraw: if nothing visible changed, leave the page exactly as it is (no flicker) */
+    if (window.DLive && DLive.silent && view.__lastHtml === html) return;
+    view.__lastHtml = html;
     view.innerHTML = html;
     view.classList.remove('enter');
     void view.offsetWidth;
