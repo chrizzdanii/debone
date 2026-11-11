@@ -135,9 +135,6 @@ function createStore(defaultDb) {
       return db;
     },
 
-    /* A token that changes whenever any data changes (the page asks for it every second) */
-    version() { return SUPABASE ? since : String(dbMtime); },
-
     /* Pull in changes made by other server instances. Returns a new object only in file mode. */
     async refresh(db, force) {
       if (!SUPABASE) {
@@ -155,6 +152,9 @@ function createStore(defaultDb) {
       lastSync = Date.now();
       return db;
     },
+
+    /* A short string that changes whenever the data changes (here or on another server instance) */
+    rev() { return SUPABASE ? since : String(dbMtime); },
 
     /* Save everything that changed since the last save */
     flush(db, opts) {
