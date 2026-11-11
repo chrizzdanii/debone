@@ -289,7 +289,7 @@ function completion(u) {
 }
 function publicUser(u) {
   return { id: u.id, name: u.name, email: u.email, phone: u.phone || '', role: u.role || 'student', createdAt: u.createdAt,
-    profile: u.profile || {}, hasAvatar: !!u.avatar, completion: completion(u), coupon: couponFor(u) };
+    profile: u.profile || {}, hasAvatar: !!u.avatar, avatarV: u.avatar ? crypto.createHash('md5').update(String(u.avatar)).digest('hex').slice(0, 10) : '', completion: completion(u), coupon: couponFor(u) };
 }
 const isAdmin = u => !!u && u.role === 'admin';
 const isStaff = u => !!u && (u.role === 'admin' || u.role === 'instructor');
