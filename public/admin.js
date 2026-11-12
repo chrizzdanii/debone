@@ -1858,6 +1858,35 @@
     });
   }
 
+  /* ---------- Zoom student verification ---------- */
+  var zoomRoster = [];
+  async function renderZoomVerification() {
+    crumb.textContent = 'Zoom Student Verification';
+    var result = await api('/api/staff/zoom-verification');
+    zoomRoster = result.students || [];
+    setView(head('Academy', 'Zoom Student Verification', 'Compare the Zoom Waiting Room display name with paid, enrolled students. Names alone do not prove identity.') +
+      '<section class="panel"><div class="form-group"><label for="zoom-roster-search">Search student or Zoom display name</label><input id="zoom-roster-search" type="search" placeholder="Search names…" autocomplete="off"></div>' +
+      '<div class="form-group"><label for="zoom-roster-course">Filter by course</label><select id="zoom-roster-course"><option value="">All courses</option>' +
+      Array.from(new Map(zoomRoster.flatMap(function (r) { return r.courses.map(function (c) { return [c.id, c.title]; }); })).entries()).map(function (c) { return '<option value="'+esc(c[0])+'">'+esc(c[1])+'</option>'; }).join('') + '</select></div>' +
+      '<p class="muted" id="zoom-roster-summary" aria-live="polite"></p><div style="overflow-x:auto"><table class="table" style="width:100%;min-width:640px"><thead><tr><th>Student</th><th>Zoom display name</th><th>Enrolled courses</th><th>Access</th></tr></thead><tbody id="zoom-roster-body"></tbody></table></div>' +
+      '<p class="muted" style="margin-top:16px">Zoom Free does not verify identities automatically. Check the correct course and use a private second check when a name is suspicious. Admission is managed inside Zoom.</p></section>');
+    var search = document.getElementById('zoom-roster-search');
+    var filter = document.getElementById('zoom-roster-course');
+    function paint() {
+      var q = search.value.trim().toLocaleLowerCase(), courseId = filter.value;
+      var rows = zoomRoster.filter(function (r) {
+        return (!courseId || r.courses.some(function (c) { return c.id === courseId; })) &&
+          (!q || (r.name + ' ' + r.zoomName).toLocaleLowerCase().includes(q));
+      });
+      document.getElementById('zoom-roster-summary').textContent = rows.length + ' students shown · ' + rows.filter(function(r){return !!r.zoomName;}).length + ' Zoom names registered';
+      document.getElementById('zoom-roster-body').innerHTML = rows.length ? rows.map(function (r) {
+        var eligible = courseId ? r.courses.some(function (c) { return c.id === courseId; }) : r.eligible;
+        return '<tr><td><strong>'+esc(r.name)+'</strong></td><td>'+ (r.zoomName ? '<strong>'+esc(r.zoomName)+'</strong>' : '<span class="muted">Not submitted</span>') + (r.duplicate ? ' <strong style="color:#b45309">Duplicate — verify</strong>' : '') + '</td><td>'+esc(r.courses.map(function(c){return c.title;}).join(', ') || 'None')+'</td><td>'+ (eligible ? '<span style="color:#16803b">Active enrollment</span>' : '<span class="muted">No active enrollment</span>')+'</td></tr>';
+      }).join('') : '<tr><td colspan="4">No matching students found.</td></tr>';
+    }
+    search.addEventListener('input', paint); filter.addEventListener('change', paint); paint();
+  }
+
   /* ---------- Router ---------- */
   function openSide(open) {
     side.classList.toggle('open', open); scrim.classList.toggle('show', open); burger.setAttribute('aria-expanded', String(open));
@@ -1866,7 +1895,7 @@
     silent = silent === true;
     var parts = (location.hash || '#overview').replace(/^#/, '').split('/');
     var name = parts[0] || 'overview', arg = parts[1] ? decodeURIComponent(parts[1]) : null;
-    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers'].includes(name)) name = 'overview';
+    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification'].includes(name)) name = 'overview';
     document.querySelectorAll('.side-nav a[data-view]').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('data-view') === name);
     });
@@ -1874,6 +1903,7 @@
     try {
       if (name === 'overview') return await renderOverview();
       if (name === 'live') return await renderLive();
+      if (name === 'zoom-verification') return await renderZoomVerification();
       if (name === 'assignments') return await renderAssignments();
       if (name === 'courses') return await renderCourses(arg);
       if (name === 'users') return await renderUsers();
