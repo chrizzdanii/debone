@@ -1,0 +1,1 @@
+Cloudflare R2 compatibility repair: configure AWS SDK optional checksums WHEN_REQUIRED for presigned PUT requests. Existing CORS policy remains unchanged. Deploy full project and test a small MP4. Live success is not guaranteed without testing against Cloudflare.

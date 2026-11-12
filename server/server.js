@@ -10,7 +10,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const ROOT = path.join(__dirname, '..');
@@ -43,7 +43,7 @@ const r2Ready = () => !!(R2_BUCKET && R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY
 let r2Client;
 function r2() {
   if (!r2Ready()) throw httpError(503, 'Private recording storage is not configured. Contact the administrator.');
-  if (!r2Client) r2Client = new S3Client({ region: 'auto', requestChecksumCalculation: 'WHEN_REQUIRED', endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  if (!r2Client) r2Client = new S3Client({ region: 'auto', requestChecksumCalculation: 'WHEN_REQUIRED', responseChecksumValidation: 'WHEN_REQUIRED', endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
   return r2Client;
 }
@@ -1452,6 +1452,21 @@ route('PUT', '/api/lessons/:id/note', async ctx => {
   if (!n) { n = { id: uid(8), userId: user.id, lessonId: entry.lesson.id, text: '', updatedAt: now() }; db.notes.push(n); }
   n.text = text; n.updatedAt = now();
   save(); json(ctx.res, 200, { ok: true, savedAt: n.updatedAt });
+});
+/* Staff-only R2 diagnostic: checks connectivity and bucket authorization without exposing credentials. */
+route('GET', '/api/staff/r2-diagnostics', async ctx => {
+  requireStaff(ctx);
+  if (!r2Ready()) return json(ctx.res, 200, { configured: false, serverReachable: false, issue: 'Missing one or more R2 environment variables in Vercel.' });
+  try {
+    await r2().send(new HeadBucketCommand({ Bucket: R2_BUCKET }));
+    json(ctx.res, 200, { configured: true, serverReachable: true, issue: null });
+  } catch (e) {
+    const status = e && e.$metadata && e.$metadata.httpStatusCode;
+    const name = e && e.name;
+    json(ctx.res, 200, { configured: true, serverReachable: false, status: status || null,
+      issue: status === 403 ? 'R2 credentials do not have access to this bucket.' : status === 404 ? 'R2 bucket not found in this account.' :
+        name === 'TimeoutError' ? 'Vercel cannot reach Cloudflare R2.' : 'R2 server check failed (' + String(name || 'connection error').slice(0,60) + ').' });
+  }
 });
 /* R2 direct browser uploads: MP4 bytes go to private R2, never through the app's JSON request body. */
 route('POST', '/api/staff/sessions/:id/r2-upload', async ctx => {
