@@ -1,3 +1,13 @@
+/* Promotional comparison is illustrative, not a former selling price. */
+window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (price) {
+  var n = Number(price);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  var reference = Math.round(n * 1.5);
+  var money = function (x) { return '₦' + Math.round(x).toLocaleString('en-NG'); };
+  return '<span class="debone-price-comparison" aria-label="Illustrative price comparison">' +
+    '<s>' + money(reference) + '</s><span class="debone-value-badge">✦ 33% below comparison</span>' +
+    '<small>Illustrative comparison, not a previous price</small></span>';
+};
 /* Store, bundles, talent, challenges, studio booking and quotations (v32). */
 (function () {
   'use strict';
@@ -64,7 +74,7 @@
     var offer = '<div class="bw-offer' + (b.comingSoon ? ' soon' : '') + '">' +
       '<div class="bw-offer-top">' + (b.comingSoon ? '<span class="bw-tag">Launch price</span>' : (hasOffer ? '<span class="bw-pct">' + b.savingsPercent + '% OFF</span>' : '<span class="bw-tag">Bundle price</span>')) +
         (b.offerEndsAt ? '<span class="bw-cd" data-bw-cd="' + esc(b.offerEndsAt) + '"><i></i><em>…</em></span>' : '') + '</div>' +
-      '<div class="bw-prices"><b>' + naira(b.price) + '</b>' + (hasOffer ? '<s>' + naira(b.value) + '</s>' : '') + '</div>' +
+      '<div class="bw-prices"><b>' + naira(b.price) + '</b>' + window.DeboneIllustrativePrice(b.price) + '' + (hasOffer ? '<s>' + naira(b.value) + '</s>' : '') + '</div>' +
       (hasOffer ? '<p class="bw-saveline">You save <strong>' + naira(b.savings) + '</strong> on the full ' + b.courses.length + '-course package</p>' : '<p class="bw-saveline muted">One payment unlocks all ' + b.courses.length + ' courses</p>') + '</div>';
     var cta;
     if (b.owned) cta = '<a class="btn btn-ghost bw-cta" href="dashboard.html#courses">✓ You own this bundle · Open my courses</a>';

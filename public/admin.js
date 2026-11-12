@@ -551,8 +551,8 @@
       '<option value="true"' + (soon ? ' selected' : '') + '>Coming soon (students join the waiting list)</option></select>';
   }
   function offerFields(orig, ends) {
-    return '<div class="offer-fields"><div class="offer-fields-h"><b>Discount offer</b><span>Show students the normal price crossed out, how much they save and a countdown, so they hurry to enrol.</span></div>' +
-      '<div class="grid-3"><div class="field"><label>Normal price (NGN, crossed out)</label><input class="input" type="number" name="originalPrice" min="0" value="' + (orig || '') + '" placeholder="e.g. 80000" data-offer-orig></div>' +
+    return '<div class="offer-fields"><div class="offer-fields-h"><b>Discount offer</b><span>Enter a genuine former price to display a verified discount. The 50% calculation is a suggestion only, not proof of a former price.</span></div>' +
+      '<div class="grid-3"><div class="field"><label>Normal price (NGN, crossed out)</label><input class="input" type="number" name="originalPrice" min="0" value="' + (orig || '') + '" placeholder="e.g. 80000" data-offer-orig><button type="button" class="btn btn-ghost btn-sm" data-suggest-orig>Calculate +50% suggestion</button><small>Only save this as a former price if it was genuinely offered at that amount.</small></div>' +
       '<div class="field"><label>Offer ends on (optional)</label><input class="input" type="date" name="offerEnds" value="' + esc(ends || '') + '"></div>' +
       '<div class="field"><label>Preview</label><div class="offer-preview" data-offer-prev>Set a normal price above the selling price.</div></div></div></div>';
   }
@@ -563,6 +563,14 @@
       if (o > price && price > 0) p.innerHTML = '<s>' + naira(o) + '</s> <b>' + naira(price) + '</b> <em>Save ' + naira(o - price) + ' · ' + Math.round((o - price) / o * 100) + '% OFF</em>';
       else p.textContent = o ? 'The normal price must be higher than the selling price.' : 'Set a normal price above the selling price.';
     }
+    var suggest = form.querySelector('[data-suggest-orig]');
+    if (suggest) suggest.addEventListener('click', function () {
+      var current = Number(form.elements.price.value) || 0;
+      if (current <= 0) { p.textContent = 'Enter a positive selling price first.'; return; }
+      form.elements.originalPrice.value = Math.round(current * 1.5);
+      upd();
+      p.insertAdjacentHTML('beforeend', '<small style="display:block;width:100%">Suggested comparison only. Confirm this was a genuine previous selling price before saving.</small>');
+    });
     form.elements.price.addEventListener('input', upd); form.elements.originalPrice.addEventListener('input', upd); upd();
   }
 

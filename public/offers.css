@@ -162,3 +162,24 @@
 /* Coming-soon bundles (student dashboard) */
 .dbd-ribbon.soon{background:#1FE0C4;color:#06201C}
 .dbd-pricebox .offer-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+/* Clear, accessible savings emphasis across course and bundle pricing */
+.offer-save,.bw-saveline,.dbd-saveline,.lc-deal,.price small:has(s){color:#45dc8a;font-weight:650}
+.offer-save strong,.bw-saveline strong,.dbd-saveline strong{color:#65f0a1}
+.offer-prices s,.bw-prices s,.dbd-bigprice s{opacity:.78}
+.offer-fields [data-suggest-orig]{margin-top:8px;white-space:normal}
+@media(prefers-reduced-motion:no-preference){.offer-save,.bw-saveline,.dbd-saveline{animation:deboneSavingReveal .35s ease-out both}@keyframes deboneSavingReveal{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}}
+
+/* DEBONE promotional label: beside actual price, without asserting fictitious former prices. */
+.debone-value-badge{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;white-space:nowrap;max-width:100%;width:max-content;margin-inline-start:9px;padding:5px 10px;border:1px solid rgba(69,220,138,.48);border-radius:999px;background:linear-gradient(110deg,rgba(20,125,71,.22),rgba(38,190,111,.09));color:#69f3a5;font:700 .69rem/1.2 system-ui,-apple-system,sans-serif;letter-spacing:.01em;box-shadow:0 0 12px rgba(42,188,105,.09)}
+.pr-line,.offer-prices,.bw-prices,.dbd-bigprice,.lc-foot,.dbd-price{align-items:center;flex-wrap:wrap}
+.dbd-price{display:flex;gap:6px;align-items:center}
+.price .debone-value-badge{font-size:.64rem;vertical-align:middle}
+@media(prefers-reduced-motion:no-preference){.debone-value-badge{transition:transform .2s ease,box-shadow .2s ease}.debone-value-badge:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(42,188,105,.25)}}
+@media(max-width:420px){.debone-value-badge{font-size:.61rem;padding:4px 7px;margin-inline-start:5px}}
+/* Illustrative comparison beside the actual price; not a claimed historic discount. */
+.debone-price-comparison{display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap;vertical-align:middle;margin-inline-start:9px;font-family:system-ui,-apple-system,sans-serif;font-size:.76rem;font-weight:500;line-height:1.3}
+.debone-price-comparison s{color:#a6abb2;font-size:.85rem;font-weight:600}
+.debone-price-comparison .debone-value-badge{margin-inline-start:0}
+.debone-price-comparison small{flex-basis:100%;color:#a6abb2;font-size:.62rem;font-weight:400}
+@media(max-width:520px){.debone-price-comparison{gap:5px;margin-inline-start:5px}.debone-price-comparison small{font-size:.57rem}}

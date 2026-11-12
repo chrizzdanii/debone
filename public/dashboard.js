@@ -1,3 +1,13 @@
+/* Promotional comparison is illustrative, not a former selling price. */
+window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (price) {
+  var n = Number(price);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  var reference = Math.round(n * 1.5);
+  var money = function (x) { return '₦' + Math.round(x).toLocaleString('en-NG'); };
+  return '<span class="debone-price-comparison" aria-label="Illustrative price comparison">' +
+    '<s>' + money(reference) + '</s><span class="debone-value-badge">✦ 33% below comparison</span>' +
+    '<small>Illustrative comparison, not a previous price</small></span>';
+};
 (function () {
   'use strict';
 
@@ -214,12 +224,12 @@
   /* Price with the crossed-out normal price, the saving and a live countdown (the offer is set by the admin) */
   function offerBlock(c, big) {
     var o = c.offer;
-    if (!o) return '<p class="pr-line' + (big ? ' pr-big' : '') + '"><b>' + naira(c.price) + '</b><span>one-time</span></p>';
+    if (!o) return '<p class="pr-line' + (big ? ' pr-big' : '') + '"><b>' + naira(c.price) + '</b><span>one-time</span>' + window.DeboneIllustrativePrice(c.price) + '</p>';
     return '<div class="offer' + (big ? ' offer-big' : '') + '">' +
       '<div class="offer-top"><span class="offer-pct">' + o.percent + '% OFF</span>' +
         (o.endsAt ? '<span class="offer-cd" data-cd="' + esc(o.endsAt) + '"><i></i><em>…</em></span>' : '<span class="offer-cd static"><i></i><em>Limited-time price</em></span>') + '</div>' +
-      '<div class="offer-prices"><s>' + naira(o.originalPrice) + '</s><b>' + naira(c.price) + '</b></div>' +
-      '<p class="offer-save">You save <strong>' + naira(o.save) + '</strong> today. Don’t wait, the price goes back up.</p></div>';
+      '<div class="offer-prices"><s>' + naira(o.originalPrice) + '</s><b>' + naira(c.price) + '</b>' + window.DeboneIllustrativePrice(c.price) + '</div>' +
+      '<p class="offer-save">✓ Save <strong>' + naira(o.save) + '</strong> — ' + o.percent + '% OFF</p></div>';
   }
   function waitlistBlock(c, big) {
     var n = c.waitlistCount || 0;
@@ -536,7 +546,7 @@
       '<div class="paywall done-pop' + (course.offer ? ' has-offer' : '') + '">' +
         '<p class="eyebrow" style="justify-content:center">' + (course.offer ? 'Limited-time offer' : 'Locked') + '</p>' +
         '<h2>Unlock ' + esc(course.title) + '</h2>' +
-        (course.offer ? offerBlock(course, true) : '<p class="price">' + naira(course.price) + '<small>One-time</small></p>') +
+        (course.offer ? offerBlock(course, true) : '<p class="price">' + naira(course.price) + '' + window.DeboneIllustrativePrice(course.price) + '<small>One-time</small></p>') +
         '<p>Pay once through secure Paystack checkout to unlock every lesson in this course.</p>' +
         '<button class="btn btn-solid' + (course.offer ? ' btn-hurry' : '') + '" type="button" data-enroll="' + esc(course.id) + '">' + (course.offer ? 'Grab the deal · ' : 'Enrol for ') + naira(course.price) + '</button>' +
         '<p class="muted" style="margin-top:18px;font-size:.9rem">Your course unlocks automatically once the payment is confirmed.</p>' +

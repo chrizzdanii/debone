@@ -1,3 +1,13 @@
+/* Promotional comparison is illustrative, not a former selling price. */
+window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (price) {
+  var n = Number(price);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  var reference = Math.round(n * 1.5);
+  var money = function (x) { return '₦' + Math.round(x).toLocaleString('en-NG'); };
+  return '<span class="debone-price-comparison" aria-label="Illustrative price comparison">' +
+    '<s>' + money(reference) + '</s><span class="debone-value-badge">✦ 33% below comparison</span>' +
+    '<small>Illustrative comparison, not a previous price</small></span>';
+};
 /* Live courses page (v43): every live course with start date, schedule, seats and price. */
 (function () {
   'use strict';
@@ -57,7 +67,7 @@
       '</dl>' +
       (o && !c.comingSoon ? '<p class="lc-deal"><s>' + naira(o.originalPrice) + '</s> Save ' + naira(o.save) + ' · ' + o.percent + '% off</p>' : '') +
       (c.comingSoon && c.waitlistCount ? '<p class="lc-deal">' + c.waitlistCount + ' people on the waiting list</p>' : '') +
-      '<div class="lc-foot"><b>' + (c.price > 0 ? naira(c.price) : 'Free') + '</b>' +
+      '<div class="lc-foot"><b>' + (c.price > 0 ? naira(c.price) : 'Free') + '</b>' + (c.price > 0 ? window.DeboneIllustrativePrice(c.price) : '') +
         (c.comingSoon ? '<a class="btn btn-ghost btn-sm" href="login.html?next=dashboard">Join waiting list</a>' : '<a class="btn btn-solid btn-sm" href="login.html?next=dashboard">' + (c.price > 0 ? 'Enrol now' : 'Start free') + '</a>') +
       '</div></article>';
   }

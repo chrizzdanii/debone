@@ -1,3 +1,13 @@
+/* Promotional comparison is illustrative, not a former selling price. */
+window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (price) {
+  var n = Number(price);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  var reference = Math.round(n * 1.5);
+  var money = function (x) { return '₦' + Math.round(x).toLocaleString('en-NG'); };
+  return '<span class="debone-price-comparison" aria-label="Illustrative price comparison">' +
+    '<s>' + money(reference) + '</s><span class="debone-value-badge">✦ 33% below comparison</span>' +
+    '<small>Illustrative comparison, not a previous price</small></span>';
+};
 /* Student dashboard: course bundles (list + detail pages) and the shared urgency helpers (countdowns, confetti). */
 (function () {
   'use strict';
@@ -109,7 +119,7 @@
           (b.comingSoon ? '<span class="dbd-ribbon soon">Coming soon</span>' : b.savingsPercent ? '<span class="dbd-ribbon">Save ' + b.savingsPercent + '%</span>' : '') + '<span class="dbd-count">' + b.courses.length + ' courses</span>' + (b.owned ? '<span class="dbd-own">✓ Owned</span>' : '') + '</a>' +
           '<div class="dbd-body"><p class="eyebrow">Course bundle</p><h3><a href="#bundle/' + encodeURIComponent(b.id) + '">' + esc(b.title) + '</a></h3>' + (b.description ? '<p class="dbd-desc">' + esc(b.description) + '</p>' : '') +
           '<ul class="dbd-list">' + b.courses.map(function (c, j) { return '<li style="--j:' + j + '"><span class="dbd-tick' + (c.owned ? ' on' : '') + '">' + (c.owned ? '✓' : '') + '</span><b>' + esc(c.title) + '</b></li>'; }).join('') + '</ul>' +
-          '<div class="dbd-foot"><div class="dbd-price"><b>' + naira(b.paymentCredit ? b.paymentCredit.remaining : b.price) + '</b>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s><em>Save ' + naira(b.savings) + '</em>' : '') + (b.paymentCredit && b.paymentCredit.total ? '<small class="dbd-credit">✓ ' + naira(b.paymentCredit.total) + ' previous payments credited</small>' : '') + cd(b) + '</div>' +
+          '<div class="dbd-foot"><div class="dbd-price"><b>' + naira(b.paymentCredit ? b.paymentCredit.remaining : b.price) + '</b>' + window.DeboneIllustrativePrice(b.price) + '' + (b.value > b.price ? '<s>' + naira(b.value) + '</s><em>Save ' + naira(b.savings) + '</em>' : '') + (b.paymentCredit && b.paymentCredit.total ? '<small class="dbd-credit">✓ ' + naira(b.paymentCredit.total) + ' previous payments credited</small>' : '') + cd(b) + '</div>' +
           '<div class="dbd-acts"><a class="btn btn-ghost btn-sm" href="#bundle/' + encodeURIComponent(b.id) + '">Details</a>' +
           (b.owned ? '' : b.comingSoon ? wlBlock(b) : '<button class="btn btn-solid btn-sm btn-hurry" type="button" data-dbuy="' + esc(b.id) + '">' + (b.ownedCount ? 'Get the rest' : 'Buy now') + '</button>') + '</div></div></div></article>';
       }).join('') + '</div>' : '<div class="empty-state">No bundles are open yet. Check back soon, or <a href="#browse">browse single courses</a>.</div>'));
@@ -126,7 +136,7 @@
       '<section class="dbd-hero"><div class="dbd-hero-img">' + img(b) + (b.comingSoon ? '<span class="dbd-ribbon big soon">Coming soon</span>' : b.savingsPercent ? '<span class="dbd-ribbon big">Save ' + b.savingsPercent + '%</span>' : '') + '</div>' +
       '<div class="dbd-hero-info"><p class="eyebrow">Course bundle · ' + b.courses.length + ' courses</p><h1>' + esc(b.title) + '</h1>' +
         (b.description ? '<p class="muted">' + esc(b.description) + '</p>' : '') +
-        '<div class="dbd-pricebox">' + (b.comingSoon || b.offerEndsAt ? '<div class="offer-top">' + (b.comingSoon ? '<span class="gpill none">Launch price</span>' : '') + cd(b) + '</div>' : '') + '<div class="dbd-bigprice"><b data-num="' + b.price + '" data-pre="₦">' + naira(b.price) + '</b>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s>' : '') + '</div>' +
+        '<div class="dbd-pricebox">' + (b.comingSoon || b.offerEndsAt ? '<div class="offer-top">' + (b.comingSoon ? '<span class="gpill none">Launch price</span>' : '') + cd(b) + '</div>' : '') + '<div class="dbd-bigprice"><b data-num="' + b.price + '" data-pre="₦">' + naira(b.price) + '</b>' + window.DeboneIllustrativePrice(b.price) + '' + (b.value > b.price ? '<s>' + naira(b.value) + '</s>' : '') + '</div>' +
         (b.savings ? '<p class="dbd-saveline"><span class="offer-pct">' + b.savingsPercent + '% OFF</span> You save <strong>' + naira(b.savings) + '</strong> compared with buying one by one.</p>' +
           '<div class="dbd-meter" aria-hidden="true"><i style="--w:' + pct + '%"></i><span style="left:' + pct + '%">You pay ' + pct + '%</span></div>' : '') + '</div>' +
         (b.owned ? '<div class="dbd-owned">✓ You already own every course in this bundle. <a href="#courses">Go to My courses</a></div>'

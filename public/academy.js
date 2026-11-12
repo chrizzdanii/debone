@@ -1,3 +1,13 @@
+/* Promotional comparison is illustrative, not a former selling price. */
+window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (price) {
+  var n = Number(price);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  var reference = Math.round(n * 1.5);
+  var money = function (x) { return '₦' + Math.round(x).toLocaleString('en-NG'); };
+  return '<span class="debone-price-comparison" aria-label="Illustrative price comparison">' +
+    '<s>' + money(reference) + '</s><span class="debone-value-badge">✦ 33% below comparison</span>' +
+    '<small>Illustrative comparison, not a previous price</small></span>';
+};
 /* Digital Academy (v30): course catalogue with categories, schedule and seats (from the database). */
 (function () {
   'use strict';
@@ -39,8 +49,8 @@
     var o = c.offer;
     var price = c.comingSoon ? '<span class="price">Coming soon' + (c.waitlistCount ? '<small>' + c.waitlistCount + ' on the waiting list</small>' : '') + '</span>'
       : (c.free ? '<span class="price">Free<small>No payment</small></span>'
-        : o ? '<span class="price">' + naira(c.price) + '<small><s>' + naira(o.originalPrice) + '</s> · Save ' + naira(o.save) + ' (' + o.percent + '% off)</small></span>'
-        : '<span class="price">' + naira(c.price) + '<small>One-time</small></span>');
+        : o ? '<span class="price">' + naira(c.price) + '' + window.DeboneIllustrativePrice(c.price) + '<small><s>' + naira(o.originalPrice) + '</s> · ✓ Save ' + naira(o.save) + ' (' + o.percent + '% OFF)</small></span>'
+        : '<span class="price">' + naira(c.price) + '' + window.DeboneIllustrativePrice(c.price) + '<small>One-time</small></span>');
     var live = c.liveLabel ? '<p class="course-live">' + esc(c.liveLabel) + '</p>' : '';
     var rate = (c.rating && c.rating.count) ? '<p class="course-rating">★ ' + c.rating.avg + ' <span>(' + c.rating.count + (c.rating.count === 1 ? ' review' : ' reviews') + ')</span></p>' : '';
     var img = c.hasImage ? '<div class="course-img"><img src="/api/courses/' + encodeURIComponent(c.id) + '/image" alt="' + esc(c.title) + '" loading="lazy"></div>' : '';
