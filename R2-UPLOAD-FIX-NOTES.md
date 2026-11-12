@@ -1,0 +1,1 @@
+DEBONE R2 compatibility patch: disable optional AWS SDK S3 PUT checksums (requestChecksumCalculation WHEN_REQUIRED) for Cloudflare R2 presigned uploads; preserve browser network error details. Keep existing PUT/Content-Type CORS policy and four Vercel environment variables. Deploy full project. Live upload not yet verified.

@@ -43,7 +43,7 @@ const r2Ready = () => !!(R2_BUCKET && R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY
 let r2Client;
 function r2() {
   if (!r2Ready()) throw httpError(503, 'Private recording storage is not configured. Contact the administrator.');
-  if (!r2Client) r2Client = new S3Client({ region: 'auto', endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  if (!r2Client) r2Client = new S3Client({ region: 'auto', requestChecksumCalculation: 'WHEN_REQUIRED', endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
   return r2Client;
 }
