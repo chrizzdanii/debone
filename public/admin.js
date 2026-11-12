@@ -351,7 +351,17 @@
             msg.textContent = 'Uploading to Cloudflare R2… Keep this page open.';
             var upload;
             try { upload = await fetch(ticket.url, { method: 'PUT', headers: { 'Content-Type': ticket.contentType }, body: file }); }
-            catch (err) { throw new Error('Cloudflare R2 upload connection failed (' + (err && err.message || 'network blocked') + '). The browser could not reach the signed upload URL.'); }
+            catch (err) {
+              var reason = 'The browser could not connect to the private Cloudflare upload endpoint.';
+              try {
+                var diag = await api('/api/staff/r2-diagnostics', { timeout: 12000 });
+                if (!diag.configured || !diag.serverReachable) reason = 'Vercel to Cloudflare R2 check failed: ' + (diag.issue || 'Unknown issue');
+                else reason = 'Vercel can reach R2, but your browser cannot send the file. This points to browser/network filtering or a presigned-request restriction.';
+              } catch (diagnosticError) {
+                reason = 'Upload failed and the R2 diagnostic could not complete: ' + (diagnosticError.message || 'connection error');
+              }
+              throw new Error(reason);
+            }
             if (!upload.ok) throw new Error('R2 upload failed (' + upload.status + '). Check bucket CORS settings.');
             msg.textContent = 'Verifying uploaded file…';
             await api('/api/staff/sessions/' + encodeURIComponent(id) + '/r2-publish', { method: 'POST', body: { key: ticket.key }, timeout: 45000 });
