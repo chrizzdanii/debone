@@ -26,8 +26,13 @@
     opts = opts || {};
     var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: {} };
     if (opts.body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
-    init.signal = AbortSignal.timeout(15000);
-    var res = await fetch(url, init);
+    init.signal = AbortSignal.timeout(opts.timeout || 15000);
+    var res;
+    try { res = await fetch(url, init); }
+    catch (err) {
+      if (err && (err.name === 'TimeoutError' || err.name === 'AbortError')) throw new Error('The DEBONE server took too long to respond. Please retry.');
+      throw new Error('Could not connect to the DEBONE server. Check the Vercel deployment and try again.');
+    }
     if (res.status === 401) { location.replace('staff-login.html'); throw new Error('Please log in.'); }
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok) { var e = new Error(data.error || 'Something went wrong.'); e.status = res.status; throw e; }
@@ -342,12 +347,14 @@
           try {
             msg.textContent = 'Preparing private upload…';
             var id = btn.getAttribute('data-r2-upload');
-            var ticket = await api('/api/staff/sessions/' + encodeURIComponent(id) + '/r2-upload', { method: 'POST', body: { filename: file.name, size: file.size } });
+            var ticket = await api('/api/staff/sessions/' + encodeURIComponent(id) + '/r2-upload', { method: 'POST', body: { filename: file.name, size: file.size }, timeout: 45000 });
             msg.textContent = 'Uploading to Cloudflare R2… Keep this page open.';
-            var upload = await fetch(ticket.url, { method: 'PUT', headers: { 'Content-Type': ticket.contentType }, body: file });
+            var upload;
+            try { upload = await fetch(ticket.url, { method: 'PUT', headers: { 'Content-Type': ticket.contentType }, body: file }); }
+            catch (err) { throw new Error('Cloudflare R2 upload connection failed. Check the bucket CORS policy and the signed upload URL.'); }
             if (!upload.ok) throw new Error('R2 upload failed (' + upload.status + '). Check bucket CORS settings.');
             msg.textContent = 'Verifying uploaded file…';
-            await api('/api/staff/sessions/' + encodeURIComponent(id) + '/r2-publish', { method: 'POST', body: { key: ticket.key } });
+            await api('/api/staff/sessions/' + encodeURIComponent(id) + '/r2-publish', { method: 'POST', body: { key: ticket.key }, timeout: 45000 });
             msg.textContent = 'Recording published. Students can watch after the class ends.';
             toast('Private recording published successfully.');
           } catch (e) { msg.textContent = e.message; toast(e.message, 'err'); }
