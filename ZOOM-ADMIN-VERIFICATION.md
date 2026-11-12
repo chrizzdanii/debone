@@ -1,0 +1,1 @@
+Zoom Student Verification added under Admin > Academy. The roster shows active course enrollments and saved Zoom display names. Staff can search and filter by course. Names are not verified Zoom identities; use Zoom Waiting Room and private secondary verification. No Zoom API admission automation is included. Test with paid and unpaid accounts before deployment.

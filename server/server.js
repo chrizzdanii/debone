@@ -730,6 +730,20 @@ route('POST', '/api/auth/logout', async ctx => json(ctx.res, 200, { ok: true }, 
 route('GET', '/api/me', async ctx => json(ctx.res, 200, { user: publicUser(requireUser(ctx)) }));
 
 /* Zoom Basic: compulsory registered display name before releasing meeting links. */
+/* Staff-only Zoom waiting-room roster. No meeting URLs or passcodes exposed. */
+route('GET', '/api/staff/zoom-verification', async ctx => {
+  requireStaff(ctx);
+  const rows = db.users.filter(u => (u.role || 'student') === 'student').map(u => {
+    const enrollments = db.enrollments.filter(e => e.userId === u.id && e.status === 'active');
+    const courses = enrollments.map(e => db.courses.find(c => c.id === e.courseId)).filter(Boolean).map(c => ({ id: c.id, title: c.title }));
+    return { id: u.id, name: u.name || '', zoomName: u.zoomName || '', courses, eligible: courses.length > 0, zoomNameUpdatedAt: u.zoomNameUpdatedAt || null };
+  });
+  const counts = new Map();
+  rows.forEach(r => { if (r.zoomName) { const k = r.zoomName.trim().toLocaleLowerCase(); counts.set(k, (counts.get(k) || 0) + 1); } });
+  rows.forEach(r => { r.duplicate = !!r.zoomName && counts.get(r.zoomName.trim().toLocaleLowerCase()) > 1; });
+  json(ctx.res, 200, { students: rows });
+});
+
 route('PUT', '/api/me/zoom-name', async ctx => {
   const user = requireUser(ctx);
   const name = clean(ctx.body.zoomName, 80).replace(/\s+/g, ' ').trim();
