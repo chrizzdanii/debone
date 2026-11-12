@@ -1796,10 +1796,21 @@ function bundleInput(b) {
   if (image.length > 700000) throw httpError(400, 'Bundle image is too large (maximum 500 KB).');
   return { title, image, description: clean(b.description, 1000), price, originalPrice: originalPrice || null, offerEnds: offerEnds || null, comingSoon, courseIds: ids, active: b.active !== false && b.active !== 'false' };
 }
+// Credit only verified successful individual-course payments, not catalogue prices or pending transfers.
+function bundleCredit(userId, b) {
+  const owned = (b.courseIds || []).filter(cid => !!enrollmentFor(userId, cid));
+  const credits = owned.map(cid => {
+    const paid = db.payments.filter(p => p.userId === userId && p.kind === 'course' && p.courseId === cid && p.status === 'success' && !(db.refunds || []).some(r => r.paymentReference === p.reference && ['paid', 'approved', 'processing'].includes(r.status)));
+    const amount = paid.reduce((m, p) => Math.max(m, Math.round((Number(p.amountKobo) || 0) / 100)), 0);
+    return { courseId: cid, amount };
+  });
+  const total = credits.reduce((sum, x) => sum + x.amount, 0);
+  return { credits, total: Math.min(b.price, total), remaining: Math.max(0, b.price - total) };
+}
 route('GET', '/api/bundles', async ctx => json(ctx.res, 200, { bundles: db.bundles.filter(b => b.active !== false).map(b => {
   const v = bundleView(b);
   // For a signed-in student: which courses of the bundle they already own
-  if (ctx.user) { v.courses.forEach(c => { c.owned = !!enrollmentFor(ctx.user.id, c.id); }); v.ownedCount = v.courses.filter(c => c.owned).length; v.owned = v.ownedCount === v.courses.length; v.onWaitlist = (db.waitlist || []).some(w => w.bundleId === b.id && w.userId === ctx.user.id); }
+  if (ctx.user) { v.courses.forEach(c => { c.owned = !!enrollmentFor(ctx.user.id, c.id); }); v.ownedCount = v.courses.filter(c => c.owned).length; v.owned = v.ownedCount === v.courses.length; v.paymentCredit = bundleCredit(ctx.user.id, b); v.onWaitlist = (db.waitlist || []).some(w => w.bundleId === b.id && w.userId === ctx.user.id); }
   return v;
 }) }));
 route('POST', '/api/bundles/:id/buy', async ctx => {
@@ -1808,8 +1819,18 @@ route('POST', '/api/bundles/:id/buy', async ctx => {
   if (!b) throw httpError(404, 'Bundle not found');
   if (b.comingSoon) throw httpError(403, 'This bundle is coming soon. Join the waiting list and we will tell you the moment it opens.');
   if (b.courseIds.every(cid => enrollmentFor(user.id, cid))) return json(ctx.res, 200, { alreadyOwned: true });
-  const qr = qrOffer(user), price = qr ? Math.round(b.price * (100 - qr.percent) / 100) : b.price;
-  return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: price })) });
+  const credit = bundleCredit(user.id, b);
+  const qr = qrOffer(user);
+  const discounted = qr ? Math.round(b.price * (100 - qr.percent) / 100) : b.price;
+  const price = Math.max(0, discounted - credit.total);
+  if (price === 0) {
+    // A fully credited bundle is granted without creating a zero-naira bank transfer.
+    const ref = 'DBC-' + uid(6).toUpperCase();
+    for (const cid of b.courseIds) if (!enrollmentFor(user.id, cid)) db.enrollments.push({ id: uid(), userId: user.id, courseId: cid, status: 'active', enrolledAt: now(), via: 'bundle-credit', reference: ref, bundleId: b.id });
+    db.orders.push({ id: uid(8), reference: ref, userId: user.id, contactEmail: user.email, contactName: user.name, kind: 'bundle', bundleId: b.id, amountNaira: 0, creditApplied: credit.total, status: 'approved', createdAt: now(), updatedAt: now() });
+    save(); return json(ctx.res, 200, { alreadyOwned: true, credited: true });
+  }
+  return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: price, creditApplied: credit.total })) });
 });
 route('GET', '/api/staff/bundles', async ctx => { requireStaff(ctx, true); json(ctx.res, 200, { bundles: db.bundles.map(b => Object.assign(bundleView(b), { courseIds: b.courseIds, sold: db.payments.filter(p => p.status === 'success' && p.bundleId === b.id).length })) }); });
 route('GET', '/api/bundles/:id/image', async ctx => {
