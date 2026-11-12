@@ -833,7 +833,7 @@ route('DELETE', '/api/me/avatar', async ctx => {
 route('POST', '/api/me/password', async ctx => {
   const user = requireUser(ctx);
   if (limited('pw:' + user.id, 5)) throw httpError(429, 'Too many attempts. Please wait a minute and try again.');
-  if (!verifyPassword(String(ctx.body.current || ''), user.passHash)) throw httpError(401, 'Your current password is incorrect.');
+  if (!verifyPassword(String(ctx.body.current || ''), user.passHash)) throw httpError(400, 'Your current password is incorrect.');
   const next = String(ctx.body.next || '');
   if (next.length < 8) throw httpError(400, 'New password must be at least 8 characters.');
   user.passHash = hashPassword(next);
@@ -3333,7 +3333,7 @@ function sendErrorPage(res, status) {
   });
 }
 // Set MAINTENANCE_MODE=1 in the environment to show the maintenance page to visitors. Staff pages and /api stay reachable.
-const MAINTENANCE_OPEN = /^\/(api\/|staff-login|admin|error-pages\.|favicon|503)/;
+const MAINTENANCE_OPEN = /^\/(api\/|staff-login|admin|error-pages\.|favicon|503|sw\.js|sw-register\.js|offline)/;
 
 function serveStatic(req, res, pathname, user) {
   let p = decodeURIComponent(pathname);

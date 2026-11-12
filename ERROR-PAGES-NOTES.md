@@ -12,3 +12,12 @@ Not done yet: 401.html and offline.html are ready but nothing sends visitors to 
  - 401: point your dashboard.js "session expired" redirect at /401.html.
  - offline: needs a small service worker (next step).
 Only server/server.js was changed; no customer data or other files are touched.
+
+## v53 update (12 Nov 2026)
+- Offline: public/sw.js + sw-register.js (registered on every page). Shows offline.html only when a page cannot load. API calls are never cached.
+- 401: every "session expired" redirect (dashboard.js and the dashboard-*.js files) now goes to /401.html. The 401 page's "Log in again" returns to the dashboard. A wrong current password on Change password now returns 400, so it no longer looks like an expired session.
+- Student lesson: the Live class step shows four stages (Locked, Live, Recorded, Finished).
+- Admin Live classes: a control room at the top (on air with timer and check-ins, or next class with countdown, plus a warning when ended classes have no recording) and a stage line on every class card.
+- Bundles: the "Save %" badge now shows (the code read the wrong field), plus Best value, Coming soon with a waiting-list button.
+- Nav: current page highlighted, reading-progress bar, phone menu locks page scroll and closes on link tap.
+Not browser-tested. Test on staging first.
