@@ -430,7 +430,7 @@ function youtubeId(v) {
 }
 function safeYouTubeEmbed(value) {
   const id = youtubeId(value);
-  return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1` : null;
+  return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&controls=0&fs=1&playsinline=1` : null;
 }
 function sessionView(s, user) {
   const course = db.courses.find(c => c.id === s.courseId);
