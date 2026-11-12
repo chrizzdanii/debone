@@ -983,7 +983,7 @@ route('GET', '/api/courses/:id/image', async ctx => {
 
 /* ---------- Site settings (edited by admins, shown on every page) ---------- */
 route('GET', '/api/settings', async ctx => {
-  json(ctx.res, 200, { settings: Object.assign({}, SETTINGS_DEFAULTS, db.settings) });
+  json(ctx.res, 200, { settings: Object.assign({}, SETTINGS_DEFAULTS, db.settings, { announcementOn: false, announcement: '' }) });
 });
 route('PUT', '/api/staff/settings', async ctx => {
   requireStaff(ctx, true);
