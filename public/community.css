@@ -53,3 +53,29 @@
 .wa2-lightbox button{position:absolute;top:14px;right:18px;background:none;border:0;color:#fff;font-size:2.2rem;cursor:pointer}
 @media (max-width:640px){.wa2-shell .wa-bubble{max-width:88%}.wa2-btn{width:38px}}
 @media (prefers-reduced-motion:reduce){.wa2-live i,.wa2-shell .wa-row.wa2-new,.wa2-jump{animation:none}}
+
+/* Keep the drag-and-drop overlay fully hidden until an actual file drag. */
+.wa2-drop[hidden]{display:none!important}
+
+.dbd-credit{display:block;color:#22c55e;font-weight:700;margin-top:6px}
+
+/* Community layout: protect the composer, attachment preview and overlay on narrow screens. */
+.wa2-shell{min-width:0;overflow:hidden;isolation:isolate}
+.wa2-drop{pointer-events:none}
+.wa2-drop:not([hidden]){pointer-events:auto}
+.wa2-shell .wa-row,.wa2-shell .wa-bubble{max-width:100%;overflow-wrap:anywhere}
+.wa2-shell button:focus-visible,.wa2-shell a:focus-visible{outline:2px solid var(--orange,#E0A800);outline-offset:3px}
+@media(max-width:650px){.wa2-shell{border-radius:14px}.wa2-drop{font-size:14px;text-align:center;padding:20px}.wa2-shell .wa-bubble{max-width:88%}}
+@media(prefers-reduced-motion:reduce){.wa2-shell *{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Premium DEBONE community layout: stable composer, readable messages and accessible media. */
+.theme-brand .wa2-shell{width:100%;max-width:1100px;margin-inline:auto;min-width:0;border:1px solid rgba(224,168,0,.22);box-shadow:0 24px 65px rgba(0,0,0,.28);background:#101b22}
+.theme-brand .wa2-shell .wa-log{min-height:300px;overscroll-behavior:contain;scrollbar-color:#54616a transparent}
+.theme-brand .wa2-shell .wa-bubble{line-height:1.55;overflow-wrap:anywhere;word-break:normal}
+.theme-brand .wa2-shell .wa-row.mine .wa-bubble{border-color:rgba(224,168,0,.16)}
+.theme-brand .wa2-shell .wa2-file{min-width:0;max-width:100%}
+.theme-brand .wa2-shell .wa2-img{max-width:100%}
+.theme-brand .wa2-shell .wa2-img img{max-width:100%;height:auto;object-fit:contain}
+.theme-brand .wa2-shell .wa2-attach{border:1px solid rgba(224,168,0,.2)}
+.theme-brand .wa2-shell .wa2-btn:focus-visible{outline:3px solid #e0a800;outline-offset:2px}
+@media(max-width:700px){.theme-brand .wa2-shell{border-radius:16px;grid-template-rows:auto auto minmax(300px,55dvh) auto}.theme-brand .wa2-shell .wa-bubble{max-width:90%}.theme-brand .wa2-shell .wa2-file{padding:8px;gap:6px}}

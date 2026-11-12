@@ -87,7 +87,7 @@
     try {
       var res = await api('/api/bundles/' + encodeURIComponent(id) + '/buy', { method: 'POST', body: {} });
       if (res.order) { location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); return; }
-      toast('You already have all these courses.'); location.hash = '#courses';
+      toast(res.credited ? 'Your previous payments covered this bundle. All included courses are unlocked.' : 'You already have all these courses.'); location.hash = '#courses';
     } catch (e) { toast(e.message, 'err'); btn.disabled = false; btn.textContent = label; }
   }
 
@@ -109,7 +109,7 @@
           (b.comingSoon ? '<span class="dbd-ribbon soon">Coming soon</span>' : b.savingsPercent ? '<span class="dbd-ribbon">Save ' + b.savingsPercent + '%</span>' : '') + '<span class="dbd-count">' + b.courses.length + ' courses</span>' + (b.owned ? '<span class="dbd-own">✓ Owned</span>' : '') + '</a>' +
           '<div class="dbd-body"><p class="eyebrow">Course bundle</p><h3><a href="#bundle/' + encodeURIComponent(b.id) + '">' + esc(b.title) + '</a></h3>' + (b.description ? '<p class="dbd-desc">' + esc(b.description) + '</p>' : '') +
           '<ul class="dbd-list">' + b.courses.map(function (c, j) { return '<li style="--j:' + j + '"><span class="dbd-tick' + (c.owned ? ' on' : '') + '">' + (c.owned ? '✓' : '') + '</span><b>' + esc(c.title) + '</b></li>'; }).join('') + '</ul>' +
-          '<div class="dbd-foot"><div class="dbd-price"><b>' + naira(b.price) + '</b>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s><em>Save ' + naira(b.savings) + '</em>' : '') + cd(b) + '</div>' +
+          '<div class="dbd-foot"><div class="dbd-price"><b>' + naira(b.paymentCredit ? b.paymentCredit.remaining : b.price) + '</b>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s><em>Save ' + naira(b.savings) + '</em>' : '') + (b.paymentCredit && b.paymentCredit.total ? '<small class="dbd-credit">✓ ' + naira(b.paymentCredit.total) + ' previous payments credited</small>' : '') + cd(b) + '</div>' +
           '<div class="dbd-acts"><a class="btn btn-ghost btn-sm" href="#bundle/' + encodeURIComponent(b.id) + '">Details</a>' +
           (b.owned ? '' : b.comingSoon ? wlBlock(b) : '<button class="btn btn-solid btn-sm btn-hurry" type="button" data-dbuy="' + esc(b.id) + '">' + (b.ownedCount ? 'Get the rest' : 'Buy now') + '</button>') + '</div></div></div></article>';
       }).join('') + '</div>' : '<div class="empty-state">No bundles are open yet. Check back soon, or <a href="#browse">browse single courses</a>.</div>'));

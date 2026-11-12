@@ -1993,12 +1993,19 @@
     var result = await api('/api/staff/zoom-verification');
     zoomRoster = result.students || [];
     setView(head('Academy', 'Zoom Student Verification', 'Compare the Zoom Waiting Room display name with paid, enrolled students. Names alone do not prove identity.') +
-      '<section class="panel"><div class="form-group"><label for="zoom-roster-search">Search student or Zoom display name</label><input id="zoom-roster-search" type="search" placeholder="Search names…" autocomplete="off"></div>' +
+      '<section class="panel zoom-admin-panel"><div class="zoom-admin-intro"><span class="zoom-admin-eyebrow">LIVE CLASS SECURITY</span><h3>Waiting Room roster</h3><p>Compare each participant with a paid student before admitting them to class.</p></div><div class="zoom-roster-filters"><div class="form-group"><label for="zoom-roster-search">Search student or Zoom display name</label><input id="zoom-roster-search" type="search" placeholder="Search names…" autocomplete="off"></div>' +
       '<div class="form-group"><label for="zoom-roster-course">Filter by course</label><select id="zoom-roster-course"><option value="">All courses</option>' +
-      Array.from(new Map(zoomRoster.flatMap(function (r) { return r.courses.map(function (c) { return [c.id, c.title]; }); })).entries()).map(function (c) { return '<option value="'+esc(c[0])+'">'+esc(c[1])+'</option>'; }).join('') + '</select></div>' +
+      Array.from(new Map(zoomRoster.flatMap(function (r) { return r.courses.map(function (c) { return [c.id, c.title]; }); })).entries()).map(function (c) { return '<option value="'+esc(c[0])+'">'+esc(c[1])+'</option>'; }).join('') + '</select></div></div>' +
       '<p class="muted" id="zoom-roster-summary" aria-live="polite"></p><div style="overflow-x:auto"><table class="table" style="width:100%;min-width:640px"><thead><tr><th>Student</th><th>Zoom display name</th><th>Enrolled courses</th><th>Access</th></tr></thead><tbody id="zoom-roster-body"></tbody></table></div>' +
       '<p class="muted" style="margin-top:16px">Zoom Free does not verify identities automatically. Check the correct course and use a private second check when a name is suspicious. Admission is managed inside Zoom.</p></section>');
     var search = document.getElementById('zoom-roster-search');
+    var visibleRoster = [];
+    document.getElementById('zoom-roster-export').addEventListener('click', function () {
+      var cells = [['Student', 'Zoom display name', 'Courses', 'Duplicate name', 'Active enrollment']].concat(visibleRoster.map(function(r){ return [r.name, r.zoomName || '', r.courses.map(function(c){return c.title;}).join('; '), r.duplicate ? 'Yes' : 'No', r.eligible ? 'Yes' : 'No']; }));
+      var csv = cells.map(function(row){ return row.map(function(value){ var v = String(value == null ? '' : value); if (/^[=+@\-\t\r]/.test(v)) v = '\'' + v; return '"' + v.replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+      var url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+      var link = document.createElement('a'); link.href=url; link.download='debone-zoom-roster.csv'; link.click(); setTimeout(function(){URL.revokeObjectURL(url);}, 1000);
+    });
     var filter = document.getElementById('zoom-roster-course');
     function paint() {
       var q = search.value.trim().toLocaleLowerCase(), courseId = filter.value;
@@ -2006,6 +2013,7 @@
         return (!courseId || r.courses.some(function (c) { return c.id === courseId; })) &&
           (!q || (r.name + ' ' + r.zoomName).toLocaleLowerCase().includes(q));
       });
+      visibleRoster = rows;
       document.getElementById('zoom-roster-summary').textContent = rows.length + ' students shown · ' + rows.filter(function(r){return !!r.zoomName;}).length + ' Zoom names registered';
       document.getElementById('zoom-roster-body').innerHTML = rows.length ? rows.map(function (r) {
         var eligible = courseId ? r.courses.some(function (c) { return c.id === courseId; }) : r.eligible;

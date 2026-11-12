@@ -38,3 +38,15 @@ textarea.input{padding:12px 16px;min-height:100px;resize:vertical}
 .form-grid{display:grid;gap:16px}
 .form-grid .btn{width:auto}
 .box .box{margin:0}
+
+/* Zoom roster — matches academy's dark and gold system */
+.zoom-admin-panel{border-radius:22px;overflow:hidden}
+.zoom-admin-intro{padding:4px 0 14px;border-bottom:1px solid rgba(148,163,184,.18);margin-bottom:18px}
+.zoom-admin-eyebrow{font-size:.7rem;font-weight:800;letter-spacing:.14em;color:#e0a800}
+.zoom-admin-intro h3{font-size:1.45rem;margin:7px 0}.zoom-admin-intro p{opacity:.75;margin:0}
+.zoom-roster-filters{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end}
+.zoom-roster-filters input,.zoom-roster-filters select{min-height:44px;border-radius:12px}
+.zoom-roster-scroll{overflow-x:auto;border:1px solid rgba(148,163,184,.22);border-radius:14px}
+.zoom-roster-table{border-collapse:separate;border-spacing:0}.zoom-roster-table th{background:rgba(224,168,0,.09);font-size:.76rem;text-transform:uppercase;letter-spacing:.05em}.zoom-roster-table td,.zoom-roster-table th{padding:14px 12px;vertical-align:middle}.zoom-roster-table tbody tr{transition:background .15s}.zoom-roster-table tbody tr:hover{background:rgba(224,168,0,.055)}
+@media(max-width:650px){.zoom-roster-filters{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.zoom-roster-table tbody tr{transition:none}}

@@ -1,1 +1,33 @@
 .zoom-alert{border:1px solid #e5a43c;background:#fff8e9;color:#553600;border-radius:16px;padding:20px;margin:18px 0}.zoom-alert p{margin:9px 0 14px}.zoom-ready{border-color:#65b894;background:#eaf9f1;color:#164d37}.zoom-modal-cover{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px}.zoom-modal{position:relative;background:#fff;color:#202020;border-radius:18px;padding:26px;max-width:540px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 18px 70px #0005}.zoom-modal h2{margin:0 0 12px}.zoom-modal details{border:1px solid #ddd;border-radius:10px;padding:12px;margin:10px 0}.zoom-modal summary{cursor:pointer;font-weight:700}.zoom-modal ol{padding-left:22px;line-height:1.6}.zoom-modal label{display:block;font-weight:700;margin:14px 0 7px}.zoom-modal input{width:100%;padding:13px;border:1px solid #aaa;border-radius:9px;font-size:16px;box-sizing:border-box}.zoom-hint{font-size:13px;color:#666}.zoom-error{color:#b00020;font-weight:700}.zoom-close{position:absolute;right:16px;top:12px;border:0;background:transparent;font-size:30px;cursor:pointer}.zoom-modal a{color:#1264a3;text-decoration:underline}.zoom-modal form button{margin-top:10px}
+/* Brand-aligned Zoom setup and verification controls. */
+.zoom-alert{background:linear-gradient(130deg,rgba(224,168,0,.13),rgba(255,255,255,.04));color:inherit;border:1px solid rgba(224,168,0,.45);box-shadow:0 12px 36px rgba(0,0,0,.10)}
+.zoom-ready{background:linear-gradient(130deg,rgba(22,163,105,.15),rgba(255,255,255,.03));border-color:rgba(22,163,105,.5);color:inherit}
+.zoom-modal{background:var(--surface,#15191e);color:var(--text,#f5f5f5);border:1px solid rgba(224,168,0,.25);box-shadow:0 24px 85px rgba(0,0,0,.48);animation:zoomEnter .22s ease-out}
+.zoom-modal details{border-color:rgba(148,163,184,.3)}
+.zoom-modal input{background:var(--surface-2,#20252b);color:inherit;border:1px solid rgba(148,163,184,.55);transition:border-color .2s,box-shadow .2s}
+.zoom-modal input:focus{outline:none;border-color:#e0a800;box-shadow:0 0 0 3px rgba(224,168,0,.2)}
+.zoom-modal a{color:#e0a800}.zoom-hint{color:inherit;opacity:.75}.zoom-error{color:#f87171}
+.zoom-modal button:focus-visible{outline:2px solid #e0a800;outline-offset:3px}
+@keyframes zoomEnter{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.zoom-modal{animation:none}.zoom-modal *{transition:none!important}}
+
+/* Zoom profile experience — accessible branded layout */
+.zoom-alert{position:relative;overflow:hidden;padding:clamp(18px,3vw,28px);border-radius:22px;transition:transform .2s ease,border-color .2s ease}
+.zoom-alert:hover{transform:translateY(-2px);border-color:#f2c94c}
+.zoom-alert h3{font-size:clamp(1.12rem,2.3vw,1.5rem);margin:12px 0 5px;color:inherit}
+.zoom-status-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid currentColor;border-radius:999px;padding:5px 12px;font-size:.75rem;font-weight:800;letter-spacing:.025em}
+.zoom-alert .btn{min-height:42px;border-radius:12px}
+.zoom-modal-kicker{font-size:.69rem;letter-spacing:.15em;font-weight:800;color:#e0a800;margin-bottom:10px}
+.zoom-modal h2{font-size:clamp(1.5rem,3vw,2rem);line-height:1.18;padding-right:24px}
+.zoom-modal{border-radius:24px;padding:clamp(20px,4vw,34px)}
+.zoom-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0}
+.zoom-steps span{display:flex;align-items:center;gap:7px;background:rgba(224,168,0,.08);border:1px solid rgba(224,168,0,.2);border-radius:12px;padding:10px 8px;font-size:.75rem;line-height:1.3}
+.zoom-steps b{display:grid;place-items:center;flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#e0a800;color:#171717}
+.zoom-modal details{background:rgba(255,255,255,.025);transition:border-color .2s ease}
+.zoom-modal details[open]{border-color:#e0a800}
+.zoom-modal form button{width:100%;min-height:46px;border-radius:12px}
+@media(max-width:460px){.zoom-steps{grid-template-columns:1fr}.zoom-steps span{padding:7px 10px}.zoom-modal-cover{align-items:flex-end;padding:0}.zoom-modal{border-radius:24px 24px 0 0;max-height:94dvh}}
+@media(prefers-reduced-motion:reduce){.zoom-alert:hover{transform:none}}
+
+/* Roster controls and reduced-motion improvements */
+.zoom-roster-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:14px 0}.zoom-roster-toolbar p{margin:0}.zoom-admin-panel .table tbody tr{transition:background-color .18s ease}.zoom-admin-panel .table tbody tr:hover{background:rgba(220,175,62,.06)}@media(max-width:600px){.zoom-roster-toolbar{align-items:stretch}.zoom-roster-toolbar button{width:100%}}@media(prefers-reduced-motion:reduce){.zoom-admin-panel .table tbody tr{transition:none}}

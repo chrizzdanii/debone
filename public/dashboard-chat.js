@@ -73,7 +73,7 @@
   function fileSize(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
   function fileExt(n) { var e = String(n || '').split('.').pop(); return e && e.length < 6 ? e.toUpperCase() : 'FILE'; }
   var CHAT_MAX = 2.4 * 1024 * 1024;
-  var chat = { course: null, msgs: [], sig: '', replyTo: null, pending: null, timer: null, busy: false, stick: true };
+  var chat = { course: null, msgs: [], sig: '', replyTo: null, pending: null, timer: null, busy: false, stick: true, rerun: false, generation: 0 };
 
   /* Shrinks big photos before sending so they upload fast on mobile data */
   function prepareFile(file) {
@@ -138,14 +138,17 @@
     var mem = document.getElementById('wa-count'); if (mem) mem.textContent = chat.members + ' members · ' + list.filter(function (m) { return !m.deleted; }).length + ' messages';
   }
   async function pollChat() {
-    if (!chat.course || !document.getElementById('wa-log') || chat.busy) return;
+    if (!chat.course || !document.getElementById('wa-log')) return;
+    if (chat.busy) { chat.rerun = true; return; }
     chat.busy = true;
+    var currentCourse = chat.course, generation = chat.generation;
     try {
-      var d = await api('/api/courses/' + encodeURIComponent(chat.course) + '/community/chat');
+      var d = await api('/api/courses/' + encodeURIComponent(currentCourse) + '/community/chat');
+      if (generation !== chat.generation || currentCourse !== chat.course) return;
       chat.msgs = d.messages; chat.members = d.members; paintLog(false);
-    } catch (e) { /* keep what is on screen */ } finally { chat.busy = false; }
+    } catch (e) { /* preserve visible messages on transient errors */ } finally { chat.busy = false; if (chat.rerun) { chat.rerun = false; if (generation === chat.generation) pollChat(); } }
   }
-  function stopChat() { clearInterval(chat.timer); chat.timer = null; }
+  function stopChat() { clearInterval(chat.timer); chat.timer = null; chat.generation++; chat.rerun = false; }
   function setReply(m) {
     chat.replyTo = m;
     var box = document.getElementById('wa-replying'); if (!box) return;
@@ -218,11 +221,21 @@
       var items = (e.clipboardData && e.clipboardData.files) || [];
       if (items.length) { e.preventDefault(); takeFile(items[0]); }
     });
-    var shell = document.getElementById('wa-shell'), drop = document.getElementById('wa-drop'), dragN = 0;
-    shell.addEventListener('dragenter', function (e) { e.preventDefault(); dragN++; drop.hidden = false; });
-    shell.addEventListener('dragleave', function () { dragN = Math.max(0, dragN - 1); if (!dragN) drop.hidden = true; });
-    shell.addEventListener('dragover', function (e) { e.preventDefault(); });
-    shell.addEventListener('drop', function (e) { e.preventDefault(); dragN = 0; drop.hidden = true; if (e.dataTransfer.files[0]) takeFile(e.dataTransfer.files[0]); });
+    var shell = document.getElementById('wa-shell'), drop = document.getElementById('wa-drop');
+    function hasFiles(e) { return !!(e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files')); }
+    function hideDrop() { drop.hidden = true; dragDepth = 0; }
+    var dragDepth = 0;
+    shell.addEventListener('dragenter', function (e) { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; drop.hidden = false; });
+    shell.addEventListener('dragleave', function (e) {
+      if (!hasFiles(e)) return; dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) hideDrop();
+    });
+    shell.addEventListener('dragover', function (e) { if (hasFiles(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+    shell.addEventListener('drop', function (e) { if (!hasFiles(e)) return; e.preventDefault(); hideDrop(); if (e.dataTransfer.files[0]) takeFile(e.dataTransfer.files[0]); });
+    window.addEventListener('drop', hideDrop);
+    window.addEventListener('dragend', hideDrop);
+    window.addEventListener('blur', hideDrop);
+    shell.addEventListener('keydown', function(e) { if (e.key === 'Escape') hideDrop(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) hideDrop(); });
 
     log.addEventListener('click', async function (e) {
       var img = e.target.closest('[data-view-img]'); if (img) return openImage(img.getAttribute('data-view-img'));
@@ -262,9 +275,14 @@
     });
 
     // Live: a new message from anyone appears within a moment
-    chat.timer = setInterval(function () { if (!document.getElementById('wa-log')) return stopChat(); if (!document.hidden) pollChat(); }, 3000);
+    chat.timer = setInterval(function () { if (!document.getElementById('wa-log')) return stopChat(); if (!document.hidden) pollChat(); }, 2500);
+    window.addEventListener('focus', pollChat);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && document.getElementById('wa-log')) pollChat(); });
     var onEvt = function () { if (!document.getElementById('wa-log')) { window.removeEventListener('debone:community', onEvt); return; } pollChat(); };
     window.addEventListener('debone:community', onEvt);
+    // Vercel cannot maintain SSE connections; a shared database revision triggers immediate refresh.
+    var onRefresh = function () { if (document.getElementById('wa-log')) pollChat(); else window.removeEventListener('debone:refresh', onRefresh); };
+    window.addEventListener('debone:refresh', onRefresh);
   }
 
   /* ---------- Course reviews: clear stars, labelled form ---------- */
