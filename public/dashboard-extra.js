@@ -54,6 +54,7 @@
     setView(head('Learn live', 'Live classes', 'Join your instructor live, watch recordings and ask questions in the class chat.') + '<div class="skeleton" style="min-height:300px"></div>');
     crumb.textContent = 'Live classes';
     var dash = await api('/api/dashboard');
+    if (window.DeboneZoomProfile && !dash.user.zoomName) { window.DeboneZoomProfile.show(); }
     var enrolled = dash.courses.filter(function (c) { return c.enrolled; });
     if (!enrolled.length) { setView(head('Learn live', 'Live classes') + empty('Enrol in a course to see its live classes.')); return; }
 
@@ -83,10 +84,10 @@
       var media = selected.embedUrl
         ? '<div class="video-frame"><iframe src="' + esc(selected.embedUrl) + '" title="' + esc(selected.title) + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>'
         : '<div class="video-frame video-wait"><div><p class="eyebrow">' + (selected.status === 'scheduled' ? 'Starts ' + esc(fmt(selected.startsAt)) : 'Video not available yet') + '</p>' +
-          '<p class="muted">' + (selected.joinUrl ? 'Your instructor is hosting this class in a video room.' : 'The video link will appear here when the class starts.') + '</p></div></div>';
+          '<p class="muted">' + (selected.hasJoinLink ? 'Your instructor is hosting this class in a video room.' : 'The video link will appear here when the class starts.') + '</p></div></div>';
       var extras = '';
-      if (selected.joinUrl && selected.joinOpen) extras += '<a class="btn btn-solid join-now" target="_blank" rel="noopener" href="' + esc(selected.joinUrl) + '"><span class="join-dot"></span>Join class now</a> ';
-      else if (selected.joinUrl) extras += '<span class="join-wait">Join opens 15 minutes before the class</span> ';
+      if (selected.hasJoinLink && selected.joinOpen) extras += '<button class="btn btn-solid join-now" type="button"><span class="join-dot"></span>Join Zoom class</button> ';
+      else if (selected.hasJoinLink) extras += '<span class="join-wait">Join opens 15 minutes before the class</span> ';
       if ((selected.joinOpen || selected.liveOpen) && !selected.attended && !selected.ended) extras += '<button class="btn btn-ghost btn-sm" type="button" id="attend-btn">I have joined the class</button> ';
       if (selected.attended) extras += selected.attendedHow === 'recording' ? '<span class="gpill pass">You have watched the recorded video ✓</span> ' : '<span class="gpill pass">Live joined ✓</span> ';
       if (selected.countdownTo) extras += '<div class="countdown" data-countdown="' + esc(selected.countdownTo) + '" aria-live="off"></div>';
@@ -114,10 +115,20 @@
         .then(function () { toast('Checked in. Enjoy the class!'); renderLive(selected.id); })
         .catch(function (err) { toast(err.message, 'err'); att.disabled = false; });
     });
-    // Opening the join link counts as joining live
-    view.querySelectorAll('a.join-now').forEach(function (a) {
-      a.addEventListener('click', function () {
-        api('/api/sessions/' + encodeURIComponent(selected.id) + '/attend', { method: 'POST', body: {} }).then(function () { setTimeout(function () { renderLive(selected.id); }, 600); }).catch(function () {});
+    view.querySelectorAll('button.join-now').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        b.disabled = true;
+        // Open a blank window synchronously to avoid popup blockers after async verification.
+        var tab = window.open('about:blank', '_blank');
+        try {
+          var result = await api('/api/sessions/' + encodeURIComponent(selected.id) + '/join');
+          if (tab) { tab.opener = null; tab.location.replace(result.url); }
+          else { window.location.href = result.url; }
+          // A click is not verified attendance; staff should reconcile Zoom attendance separately.
+        } catch (err) {
+          if (tab) tab.close();
+          toast(err.message || 'Unable to join', 'err');
+        } finally { b.disabled = false; }
       });
     });
     view.querySelectorAll('[data-replay]').forEach(function (b) {
@@ -209,6 +220,7 @@
     setView(head('Practice & marks', 'Assignments', 'Submit your work, track due dates and see your marks and feedback.') + '<div class="skeleton" style="min-height:260px"></div>');
     crumb.textContent = 'Assignments';
     var dash = await api('/api/dashboard');
+    if (window.DeboneZoomProfile && !dash.user.zoomName) { window.DeboneZoomProfile.show(); }
     var enrolled = dash.courses.filter(function (c) { return c.enrolled; });
     if (!enrolled.length) { setView(head('Practice & marks', 'Assignments') + empty('Enrol in a course to see its assignments.')); return; }
     var blocks = [];

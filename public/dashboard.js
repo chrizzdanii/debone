@@ -206,7 +206,7 @@
         '<div class="btn-row" style="margin-top:20px"><a class="btn btn-solid" href="#browse">Browse courses</a></div>');
       return;
     }
-    setView(head + '<div class="grid-courses stagger">' + list.map(enrolledCard).join('') + '</div>');
+    setView(head + (window.DeboneZoomProfile ? window.DeboneZoomProfile.banner(state.d.user) : '') + '<div class="grid-courses stagger">' + list.map(enrolledCard).join('') + '</div>');
     animateBars();
   }
 
@@ -365,7 +365,7 @@
       }
       if (s.recordingAvailable) inner += '<button class="btn btn-ghost btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch the recording again</button>';
     } else if (s.status === 'live' || (s.liveOpen && !s.ended)) {
-      inner += '<p class="jlive"><i></i>Class is live now</p><button class="btn btn-solid btn-sm pulse" type="button" data-join="' + esc(s.id) + '" data-url="' + esc(s.joinUrl || '') + '" data-yt="' + (s.embedUrl ? '1' : '') + '">Join live class</button>' +
+      inner += '<p class="jlive"><i></i>Class is live now</p><button class="btn btn-solid btn-sm pulse" type="button" data-join="' + esc(s.id) + '" data-yt="' + (s.embedUrl ? '1' : '') + '">Join live class</button>' +
         '<p class="muted jhint">Joining counts as attending live. If you cannot join, you can watch the recorded video after the class.</p>';
     } else if (s.ended) {
       inner += s.recordingAvailable
