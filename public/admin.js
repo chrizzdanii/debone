@@ -545,6 +545,27 @@
     });
   }
 
+  // "Coming soon" switch and the discount ("save X, Y% off") fields, shared by the new-course and edit forms
+  function statusSelect(soon) {
+    return '<select class="input" name="comingSoon"><option value="false"' + (soon ? '' : ' selected') + '>Open for enrolment</option>' +
+      '<option value="true"' + (soon ? ' selected' : '') + '>Coming soon (students join the waiting list)</option></select>';
+  }
+  function offerFields(orig, ends) {
+    return '<div class="offer-fields"><div class="offer-fields-h"><b>Discount offer</b><span>Show students the normal price crossed out, how much they save and a countdown, so they hurry to enrol.</span></div>' +
+      '<div class="grid-3"><div class="field"><label>Normal price (NGN, crossed out)</label><input class="input" type="number" name="originalPrice" min="0" value="' + (orig || '') + '" placeholder="e.g. 80000" data-offer-orig></div>' +
+      '<div class="field"><label>Offer ends on (optional)</label><input class="input" type="date" name="offerEnds" value="' + esc(ends || '') + '"></div>' +
+      '<div class="field"><label>Preview</label><div class="offer-preview" data-offer-prev>Set a normal price above the selling price.</div></div></div></div>';
+  }
+  function bindOfferPreview(form) {
+    var p = form.querySelector('[data-offer-prev]'); if (!p) return;
+    function upd() {
+      var price = Number(form.elements.price.value) || 0, o = Number(form.elements.originalPrice.value) || 0;
+      if (o > price && price > 0) p.innerHTML = '<s>' + naira(o) + '</s> <b>' + naira(price) + '</b> <em>Save ' + naira(o - price) + ' · ' + Math.round((o - price) / o * 100) + '% OFF</em>';
+      else p.textContent = o ? 'The normal price must be higher than the selling price.' : 'Set a normal price above the selling price.';
+    }
+    form.elements.price.addEventListener('input', upd); form.elements.originalPrice.addEventListener('input', upd); upd();
+  }
+
   async function renderCourses(arg) {
     if (!isAdmin()) return denied();
     crumb.textContent = 'Courses & lessons';
@@ -556,9 +577,9 @@
         '<div class="field"><label>Subtitle</label><input class="input" name="subtitle" maxlength="80" placeholder="e.g. Full course · One-time payment"></div></div>' +
         '<div class="field"><label>Summary</label><textarea class="input" name="summary" maxlength="500"></textarea></div>' +
         '<div class="grid-3"><div class="field"><label>Level</label><input class="input" name="level" value="Beginner" maxlength="30"></div>' +
-        '<div class="field"><label>Price (' + 'NGN' + ', 0 = free)</label><input class="input" type="number" name="price" min="0" value="0"></div></div>' +
-        '<label class="check"><input type="checkbox" name="comingSoon"> Coming soon — show Join waitlist instead of enrolment</label>' +
-        '<div class="field"><label>Regular price before discount (optional, NGN)</label><input class="input" type="number" name="compareAtPrice" min="0" placeholder="Leave blank if no real discount"></div>' +
+        '<div class="field"><label>Price (' + 'NGN' + ', 0 = free)</label><input class="input" type="number" name="price" min="0" value="0"></div>' +
+        '<div class="field"><label>Course status</label>' + statusSelect(false) + '</div></div>' +
+        offerFields(0, null) +
         '<div class="field"><label>Course image</label><div class="img-up"><div class="img-prev" id="new-prev"><span>No image yet</span></div>' +
         '<div class="img-up-side"><input type="file" name="image" id="new-file" accept="image/jpeg,image/png,image/webp" class="input">' +
         '<p class="muted" style="font-size:.85rem;margin:8px 0 0">JPG, PNG or WebP, under 200 KB. Shown on the course card.</p></div></div></div>' +
@@ -574,8 +595,10 @@
       readImage(file).then(function (url) { document.getElementById('new-prev').innerHTML = '<img src="' + url + '" alt="">'; })
         .catch(function (e) { toast(e.message, 'err'); });
     });
+    bindOfferPreview(document.getElementById('course-form'));
     bindForm('#course-form', async function (f) {
-      var r = await api('/api/staff/courses', { method: 'POST', body: { title: fv(f, 'title'), subtitle: fv(f, 'subtitle'), summary: fv(f, 'summary'), level: fv(f, 'level'), price: Number(fv(f, 'price')) || 0, comingSoon: !!f.elements.comingSoon.checked, compareAtPrice: Number(fv(f, 'compareAtPrice')) || 0 } });
+      var r = await api('/api/staff/courses', { method: 'POST', body: { title: fv(f, 'title'), subtitle: fv(f, 'subtitle'), summary: fv(f, 'summary'), level: fv(f, 'level'), price: Number(fv(f, 'price')) || 0,
+        comingSoon: fv(f, 'comingSoon') === 'true', originalPrice: Number(fv(f, 'originalPrice')) || 0, offerEnds: fv(f, 'offerEnds') } });
       var file = f.querySelector('input[type=file]').files[0];
       if (file) {
         try { await api('/api/staff/courses/' + encodeURIComponent(r.course.id) + '/image', { method: 'POST', body: { data: await readImage(file) } }); }
@@ -584,21 +607,6 @@
       toast('Course created. Now add its lessons.');
       location.hash = '#courses/' + r.course.id;
     });
-  }
-
-  async function renderWaitlist() {
-    if (!isAdmin()) return denied();
-    crumb.textContent = 'Course waitlists';
-    var d = await api('/api/staff/course-waitlist');
-    var rows = d.waitlist || [];
-    var grouped = {};
-    rows.forEach(function (w) { (grouped[w.courseTitle] = grouped[w.courseTitle] || []).push(w); });
-    setView(head('Academy', 'Course waitlists', 'Real student interest in courses marked Coming soon.') +
-      '<div class="bx-stats"><div><b>' + rows.length + '</b><span>Total signups</span></div><div><b>' + Object.keys(grouped).length + '</b><span>Courses with demand</span></div></div>' +
-      (Object.keys(grouped).map(function (title) { return '<section class="box"><h2>' + esc(title) + ' — ' + grouped[title].length + ' interested</h2>' +
-        '<div class="table-wrap"><table class="tbl"><thead><tr><th>Student</th><th>Email</th><th>Joined</th></tr></thead><tbody>' +
-        grouped[title].map(function (w) { return '<tr><td>' + esc(w.name) + '</td><td>' + esc(w.email) + '</td><td>' + esc(w.createdAt.slice(0,10)) + '</td></tr>'; }).join('') +
-        '</tbody></table></div></section>'; }).join('') || '<div class="empty-state">No waitlist signups yet.</div>'));
   }
 
   async function renderCourseEditor(id) {
@@ -618,10 +626,12 @@
         '<div class="field"><label>Subtitle</label><input class="input" name="subtitle" value="' + esc(c.subtitle || '') + '" maxlength="80"></div></div>' +
         '<div class="field"><label>Summary</label><textarea class="input" name="summary" maxlength="500">' + esc(c.summary || '') + '</textarea></div>' +
         '<div class="grid-3"><div class="field"><label>Level</label><input class="input" name="level" value="' + esc(c.level || '') + '"></div>' +
-        '<div class="field"><label>Price (NGN, 0 = free)</label><input class="input" type="number" name="price" min="0" value="' + c.price + '"></div></div>' +
-        '<label class="check"><input type="checkbox" name="comingSoon"' + (c.comingSoon ? ' checked' : '') + '> Coming soon — accept waitlist signups, not payments</label>' +
-        '<p class="muted">Waitlist interest: <b>' + (c.waitlistCount || 0) + '</b> student(s). <a href="#waitlist">See names and emails</a></p>' +
-        '<div class="field"><label>Regular price before discount (optional, NGN)</label><input class="input" type="number" name="compareAtPrice" min="0" value="' + (c.compareAtPrice || '') + '" placeholder="Only enter a genuine regular price"></div>' +
+        '<div class="field"><label>Price (NGN, 0 = free)</label><input class="input" type="number" name="price" min="0" value="' + c.price + '"></div>' +
+        '<div class="field"><label>Course status</label>' + statusSelect(c.comingSoon) + '</div></div>' +
+        (c.comingSoon ? '<div class="soon-banner"><div><b>' + (c.waitlistCount || 0) + '</b> ' + ((c.waitlistCount || 0) === 1 ? 'person is' : 'people are') + ' on the waiting list for this course.' +
+          (c.minStudents ? ' Minimum to run: <b>' + c.minStudents + '</b>.' : '') + '</div>' +
+          '<div class="row-actions"><a class="btn btn-ghost btn-sm" href="#waitlist">See who is waiting</a><button class="btn btn-solid btn-sm" type="button" id="launch-course">Launch course now</button></div></div>' : '') +
+        offerFields(c.originalPrice, c.offerEnds) +
         '<div class="grid-2"><div class="field"><label>Category</label><select class="input" name="category"><option value="">Not set</option>' + CATS.map(function (x) { return opt(x.id, x.label + (x.comingSoon ? ' (coming soon)' : ''), c.category); }).join('') + '</select></div>' +
         '<div class="field"><label>Instructor</label><input class="input" name="instructor" maxlength="120" value="' + esc(c.instructor || '') + '" placeholder="Name of the qualified instructor"></div></div>' +
         '<div class="grid-3"><div class="field"><label>Start date</label><input class="input" type="date" name="startDate" value="' + esc(c.startDate || '') + '"></div>' +
@@ -629,9 +639,7 @@
         '<div class="field"><label>Class days and times</label><input class="input" name="schedule" maxlength="240" value="' + esc(c.schedule || '') + '" placeholder="e.g. Mon, Wed, Fri · 7:00 pm"></div></div>' +
         '<div class="grid-3"><div class="field"><label>Classes per week</label><input class="input" type="number" name="classesPerWeek" min="1" max="7" value="' + num(c.classesPerWeek) + '"></div>' +
         '<div class="field"><label>Live sessions in total</label><input class="input" type="number" name="sessionsTotal" min="1" max="60" value="' + num(c.sessionsTotal) + '"></div>' +
-        '<div class="field"><label>Maximum students (seats)</label><input class="input" type="number" name="seats" min="1" max="5000" value="' + num(c.seats) + '" placeholder="1000 (default)"></div></div>' +
-        '<div class="grid-3"><div class="field"><label>Minimum students to run the course</label><input class="input" type="number" name="minStudents" min="1" value="' + num(c.minStudents) + '" placeholder="Not set"></div>' +
-        '<div class="field"><span></span></div><div class="field"><span></span></div></div>' +
+        '<div class="field"><label>Minimum students to run the course</label><input class="input" type="number" name="minStudents" min="1" value="' + num(c.minStudents) + '" placeholder="Not set"></div></div>' +
         '<div class="row-actions"><button class="btn btn-solid" type="submit">Save details</button>' +
         '<button class="btn btn-ghost" type="button" id="delete-course">Delete course</button></div></form></section>' +
       '<section class="box"><h2>Lessons</h2>' +
@@ -674,11 +682,19 @@
     bindForm('#edit-course', async function (f) {
       var det = { title: fv(f, 'title'), subtitle: fv(f, 'subtitle'), summary: fv(f, 'summary'), level: fv(f, 'level'), price: Number(fv(f, 'price')) || 0,
         category: fv(f, 'category'), instructor: fv(f, 'instructor'), startDate: fv(f, 'startDate'), duration: fv(f, 'duration'), schedule: fv(f, 'schedule'),
-        classesPerWeek: fv(f, 'classesPerWeek'), sessionsTotal: fv(f, 'sessionsTotal'), seats: fv(f, 'seats'), minStudents: fv(f, 'minStudents'), comingSoon: !!f.elements.comingSoon.checked, compareAtPrice: Number(fv(f, 'compareAtPrice')) || 0 };
+        classesPerWeek: fv(f, 'classesPerWeek'), sessionsTotal: fv(f, 'sessionsTotal'), minStudents: fv(f, 'minStudents'),
+        comingSoon: fv(f, 'comingSoon') === 'true', originalPrice: Number(fv(f, 'originalPrice')) || 0, offerEnds: fv(f, 'offerEnds') };
       try { await api('/api/staff/courses/' + encodeURIComponent(id), { method: 'PATCH', body: det }); }
       catch (e) { toast(e.message, 'err'); return; }
       toast('Course saved.');
       renderCourseEditor(id);
+    });
+    bindOfferPreview(document.getElementById('edit-course'));
+    var lc = document.getElementById('launch-course');
+    if (lc) lc.addEventListener('click', async function () {
+      if (!window.confirm('Launch this course now? Students can enrol straight away and everyone on the waiting list is notified.')) return;
+      try { var r = await api('/api/staff/courses/' + encodeURIComponent(id) + '/launch', { method: 'POST', body: {} }); toast('Course launched. ' + r.notified + ' waiting-list ' + (r.notified === 1 ? 'person was' : 'people were') + ' notified.'); renderCourseEditor(id); }
+      catch (e) { toast(e.message, 'err'); }
     });
     document.getElementById('delete-course').addEventListener('click', async function () {
       if (!window.confirm('Delete this course? This cannot be undone.')) return;
@@ -1473,6 +1489,40 @@
     });
   }
 
+  /* ---------- Course waiting list (admin): demand for coming-soon courses ---------- */
+  async function renderWaitlist() {
+    if (!isAdmin()) return denied();
+    crumb.textContent = 'Course waiting list';
+    var d = await api('/api/staff/waitlist');
+    var max = d.courses.reduce(function (m, c) { return Math.max(m, c.count); }, 0) || 1;
+    setView(head('Demand', 'Course waiting list', 'See how many people want each coming-soon course, who they are, and launch the class when demand is high enough.') +
+      '<div class="bx-stats wl-stats"><div><b data-count="' + d.total + '">0</b><span>Total sign-ups</span></div><div><b data-count="' + d.courses.filter(function (c) { return c.comingSoon; }).length + '">0</b><span>Coming-soon courses</span></div>' +
+      '<div><b data-count="' + d.courses.reduce(function (m, c) { return Math.max(m, c.count); }, 0) + '">0</b><span>Most wanted course</span></div></div>' +
+      (d.courses.length ? d.courses.map(function (c, i) {
+        var pct = c.minStudents ? Math.min(100, Math.round(c.count / c.minStudents * 100)) : Math.round(c.count / max * 100);
+        return '<section class="box wl-card" style="--i:' + i + '"><div class="wl-top"><div><h2>' + esc(c.title) + '</h2><p class="muted">' + (c.comingSoon ? '<span class="gpill none">Coming soon</span>' : '<span class="gpill pass">Launched</span>') + ' ' + (c.price ? naira(c.price) : 'Free') + '</p></div>' +
+          '<div class="wl-num"><b>' + c.count + '</b><span>' + (c.count === 1 ? 'person waiting' : 'people waiting') + '</span></div></div>' +
+          '<div class="wl-meter"><i style="--w:' + pct + '%"></i></div>' +
+          '<p class="muted wl-note">' + (c.minStudents ? (c.count >= c.minStudents ? 'Minimum of ' + c.minStudents + ' reached. You can launch this class.' : (c.minStudents - c.count) + ' more needed to reach the minimum of ' + c.minStudents + '.') : 'No minimum set. Add one in the course editor to track readiness.') + '</p>' +
+          (c.people.length ? '<div class="dt-wrap"><table class="dt"><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th></th></tr></thead><tbody>' +
+            c.people.map(function (p, n) { return '<tr><td>' + (n + 1) + '</td><td><b>' + esc(p.name) + '</b></td><td>' + esc(p.email) + '</td><td>' + esc(p.phone || '—') + '</td><td>' + fmt(p.createdAt) + '</td><td>' + (p.notified ? '<span class="gpill pass">Told</span>' : '') + '</td></tr>'; }).join('') +
+          '</tbody></table></div>' : '<p class="muted">Nobody has joined yet.</p>') +
+          '<div class="row-actions" style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="#courses/' + esc(c.id) + '">Edit course</a>' +
+          (c.comingSoon ? '<button class="btn btn-solid btn-sm" type="button" data-launch="' + esc(c.id) + '">Launch and notify ' + c.count + '</button>' : '') + '</div></section>';
+      }).join('') : '<div class="empty-state">No coming-soon courses yet. Choose “Coming soon” when you create or edit a course.</div>'));
+    view.querySelectorAll('[data-count]').forEach(function (el) {
+      var to = Number(el.getAttribute('data-count')), t0 = performance.now();
+      (function tick(t) { var p = Math.min(1, (t - t0) / 900); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(tick); })(t0);
+    });
+    view.querySelectorAll('[data-launch]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        if (!window.confirm('Launch this course now? Students can enrol straight away and everyone on the list is notified.')) return;
+        try { var r = await api('/api/staff/courses/' + encodeURIComponent(b.getAttribute('data-launch')) + '/launch', { method: 'POST', body: {} }); toast('Launched. ' + r.notified + ' notified.'); renderWaitlist(); }
+        catch (e) { toast(e.message, 'err'); }
+      });
+    });
+  }
+
   async function renderBookings() {
     crumb.textContent = 'Bookings and quotes';
     var d = await api('/api/staff/bookings');
@@ -1642,7 +1692,7 @@
     return d.courses.length ? d.courses.map(function (c, i) {
       var R = 17, C = 2 * Math.PI * R;
       return '<div class="lv-course" style="--i:' + i + '"><div class="lv-ring"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="' + R + '" fill="none" stroke="rgba(244,244,240,.08)" stroke-width="4"/><circle class="lv-ring-v" cx="22" cy="22" r="' + R + '" fill="none" stroke="#6BCB77" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + (c.completion / 100 * C).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 22 22)"/></svg><b>' + c.completion + '%</b></div>' +
-        '<div class="lv-cmain"><div class="lv-ctop"><b>' + esc(c.title) + '</b><span>' + c.students.toLocaleString('en-US') + ' / ' + c.seats.toLocaleString('en-US') + ' students</span></div><div class="lv-bar"><i style="--w:' + Math.max(c.students ? 3 : 0, Math.round(c.students / max * 100)) + '%"></i></div></div></div>';
+        '<div class="lv-cmain"><div class="lv-ctop"><b>' + esc(c.title) + '</b><span>' + c.students.toLocaleString('en-US') + (c.students === 1 ? ' student' : ' students') + '</span></div><div class="lv-bar"><i style="--w:' + Math.max(c.students ? 3 : 0, Math.round(c.students / max * 100)) + '%"></i></div></div></div>';
     }).join('') : '<p class="muted">No courses yet.</p>';
   }
   function rpFeed(d) {
@@ -1954,7 +2004,7 @@
     silent = silent === true;
     var parts = (location.hash || '#overview').replace(/^#/, '').split('/');
     var name = parts[0] || 'overview', arg = parts[1] ? decodeURIComponent(parts[1]) : null;
-    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification', 'waitlist'].includes(name)) name = 'overview';
+    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'waitlist', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification'].includes(name)) name = 'overview';
     document.querySelectorAll('.side-nav a[data-view]').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('data-view') === name);
     });

@@ -211,50 +211,57 @@
   }
 
   /* ---------- Browse ---------- */
-  function browseCard(c) {
-    var status, action;
+  /* Price with the crossed-out normal price, the saving and a live countdown (the offer is set by the admin) */
+  function offerBlock(c, big) {
+    var o = c.offer;
+    if (!o) return '<p class="pr-line' + (big ? ' pr-big' : '') + '"><b>' + naira(c.price) + '</b><span>one-time</span></p>';
+    return '<div class="offer' + (big ? ' offer-big' : '') + '">' +
+      '<div class="offer-top"><span class="offer-pct">' + o.percent + '% OFF</span>' +
+        (o.endsAt ? '<span class="offer-cd" data-cd="' + esc(o.endsAt) + '"><i></i><em>…</em></span>' : '<span class="offer-cd static"><i></i><em>Limited-time price</em></span>') + '</div>' +
+      '<div class="offer-prices"><s>' + naira(o.originalPrice) + '</s><b>' + naira(c.price) + '</b></div>' +
+      '<p class="offer-save">You save <strong>' + naira(o.save) + '</strong> today. Don’t wait, the price goes back up.</p></div>';
+  }
+  function waitlistBlock(c, big) {
+    var n = c.waitlistCount || 0;
+    return '<div class="wl-box' + (big ? ' wl-big' : '') + '"><p class="wl-hot"><span class="wl-dot"></span>' +
+      (n ? '<b>' + n + '</b> ' + (n === 1 ? 'person is' : 'people are') + ' already waiting' : 'Be the first to join the waiting list') + '</p>' +
+      (c.onWaitlist
+        ? '<div class="wl-in"><span class="wl-ok">✓ You are on the waiting list</span><button class="btn btn-ghost btn-sm" type="button" data-waitlist-leave="' + esc(c.id) + '">Leave</button></div>'
+        : '<button class="btn btn-solid btn-sm btn-hurry" type="button" data-waitlist="' + esc(c.id) + '">Join waitlist</button>') + '</div>';
+  }
+
+  function browseCard(c, i) {
+    var status, action, extra = '';
     if (c.comingSoon && !c.enrolled) {
       status = '<span class="tag soon">Coming soon</span>';
-      action = '<button class="btn btn-solid btn-sm" type="button" data-waitlist="' + esc(c.id) + '"' + (c.waitlisted ? ' disabled' : '') + '>' + (c.waitlisted ? '✓ Joined waitlist' : 'Join waitlist') + '</button>';
+      action = '';
+      extra = waitlistBlock(c);
     } else if (c.enrolled) {
       status = '<span class="tag ' + (c.free ? 'free' : 'paid') + '">' + (c.free ? 'Free intro' : 'Unlocked') + '</span>';
       action = '<a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">Open course</a>';
     } else {
-      status = '<span class="tag paid">Locked</span>';
-      action = '<button class="btn btn-solid btn-sm" type="button" data-enroll="' + esc(c.id) + '">Enrol for ' + naira(c.price) + '</button>';
+      status = '<span class="tag ' + (c.offer ? 'hot' : 'paid') + '">' + (c.offer ? 'Limited offer' : 'Locked') + '</span>';
+      action = '<button class="btn btn-solid btn-sm' + (c.offer ? ' btn-hurry' : '') + '" type="button" data-enroll="' + esc(c.id) + '">' + (c.offer ? 'Grab the deal · ' : 'Enrol for ') + naira(c.price) + '</button>';
     }
-    var offer = c.compareAtPrice > c.price && c.price > 0 && !c.comingSoon ? '<div class="debone-course-offer"><s>' + naira(c.compareAtPrice) + '</s><b>Save ' + naira(c.compareAtPrice - c.price) + ' (' + Math.round((c.compareAtPrice - c.price) / c.compareAtPrice * 100) + '% off)</b></div>' : '';
-    return '<article class="dcourse">' + thumb(c) + status +
+    var priceLine = (c.free || c.comingSoon || c.enrolled) ? '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons</p>'
+      : '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons</p>' + offerBlock(c);
+    return '<article class="dcourse' + (c.offer && !c.enrolled && !c.comingSoon ? ' has-offer' : '') + (c.comingSoon && !c.enrolled ? ' is-soon' : '') + '" style="--i:' + (i || 0) + '">' +
+      (c.offer && !c.enrolled && !c.comingSoon ? '<span class="corner-ribbon">' + c.offer.percent + '% OFF</span>' : '') + thumb(c) + status +
       '<h3>' + esc(c.title) + '</h3>' +
-      '<p>' + esc(c.summary) + '</p>' +
-      offer + '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons' + (c.free || c.comingSoon ? '' : ' · ' + naira(c.price) + ' one-time') + '</p>' +
-      '<div class="foot">' + action + '</div>' +
+      '<p>' + esc(c.summary) + '</p>' + priceLine + extra +
+      (action ? '<div class="foot">' + action + '</div>' : '') +
     '</article>';
   }
 
   function renderBrowse() {
-    setView(viewHead('Catalogue', 'Browse courses', 'Start the free intro now. Unlock full courses with secure payment.') +
+    var best = state.d.courses.filter(function (c) { return c.offer && !c.enrolled && !c.comingSoon; }).sort(function (a, b) { return b.offer.percent - a.offer.percent; })[0];
+    var banner = best ? '<section class="deal-banner"><div class="deal-glow"></div><div><p class="eyebrow">Hot deal right now</p><h3>Save ' + naira(best.offer.save) + ' on ' + esc(best.title) + '</h3>' +
+      '<p class="muted">Normally ' + naira(best.offer.originalPrice) + ', now just <b>' + naira(best.price) + '</b> (' + best.offer.percent + '% off).' +
+      (best.offer.endsAt ? ' Ends in <span class="offer-cd inline" data-cd="' + esc(best.offer.endsAt) + '"><em>…</em></span>.' : '') + '</p></div>' +
+      '<button class="btn btn-solid btn-hurry" type="button" data-enroll="' + esc(best.id) + '">Claim ' + best.offer.percent + '% off</button></section>' : '';
+    setView(viewHead('Catalogue', 'Browse courses', 'Start the free intro now. Unlock full courses with secure payment.') + banner +
       '<div class="grid-courses stagger">' + state.d.courses.map(browseCard).join('') + '</div>');
-  }
-
-  /* ---------- Bundles inside the student dashboard ---------- */
-  async function renderBundles() {
-    setView(viewHead('Save more together', 'Course bundles', 'Unlock multiple courses with one secure payment.') + '<div class="skeleton" style="min-height:220px"></div>');
-    try {
-      var data = await api('/api/bundles');
-      var list = data.bundles || [];
-      setView(viewHead('Curated learning', 'Course bundles', 'Choose a package and save compared with buying each course separately.') +
-        '<div class="debone-bundle-grid stagger">' + (list.map(function (b) {
-          var owned = b.courses.every(function (c) { return state.d.courses.some(function (x) { return x.id === c.id && x.enrolled; }); });
-          var pic = b.hasImage ? '<img loading="lazy" src="/api/bundles/' + encodeURIComponent(b.id) + '/image" alt="">' : '<div class="debone-bundle-art">✦</div>';
-          return '<article class="debone-bundle-card"><div class="debone-bundle-cover">' + pic +
-            (b.savings > 0 ? '<span class="debone-saving">Save ' + naira(b.savings) + ' · ' + b.savingsPercent + '% off</span>' : '') + '</div>' +
-            '<div class="debone-bundle-body"><span class="debone-overline">' + b.courses.length + ' courses in one package</span><h3>' + esc(b.title) + '</h3><p>' + esc(b.description || 'Build your skills with a complete course package.') + '</p>' +
-            '<ul>' + b.courses.map(function (c) { return '<li>✓ ' + esc(c.title) + '</li>'; }).join('') + '</ul>' +
-            '<div class="debone-bundle-pricing"><strong>' + naira(b.price) + '</strong>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s>' : '') + '</div>' +
-            (owned ? '<a class="btn btn-solid" href="#courses">Open my courses</a>' : '<button type="button" class="btn btn-solid" data-buy-bundle="' + esc(b.id) + '">Get this bundle</button>') + '</div></article>';
-        }).join('') || '<div class="empty-state">No course bundles are available yet.</div>') + '</div>');
-    } catch (e) { setView(viewHead('Catalogue', 'Course bundles') + emptyState(e.message)); }
+    if (window.DOffers) DOffers.tick();
   }
 
   /* ---------- Course player ---------- */
@@ -522,18 +529,19 @@
   function renderPaywall(course) {
     var pane = document.getElementById('pane');
     if (course.comingSoon) {
-      pane.innerHTML = '<div class="paywall"><p class="eyebrow" style="justify-content:center">Coming soon</p><h2>' + esc(course.title) + '</h2><p>This course is not open for enrolment yet. It will appear here as open when enrolment begins.</p></div>';
+      pane.innerHTML = '<div class="paywall"><p class="eyebrow" style="justify-content:center">Coming soon</p><h2>' + esc(course.title) + '</h2><p>This course is not open for enrolment yet. Join the waiting list and we will tell you the moment it opens.</p>' + waitlistBlock(course, true) + '</div>';
       return;
     }
     pane.innerHTML =
-      '<div class="paywall done-pop">' +
-        '<p class="eyebrow" style="justify-content:center">Locked</p>' +
+      '<div class="paywall done-pop' + (course.offer ? ' has-offer' : '') + '">' +
+        '<p class="eyebrow" style="justify-content:center">' + (course.offer ? 'Limited-time offer' : 'Locked') + '</p>' +
         '<h2>Unlock ' + esc(course.title) + '</h2>' +
-        '<p class="price">' + naira(course.price) + '<small>One-time</small></p>' +
+        (course.offer ? offerBlock(course, true) : '<p class="price">' + naira(course.price) + '<small>One-time</small></p>') +
         '<p>Pay once through secure Paystack checkout to unlock every lesson in this course.</p>' +
-        '<button class="btn btn-solid" type="button" data-enroll="' + esc(course.id) + '">Enrol for ' + naira(course.price) + '</button>' +
+        '<button class="btn btn-solid' + (course.offer ? ' btn-hurry' : '') + '" type="button" data-enroll="' + esc(course.id) + '">' + (course.offer ? 'Grab the deal · ' : 'Enrol for ') + naira(course.price) + '</button>' +
         '<p class="muted" style="margin-top:18px;font-size:.9rem">Your course unlocks automatically once the payment is confirmed.</p>' +
       '</div>';
+    if (window.DOffers) DOffers.tick();
   }
 
   async function refreshCourseHeader(courseId) {
@@ -618,7 +626,9 @@
     var money = function (n) { return '₦' + Math.round(n).toLocaleString('en-US'); };
     if (fee === 0) { return doEnroll(courseId, '', btn); }
     DModal.open({ size: 'md', eyebrow: 'Enrol', title: esc(course.title), body:
-      '<div class="enrol"><div class="enrol-row"><span>Course fee</span><b>' + money(fee) + '</b></div>' +
+      '<div class="enrol">' + (course.offer ? '<div class="enrol-deal"><span class="offer-pct">' + course.offer.percent + '% OFF</span><div><s>' + money(course.offer.originalPrice) + '</s><b>You save ' + money(course.offer.save) + '</b></div>' +
+        (course.offer.endsAt ? '<span class="offer-cd" data-cd="' + esc(course.offer.endsAt) + '"><i></i><em>…</em></span>' : '') + '</div>' : '') +
+      '<div class="enrol-row"><span>Course fee</span><b>' + money(fee) + '</b></div>' +
       (qrOff ? '<div class="enrol-coupon"><span>Your <b>' + qrOff.percent + '% QR discount</b> is applied automatically</span></div>' : '') +
       (coupon ? '<div class="enrol-coupon"><span>Your 30% coupon <b>' + esc(coupon.code) + '</b></span><button type="button" class="btn btn-ghost btn-sm" data-use>Use it</button></div>' : '') +
       '<label class="enrol-label" for="enrol-code">Coupon code (optional)</label>' +
@@ -628,6 +638,7 @@
       '<p class="form-error" id="enrol-err" role="alert"></p>' +
       '<button type="button" class="btn btn-solid enrol-go" id="enrol-go">Continue to secure payment</button></div>',
       onMount: function (box, inst) {
+        if (window.DOffers) DOffers.tick();
         var input = box.querySelector('#enrol-code'), total = box.querySelector('#enrol-total');
         var preview = function () {
           var typed = input.value.trim().toUpperCase();
@@ -643,6 +654,20 @@
           doEnroll(courseId, input.value.trim().toUpperCase(), this, inst, box.querySelector('#enrol-err'));
         });
       } });
+  }
+
+  /* Join or leave the waiting list of a coming-soon course */
+  async function waitlist(courseId, join, btn) {
+    btn.disabled = true; var label = btn.textContent; btn.textContent = join ? 'Joining…' : 'Leaving…';
+    try {
+      await api('/api/courses/' + encodeURIComponent(courseId) + '/waitlist', { method: join ? 'POST' : 'DELETE' });
+      await loadDash(); route();
+      if (join && window.DOffers) DOffers.burst();
+      DModal.toast({ title: join ? 'You are on the waiting list. We will notify you the moment this course opens.' : 'You left the waiting list.', tone: 'ok' });
+    } catch (err) {
+      DModal.toast({ title: err.message, tone: 'err' });
+      btn.disabled = false; btn.textContent = label;
+    }
   }
 
   async function doEnroll(courseId, code, btn, inst, errEl) {
@@ -915,7 +940,7 @@
   }
 
   /* ---------- Router ---------- */
-  var TITLES = { overview: 'Overview', courses: 'My courses', browse: 'Browse courses', bundles: 'Course bundles', live: 'Live classes', assignments: 'Assignments', payments: 'Payments', profile: 'Profile', performance: 'Performance', certificates: 'Certificates', reviews: 'Course reviews', downloads: 'Downloads', recordings: 'Recordings', requests: 'Requests and refunds', referrals: 'Refer a friend', community: 'Community', portfolio: 'Talent profile', course: 'Course' };
+  var TITLES = { overview: 'Overview', courses: 'My courses', browse: 'Browse courses', live: 'Live classes', assignments: 'Assignments', payments: 'Payments', profile: 'Profile', performance: 'Performance', certificates: 'Certificates', reviews: 'Course reviews', downloads: 'Downloads', recordings: 'Recordings', requests: 'Requests and refunds', referrals: 'Refer a friend', community: 'Community', portfolio: 'Talent profile', course: 'Course', bundles: 'Course bundles', bundle: 'Course bundle' };
 
   function openSide(open) {
     side.classList.toggle('open', open);
@@ -931,16 +956,15 @@
     var arg = parts[1];
     crumb.textContent = TITLES[name];
     document.querySelectorAll('.side-nav a').forEach(function (a) {
-      var target = name === 'course' ? 'courses' : name;
+      var target = name === 'course' ? 'courses' : name === 'bundle' ? 'bundles' : name;
       a.classList.toggle('active', a.getAttribute('data-view') === target);
     });
     openSide(false);
 
-    if (name === 'live' || name === 'assignments' || name === 'performance' || name === 'certificates' || name === 'reviews' || name === 'downloads' || name === 'recordings' || name === 'requests' || name === 'referrals' || name === 'community' || name === 'portfolio') return window.DashExtras.render(name, arg);
+    if (name === 'live' || name === 'assignments' || name === 'performance' || name === 'certificates' || name === 'reviews' || name === 'downloads' || name === 'recordings' || name === 'requests' || name === 'referrals' || name === 'community' || name === 'portfolio' || name === 'bundles' || name === 'bundle') return window.DashExtras.render(name, arg);
     if (name === 'overview') return renderOverview();
     if (name === 'courses') return renderCourses();
     if (name === 'browse') return renderBrowse();
-    if (name === 'bundles') return renderBundles();
     if (name === 'payments') return renderPayments();
     if (name === 'profile') return renderProfile();
     if (name === 'course') return renderCourse(arg ? decodeURIComponent(arg) : null);
@@ -948,24 +972,11 @@
 
   /* ---------- Global events ---------- */
   document.addEventListener('click', function (e) {
-    var waitBtn = e.target.closest('[data-waitlist]');
-    if (waitBtn) {
-      waitBtn.disabled = true;
-      api('/api/courses/' + encodeURIComponent(waitBtn.getAttribute('data-waitlist')) + '/waitlist', { method: 'POST', body: {} })
-        .then(function (res) { waitBtn.textContent = '✓ Joined waitlist'; toast(res.message || 'Joined waitlist.'); var c = state.d.courses.find(function (x) { return x.id === waitBtn.getAttribute('data-waitlist'); }); if (c) c.waitlisted = true; })
-        .catch(function (err) { waitBtn.disabled = false; toast(err.message, 'err'); });
-      return;
-    }
-    var bundleBtn = e.target.closest('[data-buy-bundle]');
-    if (bundleBtn) {
-      bundleBtn.disabled = true; bundleBtn.textContent = 'Preparing checkout…';
-      api('/api/bundles/' + encodeURIComponent(bundleBtn.getAttribute('data-buy-bundle')) + '/buy', { method: 'POST', body: {} })
-        .then(function (res) { if (res.order) location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); else { toast('These courses are already unlocked.'); location.hash = '#courses'; } })
-        .catch(function (err) { bundleBtn.disabled = false; bundleBtn.textContent = 'Get this bundle'; toast(err.message, 'err'); });
-      return;
-    }
     var enrollBtn = e.target.closest('[data-enroll]');
     if (enrollBtn) return enroll(enrollBtn.getAttribute('data-enroll'), enrollBtn);
+
+    var wlBtn = e.target.closest('[data-waitlist],[data-waitlist-leave]');
+    if (wlBtn && !wlBtn.disabled) return waitlist(wlBtn.hasAttribute('data-waitlist') ? wlBtn.getAttribute('data-waitlist') : wlBtn.getAttribute('data-waitlist-leave'), wlBtn.hasAttribute('data-waitlist'), wlBtn);
 
     var doneBtn = e.target.closest('[data-lesson-done]');
     if (doneBtn && !doneBtn.disabled) return completeLesson(doneBtn.getAttribute('data-lesson-done'), doneBtn);

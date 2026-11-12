@@ -48,7 +48,7 @@
     var box = $('wb-list');
     function fmt(iso) { return new Date(iso).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' }); }
     function card(w) {
-      var seats = w.capacity ? (w.seatsLeft > 0 ? 'Registration open' : 'Full') : 'Registration open';
+      var seats = w.capacity ? (w.seatsLeft > 0 ? w.seatsLeft + ' seats left' : 'Full') : 'Open seats';
       var action;
       if (w.past) action = '<span class="btn btn-ghost btn-sm is-disabled">Finished</span>';
       else if (w.registered_by_me) action = (w.link ? '<a class="btn btn-solid btn-sm" href="' + esc(w.link) + '" target="_blank" rel="noopener">Join webinar</a>' : '') + '<span class="wb-reg">You are registered</span>';

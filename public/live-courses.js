@@ -14,12 +14,11 @@
   }
   function paintStats(list) {
     var open = list.filter(function (c) { return !c.comingSoon; });
-    // Seats are per course (up to 1,000 each), so show the roomiest course rather than adding every course together
-    var seats = open.reduce(function (m, c) { return Math.max(m, c.seatsLeft != null ? c.seatsLeft : (c.seats || 1000)); }, 0);
+    var soonCount = list.length - open.length;
     var next = open.filter(function (c) { return c.startDate && daysUntil(c.startDate) >= 0; }).sort(function (a, b) { return a.startDate.localeCompare(b.startDate); })[0];
     document.getElementById('lc-stats').innerHTML =
       '<div class="lc-stat"><b data-count="' + open.length + '">0</b><span>Live courses open</span></div>' +
-      '<div class="lc-stat"><b>Live</b><span>Instructor-led training</span></div>' +
+      '<div class="lc-stat"><b data-count="' + soonCount + '">0</b><span>Coming soon</span></div>' +
       '<div class="lc-stat"><b>' + (next ? esc(fmtDate(next.startDate)) : 'Soon') + '</b><span>Next start</span></div>';
     document.querySelectorAll('[data-count]').forEach(function (el) {
       var end = Number(el.getAttribute('data-count')), t0 = null;
@@ -42,8 +41,7 @@
     });
   }
   function card(c, i) {
-    var left = c.seatsLeft, total = c.seats || 0;
-    var pct = total ? Math.round(((total - (left || 0)) / total) * 100) : 0;
+    var o = c.offer;
     var until = daysUntil(c.startDate);
     var when = c.comingSoon ? '<span class="lc-tag soon">Coming soon</span>' : c.startDate ? '<span class="lc-tag">' + (until > 0 ? 'Starts in ' + until + ' day' + (until === 1 ? '' : 's') : until === 0 ? 'Starts today' : 'Started') + '</span>' : '<span class="lc-tag muted-tag">Date to be announced</span>';
     return '<article class="lc-card" style="--i:' + i + '">' +
@@ -57,8 +55,10 @@
         '<div><dt>Schedule</dt><dd>' + esc(c.schedule || 'To be announced') + '</dd></div>' +
         '<div><dt>Length</dt><dd>' + esc(c.duration || (c.sessionsTotal ? c.sessionsTotal + ' classes' : 'To be announced')) + '</dd></div>' +
       '</dl>' +
+      (o && !c.comingSoon ? '<p class="lc-deal"><s>' + naira(o.originalPrice) + '</s> Save ' + naira(o.save) + ' · ' + o.percent + '% off</p>' : '') +
+      (c.comingSoon && c.waitlistCount ? '<p class="lc-deal">' + c.waitlistCount + ' people on the waiting list</p>' : '') +
       '<div class="lc-foot"><b>' + (c.price > 0 ? naira(c.price) : 'Free') + '</b>' +
-        (c.comingSoon ? '<a class="btn btn-solid btn-sm" href="login.html?next=dashboard">Join waitlist</a>' : '<a class="btn btn-solid btn-sm" href="login.html?next=dashboard">' + (c.price > 0 ? 'Enrol now' : 'Start free') + '</a>') +
+        (c.comingSoon ? '<a class="btn btn-ghost btn-sm" href="login.html?next=dashboard">Join waiting list</a>' : '<a class="btn btn-solid btn-sm" href="login.html?next=dashboard">' + (c.price > 0 ? 'Enrol now' : 'Start free') + '</a>') +
       '</div></article>';
   }
   function paint(list) {
