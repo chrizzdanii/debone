@@ -428,16 +428,24 @@ function youtubeId(v) {
   const m = s.match(/(?:youtu\.be\/|v=|embed\/|live\/|shorts\/)([A-Za-z0-9_-]{11})/);
   return m ? m[1] : null;
 }
+function safeYouTubeEmbed(value) {
+  const id = youtubeId(value);
+  return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1` : null;
+}
 function sessionView(s, user) {
-  const yid = youtubeId(s.youtubeUrl);
   const course = db.courses.find(c => c.id === s.courseId);
+  const timing = sessionTiming(s, user);
+  const liveAllowed = s.status === 'live' && timing.liveOpen;
+  const replayAllowed = s.status === 'ended' && !!s.recordingUrl && replayOpen(s);
   return {
     id: s.id, courseId: s.courseId, courseTitle: course ? course.title : '', title: s.title, lessonId: s.lessonId || null,
     startsAt: s.startsAt || null, status: s.status || 'scheduled',
-    youtubeId: yid, embedUrl: yid ? `https://www.youtube-nocookie.com/embed/${yid}?rel=0` : null,
-    watchUrl: yid ? `https://www.youtube.com/watch?v=${yid}` : null,
-    joinUrl: s.joinUrl || null, recordingUrl: replayOpen(s) ? (s.recordingUrl || null) : null,
-    durationMinutes: Number(s.durationMinutes) || 120, ...sessionTiming(s, user),
+    // Playback identifiers are only returned to an authenticated, enrolled student.
+    // YouTube embeds are not DRM and can still be extracted by a determined viewer.
+    embedUrl: liveAllowed ? safeYouTubeEmbed(s.youtubeUrl) : null,
+    recordingAvailable: replayAllowed, recordingUrl: null,
+    joinUrl: liveAllowed ? (s.joinUrl || null) : null,
+    durationMinutes: Number(s.durationMinutes) || 120, ...timing,
     replayUntil: replayUntilFor(s), replayExpired: !!s.recordingUrl && !replayOpen(s),
     chatOpen: s.chatOpen !== false
   };
@@ -1332,7 +1340,7 @@ route('POST', '/api/sessions/:id/watched', async ctx => {
   if (!db.attendance.some(a => a.sessionId === s.id && a.userId === user.id)) {
     db.attendance.push({ id: uid(8), sessionId: s.id, userId: user.id, at: now(), how: 'recording' }); save();
   }
-  json(ctx.res, 200, { ok: true, message: 'You have watched the recorded video.', url: s.recordingUrl });
+  json(ctx.res, 200, { ok: true, message: 'Recording access verified.' });
 });
 route('GET', '/api/staff/sessions/:id/attendance', async ctx => {
   requireStaff(ctx);
@@ -1363,8 +1371,25 @@ route('GET', '/api/me/recordings', async ctx => {
     const status = !s.recordingUrl ? (s.startsAt && new Date(s.startsAt).getTime() > Date.now() ? 'upcoming' : 'processing')
       : (open ? 'available' : 'expired');
     return { id: s.id, courseId: s.courseId, courseTitle: course.title || '', title: s.title || 'Live class', startsAt: s.startsAt || null,
-      status, recordingUrl: open ? (s.recordingUrl || null) : null, replayUntil: replayUntilFor(s) };
+      status, recordingAvailable: open && s.status === 'ended', replayUntil: replayUntilFor(s) };
   }) });
+});
+// Playback is issued only after a fresh authenticated enrollment and expiry check.
+route('GET', '/api/sessions/:id/playback', async ctx => {
+  const user = requireUser(ctx);
+  const s = db.sessions.find(x => x.id === ctx.params.id);
+  if (!s) throw httpError(404, 'Class not found');
+  if (!canSeeCourse(user, s.courseId)) throw httpError(403, 'You must enrol in this course to watch.');
+  const type = ctx.query.get('type') === 'recording' ? 'recording' : 'live';
+  if (type === 'recording') {
+    if (s.status !== 'ended' || !s.recordingUrl || !replayOpen(s)) throw httpError(403, 'Recording is not available.');
+  } else if (s.status !== 'live' || !sessionTiming(s, user).liveOpen) {
+    throw httpError(403, 'Live playback is not available yet.');
+  }
+  const embedUrl = safeYouTubeEmbed(type === 'recording' ? s.recordingUrl : s.youtubeUrl);
+  if (!embedUrl) throw httpError(400, 'A valid YouTube video is not configured.');
+  ctx.res.setHeader('Cache-Control', 'private, no-store');
+  json(ctx.res, 200, { embedUrl, title: s.title, type });
 });
 route('GET', '/api/me/certificates/:code/pdf', async ctx => {
   const user = requireUser(ctx);

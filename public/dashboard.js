@@ -353,11 +353,11 @@
     var state = req.classDone ? 'done' : 'todo', inner = '<p class="jmeta"><b>' + esc(s.title) + '</b> · ' + esc(fmtWhen(s.startsAt)) + '</p>';
     if (req.classDone) {
       inner += '<p class="jok">' + (s.attendanceType === 'live' ? 'Live joined' : s.attendanceType === 'recording' ? 'You have watched the recorded video.' : 'Class done.') + ' ✓</p>';
-      if (s.recordingUrl) inner += '<button class="btn btn-ghost btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch the recording again</button>';
+      if (s.recordingAvailable) inner += '<button class="btn btn-ghost btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch the recording again</button>';
     } else if (s.status === 'live' || s.liveOpen) {
       inner += '<p class="jlive"><i></i>Class is live now</p><button class="btn btn-solid btn-sm pulse" type="button" data-join="' + esc(s.id) + '" data-url="' + esc(s.joinUrl || '') + '" data-yt="' + (s.youtubeId ? '1' : '') + '">Join live class</button>';
     } else if (s.status === 'ended') {
-      inner += s.recordingUrl
+      inner += s.recordingAvailable
         ? '<p class="muted">You missed the live class. Watch the recording to complete this step.</p><button class="btn btn-solid btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch recorded class</button>'
         : '<p class="muted">The class has ended. The recording will appear here as soon as your instructor uploads it.</p>';
     } else {
@@ -435,14 +435,12 @@
     });
     pane.querySelectorAll('[data-watch]').forEach(function (b) {
       b.addEventListener('click', async function () {
-        var w = window.open('about:blank', '_blank');
         b.disabled = true;
         try {
-          var r = await api('/api/sessions/' + encodeURIComponent(b.getAttribute('data-watch')) + '/watched', { method: 'POST', body: {} });
-          if (w) w.location = r.url;
-          toast('Recording opened. This step is now complete.');
-          openLesson(l.id, null, true);
-        } catch (e) { if (w) w.close(); toast(e.message, 'err'); b.disabled = false; }
+          var sid = b.getAttribute('data-watch');
+          await api('/api/sessions/' + encodeURIComponent(sid) + '/playback?type=recording');
+          location.hash = '#live/' + encodeURIComponent(sid);
+        } catch (e) { toast(e.message, 'err'); b.disabled = false; }
       });
     });
     pane.querySelectorAll('form[data-assign]').forEach(function (f) {

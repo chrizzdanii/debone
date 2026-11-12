@@ -370,7 +370,7 @@
     var tone = { available: 'pass', expired: 'fail', processing: 'none', upcoming: 'none' };
     var fmtD = function (iso) { return iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; };
     var cards = d.recordings.length ? d.recordings.map(function (r, i) {
-      var action = r.status === 'available' ? '<a class="btn btn-solid btn-sm" href="' + esc(r.recordingUrl) + '" target="_blank" rel="noopener">Watch replay</a>'
+      var action = r.status === 'available' ? '<button type="button" class="btn btn-solid btn-sm" data-recording="' + esc(r.id) + '">Watch replay</button>'
         : r.status === 'expired' ? '<span class="muted small">Replay window closed</span>'
         : r.status === 'upcoming' ? '<span class="muted small">Available after the class</span>'
         : '<span class="muted small">Our team is uploading it</span>';
@@ -381,7 +381,22 @@
         '<div class="rc-foot">' + action + '</div></div></article>';
     }).join('') : '<div class="empty-state">Recordings of your classes appear here. If you joined late, you can still watch every class you missed.</div>';
     setView(head('Catch up', 'Recordings', 'Missed a class or joined late? Watch every recorded class of your courses here.') +
-      '<div class="rc-grid">' + cards + '</div>');
+      '<div class="rc-grid">' + cards + '</div><section id="recording-player" class="video-frame" style="display:none;margin-top:20px"></section>');
+    view.querySelectorAll('[data-recording]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        b.disabled = true;
+        try {
+          var id = b.getAttribute('data-recording');
+          var playback = await api('/api/sessions/' + encodeURIComponent(id) + '/playback?type=recording');
+          var player = document.getElementById('recording-player');
+          player.style.display = 'block';
+          player.innerHTML = '<iframe src="' + esc(playback.embedUrl) + '" title="' + esc(playback.title) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+          player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          await api('/api/sessions/' + encodeURIComponent(id) + '/watched', { method: 'POST', body: {} });
+        } catch (err) { toast(err.message, 'err'); }
+        b.disabled = false;
+      });
+    });
   }
 
   var old = window.DashExtras && window.DashExtras.render;
