@@ -79,6 +79,7 @@
   });
   es.addEventListener('open', function () { if (wasDown) { wasDown = false; fire(); } });
   es.addEventListener('refresh', fire);
+  es.addEventListener('community', function (e) { try { window.dispatchEvent(new CustomEvent('debone:community', { detail: JSON.parse(e.data) })); } catch (x) {} });
   es.addEventListener('unlock', function (e) { window.dispatchEvent(new CustomEvent('debone:unlock', { detail: JSON.parse(e.data) })); });
   es.addEventListener('notice', function (e) {
     var d = JSON.parse(e.data);

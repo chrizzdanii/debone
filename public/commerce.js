@@ -43,11 +43,27 @@
   if (page === 'bundles') {
     req('/api/bundles').then(function (d) {
       var list = d.bundles || [];
-      $('bd-list').innerHTML = list.map(function (b, i) {
-        return '<article class="bd-card" style="--i:' + i + '"><div class="bd-img" style="background-image:url(\'' + (b.image || window.ACAD.img(i + 1)) + '\')"></div><div class="bd-head"><p class="eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3><p class="muted">' + esc(b.description) + '</p></div>' +
-          '<ul class="bd-courses">' + b.courses.map(function (c) { return '<li><b>' + esc(c.title) + '</b><span>' + esc(c.startDate ? 'Starts ' + c.startDate : 'Start date to be announced') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</span></li>'; }).join('') + '</ul>' +
-          '<div class="bd-foot"><b>' + naira(b.price) + '</b><button class="btn btn-solid" type="button" data-bundle="' + esc(b.id) + '">Buy the bundle</button></div></article>';
-      }).join('') || '<div class="empty-state">No bundles are open yet. Individual courses are on the Digital Academy page.</div>';
+      var totalSave = list.reduce(function (t, b) { return t + (b.savings || 0); }, 0), totalCourses = list.reduce(function (t, b) { return t + b.courses.length; }, 0);
+      var stats = list.length ? '<div class="bw-stats"><div><b>' + list.length + '</b><span>Bundles to choose from</span></div><div><b>' + totalCourses + '</b><span>Courses inside</span></div><div><b>' + naira(Math.max.apply(null, list.map(function (b) { return b.savings || 0; }))) + '</b><span>Biggest saving on one bundle</span></div></div>' : '';
+      $('bd-list').className = '';
+      $('bd-list').innerHTML = stats + '<div class="bw-grid">' + (list.map(function (b, i) {
+        var img = b.hasImage ? '<img loading="lazy" src="/api/bundles/' + esc(b.id) + '/image?v=' + b.imageV + '" alt="' + esc(b.title) + '">' : '<div class="bw-bg" style="background-image:url(\'' + window.ACAD.img(i + 1) + '\')"></div>';
+        return '<article class="bw-card" style="--i:' + (i % 6) + '"><div class="bw-img">' + img + (b.savingsPercent ? '<span class="bw-ribbon">Save ' + b.savingsPercent + '%</span>' : '') + '<span class="bw-count">' + b.courses.length + ' courses</span></div>' +
+          '<div class="bw-body"><p class="eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3>' + (b.description ? '<p>' + esc(b.description) + '</p>' : '') +
+          '<ul class="bw-courses">' + b.courses.map(function (c, j) { return '<li style="--j:' + j + '"><b>' + esc(c.title) + '</b><span>' + esc(c.startDate ? 'Starts ' + c.startDate : 'Start date to be announced') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</span></li>'; }).join('') + '</ul>' +
+          '<div class="bw-foot"><div class="bw-price"><b>' + naira(b.price) + '</b>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s><em>Save ' + naira(b.savings) + '</em>' : '') + '</div><button class="btn btn-solid" type="button" data-bundle="' + esc(b.id) + '">Buy the bundle</button></div></div></article>';
+      }).join('') || '<div class="empty-state">No bundles are open yet. Individual courses are on the Digital Academy page.</div>') + '</div>';
+      var cards = $('bd-list').querySelectorAll('.bw-card');
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { threshold: .12 });
+        cards.forEach(function (c) { io.observe(c); });
+      } else cards.forEach(function (c) { c.classList.add('in'); });
+      // Count-up on the headline numbers
+      $('bd-list').querySelectorAll('.bw-stats b').forEach(function (el) {
+        var raw = el.textContent, num = Number(raw.replace(/\D/g, '')), pre = raw.indexOf('₦') === 0 ? '₦' : '', t0 = null;
+        function f(ts) { if (!t0) t0 = ts; var p = Math.min(1, (ts - t0) / 1100); el.textContent = pre + Math.round(num * (1 - Math.pow(1 - p, 3))).toLocaleString('en-US'); if (p < 1) requestAnimationFrame(f); }
+        requestAnimationFrame(f);
+      });
       $('bd-list').querySelectorAll('[data-bundle]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           btn.disabled = true; btn.textContent = 'Opening…';

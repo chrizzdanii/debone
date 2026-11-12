@@ -1,0 +1,11 @@
+/* Section landing pages (Studio, About) */
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:18px;margin-top:34px}
+.hub-card{position:relative;display:grid;gap:8px;padding:26px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(160deg,rgba(224,168,0,.08),#101010 60%);color:var(--bone);text-decoration:none;overflow:hidden;transition:transform .4s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .4s;animation:hubIn .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*70ms)}
+.hub-card:hover{transform:translateY(-6px);border-color:var(--orange,#E0A800);box-shadow:0 24px 60px -30px rgba(224,168,0,.6)}
+.hub-card b{font:400 1.45rem/1.1 Anton,Impact,sans-serif;letter-spacing:.01em}
+.hub-card span{color:var(--ash);font-size:.92rem;line-height:1.5}
+.hub-card em{font-style:normal;color:var(--orange,#E0A800);font-weight:700;font-size:.84rem;margin-top:6px;transition:letter-spacing .3s}
+.hub-card:hover em{letter-spacing:.06em}
+.hub-group{margin-top:46px}
+@keyframes hubIn{from{opacity:0;transform:translateY(24px)}}
+@media (prefers-reduced-motion:reduce){.hub-card{animation:none}}

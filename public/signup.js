@@ -5,8 +5,18 @@
   var $ = function (id) { return document.getElementById(id); };
   var REF_KEY = 'debone-ref', ref = (params.get('ref') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
   try { if (ref) localStorage.setItem(REF_KEY, ref); else ref = localStorage.getItem(REF_KEY) || ''; } catch (e) {}
+  // Scanned from an advert's QR code: ?qr=flyer-lagos. The source name is kept so the 15% discount and the advert's results are recorded.
+  var QR_KEY = 'debone-qr', qr = (params.get('qr') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30);
+  try { if (qr) localStorage.setItem(QR_KEY, qr); else qr = localStorage.getItem(QR_KEY) || ''; } catch (e) {}
+  if (qr) {
+    var offer = document.getElementById('qr-offer'); if (offer) offer.hidden = false;
+    var ttl = document.querySelector('.lg-title'); if (ttl) ttl.textContent = 'Scan, join and save 15%';
+    var sub = document.querySelector('.lg-sub'); if (sub) sub.textContent = 'Create your free student account. Your 15% discount is added to it automatically, with nothing to type at checkout.';
+    var sub2 = document.getElementById('lg-submit'); if (sub2) sub2.textContent = 'Create account & claim 15%';
+    try { if (params.get('qr') && !sessionStorage.getItem('debone-qr-scan')) { sessionStorage.setItem('debone-qr-scan', '1'); fetch('/api/qr/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ src: qr }) }).catch(function () {}); } } catch (e) {}
+  }
   var form = $('lg-form'), alertBox = $('lg-alert'), submit = $('lg-submit');
-  if (ref) { var g = $('lg-google'); if (g) g.setAttribute('href', '/api/auth/google?ref=' + encodeURIComponent(ref)); }
+  { var g = $('lg-google'); if (g && (ref || qr)) g.setAttribute('href', '/api/auth/google?' + (ref ? 'ref=' + encodeURIComponent(ref) + '&' : '') + (qr ? 'qr=' + encodeURIComponent(qr) : '')); }
 
   function showAlert(msg, ok) {
     alertBox.textContent = msg;
@@ -36,12 +46,12 @@
     submit.disabled = true; submit.textContent = 'Creating your account…';
     try {
       var res = await fetch('/api/auth/signup', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: $('lg-name').value.trim(), email: email, phone: $('lg-phone').value.trim(), password: pass, referralCode: ref }) });
+        body: JSON.stringify({ name: $('lg-name').value.trim(), email: email, phone: $('lg-phone').value.trim(), password: pass, referralCode: ref, qr: qr }) });
       var data = await res.json().catch(function () { return {}; });
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
-      try { localStorage.removeItem(REF_KEY); } catch (e) {}
-      showAlert('Account created. Opening your dashboard…', true);
-      location.href = next;
+      try { localStorage.removeItem(REF_KEY); localStorage.removeItem(QR_KEY); } catch (e) {}
+      showAlert(qr ? 'Account created. Your 15% discount is saved. Choose your course…' : 'Account created. Opening your dashboard…', true);
+      location.href = qr && next === 'dashboard.html' ? 'dashboard.html#browse' : next;
     } catch (err) {
       showAlert(err.message);
       submit.disabled = false; submit.textContent = label;

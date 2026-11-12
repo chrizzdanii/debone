@@ -1817,6 +1817,12 @@ html [disabled],html .btn[disabled]{cursor:not-allowed!important}
 .app input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),.app textarea,.app [contenteditable]{cursor:text}
 .app .fx-dot,.app .fx-ring{display:none!important}
 html.fx-cursor .app a,html.fx-cursor .app button,html.fx-cursor .app .btn{cursor:pointer}
+
+/* v52: section headings are links; the arrow and hover open the dropdown */
+.theme-brand a.nav-trigger{text-decoration:none}
+.theme-brand .nav-group.open a.nav-trigger,.theme-brand a.nav-trigger[aria-current="page"]{color:var(--orange)}
+.theme-brand .nav-all{display:none}
+@media (max-width:900px){.theme-brand .nav-all{display:block;color:var(--orange);font-weight:700;font-size:.9rem;text-decoration:none;padding:6px 0 10px}}
 /* Community attachments and responsive messaging controls */
 .theme-brand .wa-attachment{display:inline-flex;max-width:100%;overflow-wrap:anywhere;padding:6px 0;color:#F1C453;text-decoration:underline;text-underline-offset:3px}
 .theme-brand .wa-attachment img{max-width:100%;height:auto;object-fit:contain}

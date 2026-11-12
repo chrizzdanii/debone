@@ -87,8 +87,8 @@
       var extras = '';
       if (selected.joinUrl && selected.joinOpen) extras += '<a class="btn btn-solid join-now" target="_blank" rel="noopener" href="' + esc(selected.joinUrl) + '"><span class="join-dot"></span>Join class now</a> ';
       else if (selected.joinUrl) extras += '<span class="join-wait">Join opens 15 minutes before the class</span> ';
-      if ((selected.joinOpen || selected.liveOpen) && !selected.attended) extras += '<button class="btn btn-ghost btn-sm" type="button" id="attend-btn">I am attending</button> ';
-      if (selected.attended) extras += '<span class="gpill pass">You are checked in</span> ';
+      if ((selected.joinOpen || selected.liveOpen) && !selected.attended && !selected.ended) extras += '<button class="btn btn-ghost btn-sm" type="button" id="attend-btn">I have joined the class</button> ';
+      if (selected.attended) extras += selected.attendedHow === 'recording' ? '<span class="gpill pass">You have watched the recorded video ✓</span> ' : '<span class="gpill pass">Live joined ✓</span> ';
       if (selected.countdownTo) extras += '<div class="countdown" data-countdown="' + esc(selected.countdownTo) + '" aria-live="off"></div>';
       if (selected.recordingAvailable) extras += '<button class="btn btn-ghost btn-sm" type="button" data-replay="' + esc(selected.id) + '">Watch recording</button> ';
 
@@ -114,6 +114,12 @@
         .then(function () { toast('Checked in. Enjoy the class!'); renderLive(selected.id); })
         .catch(function (err) { toast(err.message, 'err'); att.disabled = false; });
     });
+    // Opening the join link counts as joining live
+    view.querySelectorAll('a.join-now').forEach(function (a) {
+      a.addEventListener('click', function () {
+        api('/api/sessions/' + encodeURIComponent(selected.id) + '/attend', { method: 'POST', body: {} }).then(function () { setTimeout(function () { renderLive(selected.id); }, 600); }).catch(function () {});
+      });
+    });
     view.querySelectorAll('[data-replay]').forEach(function (b) {
       b.addEventListener('click', async function () {
         b.disabled = true;
@@ -121,7 +127,9 @@
           var playback = await api('/api/sessions/' + encodeURIComponent(b.getAttribute('data-replay')) + '/playback?type=recording');
           var frame = view.querySelector('.video-frame');
           if (frame) frame.innerHTML = '<iframe src="' + esc(playback.embedUrl) + '" title="Recording" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+          // Missed the live class? Watching the recording counts as doing the class, so the lesson can be completed
           await api('/api/sessions/' + encodeURIComponent(b.getAttribute('data-replay')) + '/watched', { method: 'POST', body: {} });
+          if (!selected.attended) toast('You have watched the recorded video. This step is complete.');
         } catch (err) { toast(err.message, 'err'); }
         b.disabled = false;
       });

@@ -57,131 +57,214 @@
     });
   }
 
-  function attachmentHtml(a) {
-    if (!a || !a.data || !a.name) return '';
-    var href = esc(a.data), name = esc(a.name);
-    return a.type && a.type.indexOf('image/') === 0
-      ? '<a href="' + href + '" download="' + name + '" class="wa-attachment"><img src="' + href + '" alt="' + name + '" style="max-width:240px;max-height:200px;border-radius:12px;display:block"></a>'
-      : '<a href="' + href + '" download="' + name + '" class="wa-attachment">📎 ' + name + '</a>';
-  }
-  /* ---------- Community: a chat for each course ---------- */
-  var replyTo = null, communityTimer = null, communityRequest = false;
-  function communityLog(threads) {
-    var last = null, log = '';
-    threads.slice().reverse().forEach(function (t) {
-      var day = dayLabel(t.createdAt);
-      if (day !== last) { log += '<div class="wa-day"><span>' + esc(day) + '</span></div>'; last = day; }
-      log += '<div class="wa-row' + (t.mine ? ' mine' : '') + '" data-thread="' + esc(t.id) + '"><div class="wa-bubble">' +
-        '<span class="wa-name">' + (t.mine ? 'You' : esc(t.authorName)) + '</span>' +
-        (t.body && t.body.indexOf(t.title) === 0 ? '' : '<b class="wa-title">' + esc(t.title) + '</b>') + '<p>' + esc(t.body || t.title) + '</p>' +
-        attachmentHtml(t.attachment) + '<span class="wa-meta">' + timeLabel(t.createdAt) + (t.mine ? '<button type="button" class="wa-reply-btn" data-delete-thread="' + esc(t.id) + '">Delete</button>' : '') + '<button type="button" class="wa-reply-btn" data-reply="' + esc(t.id) + '" data-who="' + esc(t.authorName) + '">Reply</button></span></div></div>';
-      (t.replies || []).forEach(function (r) {
-        log += '<div class="wa-row reply' + (r.mine ? ' mine' : '') + '"><div class="wa-bubble"><span class="wa-name">' + (r.mine ? 'You' : esc(r.authorName)) + '</span><p>' + esc(r.body || '') + '</p>' + attachmentHtml(r.attachment) + '<span class="wa-meta">' + timeLabel(r.createdAt) + (r.mine ? '<button type="button" class="wa-reply-btn" data-delete-reply="' + esc(r.id) + '">Delete</button>' : '') + '</span></div></div>';
-      });
-    });
-    return threads.length ? log : '<div class="wa-empty"><div class="wa-empty-ring"></div><b>No messages yet</b><p>Start the conversation. Ask a question or share your progress.</p></div>';
-  }
-  function bindCommunityMessages(root, refresh) {
-    root.querySelectorAll('[data-delete-thread], [data-delete-reply]').forEach(function (b) {
-      b.addEventListener('click', async function () {
-        if (!window.confirm('Delete this message?')) return;
-        var isReply = b.hasAttribute('data-delete-reply');
-        var id = b.getAttribute(isReply ? 'data-delete-reply' : 'data-delete-thread');
-        try { await api('/api/community/' + (isReply ? 'replies/' : 'threads/') + encodeURIComponent(id), { method: 'DELETE' }); await refresh(); }
-        catch (e) { toast(e.message, 'err'); }
-      });
-    });
-    root.querySelectorAll('[data-reply]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        replyTo = b.getAttribute('data-reply');
-        document.getElementById('wa-to').textContent = b.getAttribute('data-who');
-        document.getElementById('wa-replying').hidden = false;
-        document.getElementById('wa-text').focus();
-      });
+  /* ---------- Community: a WhatsApp-style group chat for each course ----------
+     Text, pictures and files. Reply to a message. Delete your own messages. New messages appear live. */
+  var ICONS = {
+    clip: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg>',
+    image: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>',
+    send: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v7M14 10v7"/></svg>',
+    reply: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v3"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
+    down: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>'
+  };
+  var NAME_COLOURS = ['#53BDEB', '#E0A800', '#FF8A7A', '#B28DFF', '#6BCB77', '#FFB86B', '#5EE0D0', '#F28CC4'];
+  function nameColour(n) { var h = 0; String(n || '').split('').forEach(function (c) { h = (h * 31 + c.charCodeAt(0)) >>> 0; }); return NAME_COLOURS[h % NAME_COLOURS.length]; }
+  function fileSize(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+  function fileExt(n) { var e = String(n || '').split('.').pop(); return e && e.length < 6 ? e.toUpperCase() : 'FILE'; }
+  var CHAT_MAX = 2.4 * 1024 * 1024;
+  var chat = { course: null, msgs: [], sig: '', replyTo: null, pending: null, timer: null, busy: false, stick: true };
+
+  /* Shrinks big photos before sending so they upload fast on mobile data */
+  function prepareFile(file) {
+    return new Promise(function (resolve, reject) {
+      var isImg = /^image\/(jpeg|png|webp)$/.test(file.type);
+      function fromBlob(blob, name) {
+        if (blob.size > CHAT_MAX) return reject(new Error('That file is larger than 2.4 MB. Please choose a smaller one.'));
+        var r = new FileReader(); r.onload = function () { resolve({ name: name, dataUrl: r.result, size: blob.size, isImg: isImg || /^image\//.test(blob.type), preview: (isImg || /^image\//.test(blob.type)) ? r.result : null }); }; r.onerror = function () { reject(new Error('That file could not be read.')); }; r.readAsDataURL(blob);
+      }
+      if (!isImg || file.size < 700 * 1024) return fromBlob(file, file.name);
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var max = 1600, sc = Math.min(1, max / Math.max(img.width, img.height)), w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+        var cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        cv.toBlob(function (b) { if (!b) return fromBlob(file, file.name); fromBlob(b, file.name.replace(/\.\w+$/, '') + '.jpg'); }, 'image/jpeg', 0.82);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); fromBlob(file, file.name); };
+      img.src = url;
     });
   }
+
+  function bubbleHtml(m) {
+    if (m.deleted) {
+      return '<div class="wa-row wa2-gone' + (m.mine ? ' mine' : '') + '" data-id="' + esc(m.id) + '"><div class="wa-bubble"><p><em>' + (m.mine ? 'You deleted this message' : 'This message was deleted') + '</em></p><span class="wa-meta">' + timeLabel(m.createdAt) + '</span></div></div>';
+    }
+    var quote = m.replyTo ? '<div class="wa2-quote" data-jump="' + esc(m.replyTo.id) + '"><b style="color:' + nameColour(m.replyTo.name) + '">' + esc(m.replyTo.name) + '</b><span>' + esc(m.replyTo.text) + '</span></div>' : '';
+    var media = '';
+    if (m.file && m.file.kind === 'image') media = '<button type="button" class="wa2-img" data-view-img="/api/community/files/' + esc(m.file.id) + '" aria-label="Open picture"><img loading="lazy" src="/api/community/files/' + esc(m.file.id) + '" alt="' + esc(m.file.name) + '"></button>';
+    else if (m.file) media = '<a class="wa2-file" href="/api/community/files/' + esc(m.file.id) + '" download="' + esc(m.file.name) + '"><span class="wa2-fico">' + ICONS.doc + '<em>' + esc(fileExt(m.file.name)) + '</em></span><span class="wa2-finfo"><b>' + esc(m.file.name) + '</b><small>' + fileSize(m.file.size) + ' · tap to download</small></span></a>';
+    var who = m.mine ? '' : '<span class="wa-name" style="color:' + nameColour(m.name) + '">' + esc(m.name) + (m.role === 'staff' ? ' <i class="wa2-staff">Instructor</i>' : '') + '</span>';
+    return '<div class="wa-row' + (m.mine ? ' mine' : '') + (m.pending ? ' wa2-pending' : '') + '" data-id="' + esc(m.id) + '"><div class="wa-bubble">' + who + quote + media +
+      (m.text ? '<p>' + esc(m.text) + '</p>' : '') +
+      '<span class="wa-meta">' + (m.pending ? 'Sending…' : timeLabel(m.createdAt)) + (m.mine && !m.pending ? '<span class="wa2-tick" aria-label="Sent">✓✓</span>' : '') + '</span>' +
+      (m.pending ? '' : '<div class="wa2-actions"><button type="button" data-act-reply="' + esc(m.id) + '" aria-label="Reply" title="Reply">' + ICONS.reply + '</button>' +
+        (m.mine ? '<button type="button" data-act-del="' + esc(m.id) + '" aria-label="Delete message" title="Delete">' + ICONS.trash + '</button>' : '') + '</div>') +
+      '</div></div>';
+  }
+  function logHtml(list) {
+    if (!list.length) return '<div class="wa-empty"><div class="wa-empty-ring"></div><b>No messages yet</b><p>Say hello, ask a question, or share a picture of your work.</p></div>';
+    var last = null, out = '';
+    list.forEach(function (m) {
+      var day = dayLabel(m.createdAt);
+      if (day !== last) { out += '<div class="wa-day"><span>' + esc(day) + '</span></div>'; last = day; }
+      out += bubbleHtml(m);
+    });
+    return out;
+  }
+  function paintLog(force) {
+    var log = document.getElementById('wa-log'); if (!log) return;
+    var list = chat.msgs.concat(chat.pending ? [chat.pending] : []);
+    var sig = JSON.stringify(list.map(function (m) { return [m.id, m.deleted ? 1 : 0, m.pending ? 1 : 0, m.text, m.file && m.file.id]; }));
+    if (!force && sig === chat.sig) return;
+    var near = log.scrollHeight - log.scrollTop - log.clientHeight < 140;
+    var grew = list.length > (chat.count || 0);
+    chat.sig = sig; chat.count = list.length;
+    var known = chat.known; chat.known = new Set(list.map(function (m) { return m.id; }));
+    log.innerHTML = logHtml(list);
+    if (known) log.querySelectorAll('.wa-row').forEach(function (r) { if (!known.has(r.getAttribute('data-id'))) r.classList.add('wa2-new'); });
+    if (near || chat.stick) { log.scrollTop = log.scrollHeight; chat.stick = false; }
+    else if (grew) { var b = document.getElementById('wa-jump'); if (b) b.hidden = false; }
+    var mem = document.getElementById('wa-count'); if (mem) mem.textContent = chat.members + ' members · ' + list.filter(function (m) { return !m.deleted; }).length + ' messages';
+  }
+  async function pollChat() {
+    if (!chat.course || !document.getElementById('wa-log') || chat.busy) return;
+    chat.busy = true;
+    try {
+      var d = await api('/api/courses/' + encodeURIComponent(chat.course) + '/community/chat');
+      chat.msgs = d.messages; chat.members = d.members; paintLog(false);
+    } catch (e) { /* keep what is on screen */ } finally { chat.busy = false; }
+  }
+  function stopChat() { clearInterval(chat.timer); chat.timer = null; }
+  function setReply(m) {
+    chat.replyTo = m;
+    var box = document.getElementById('wa-replying'); if (!box) return;
+    box.hidden = !m;
+    if (m) { document.getElementById('wa-to').textContent = m.mine ? 'yourself' : m.name; document.getElementById('wa-to-text').textContent = m.deleted ? '' : (m.text || (m.file ? (m.file.kind === 'image' ? 'Photo' : m.file.name) : '')).slice(0, 90); document.getElementById('wa-text').focus(); }
+  }
+  function openImage(src) {
+    var o = document.createElement('div'); o.className = 'wa2-lightbox'; o.innerHTML = '<button type="button" aria-label="Close">&times;</button><img src="' + esc(src) + '" alt="">';
+    o.addEventListener('click', function () { o.classList.remove('in'); setTimeout(function () { o.remove(); }, 200); });
+    document.body.appendChild(o); requestAnimationFrame(function () { o.classList.add('in'); });
+  }
+
   async function renderCommunity() {
     crumb.textContent = 'Community';
+    stopChat();
     var dash = await api('/api/dashboard');
     var enrolled = dash.courses.filter(function (c) { return c.enrolled; });
     if (!enrolled.length) { setView(head('Learn together', 'Community', 'Ask questions and help classmates in your courses.') + '<div class="empty-state">Enrol in a course to join its community.</div>'); return; }
     var cur = (location.hash.split('/')[1]) || enrolled[0].id;
     var course = enrolled.find(function (c) { return c.id === cur; }) || enrolled[0];
-    var d = await api('/api/courses/' + encodeURIComponent(course.id) + '/community');
-    replyTo = null;
-    var log = communityLog(d.threads);
-    setView(head('Learn together', 'Community', 'Ask questions, help classmates and share your progress.') +
-      '<section class="wa-shell">' +
-        '<div class="wa-top"><div class="wa-avatar">' + esc((course.title || 'C').charAt(0)) + '</div><div><b>' + esc(course.title) + '</b><span>' + d.threads.length + ' discussions · course group</span></div></div>' +
+    var d = await api('/api/courses/' + encodeURIComponent(course.id) + '/community/chat');
+    chat = { course: course.id, msgs: d.messages, members: d.members, sig: '', count: 0, replyTo: null, pending: null, timer: null, busy: false, stick: true, attach: null };
+    setView(head('Learn together', 'Community', 'Ask questions, help classmates and share your progress and your work.') +
+      '<section class="wa-shell wa2-shell" id="wa-shell">' +
+        '<div class="wa-top"><div class="wa-avatar">' + esc((course.title || 'C').charAt(0)) + '</div><div><b>' + esc(course.title) + '</b><span id="wa-count"></span></div><span class="wa2-live"><i></i>Live</span></div>' +
         '<div class="wa-courses">' + enrolled.map(function (c) { return '<a class="wa-chip' + (c.id === course.id ? ' on' : '') + '" href="#community/' + esc(c.id) + '">' + esc(c.title) + '</a>'; }).join('') + '</div>' +
-        '<div class="wa-log" id="wa-log">' + log + '</div>' +
-        '<div class="wa-composer"><div class="wa-replying" id="wa-replying" hidden><span>Replying to <b id="wa-to"></b></span><button type="button" id="wa-cancel" aria-label="Cancel reply">&times;</button></div>' +
-          '<div class="wa-preview" id="wa-preview" hidden></div><form class="wa-form" id="wa-form"><label class="wa-plus" title="Add image or file" aria-label="Add image or file"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><input id="wa-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" style="display:none"></label><textarea id="wa-text" rows="1" maxlength="2000" placeholder="Type a message"></textarea><button type="submit" class="wa-send" aria-label="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2-7-8-1z"/></svg></button></form></div>' +
+        '<div class="wa-log" id="wa-log" aria-live="polite"></div>' +
+        '<button type="button" class="wa2-jump" id="wa-jump" hidden aria-label="Jump to the newest message">' + ICONS.down + ' New messages</button>' +
+        '<div class="wa-composer">' +
+          '<div class="wa-replying" id="wa-replying" hidden><div><span>Replying to <b id="wa-to"></b></span><small id="wa-to-text"></small></div><button type="button" id="wa-cancel" aria-label="Cancel reply">&times;</button></div>' +
+          '<div class="wa2-attach" id="wa-attach" hidden></div>' +
+          '<form class="wa-form" id="wa-form" autocomplete="off">' +
+            '<button type="button" class="wa2-btn" id="wa-pick-file" aria-label="Attach a file" title="Attach a file">' + ICONS.clip + '</button>' +
+            '<button type="button" class="wa2-btn" id="wa-pick-img" aria-label="Send a picture" title="Send a picture">' + ICONS.image + '</button>' +
+            '<textarea id="wa-text" rows="1" maxlength="2000" placeholder="Type a message"></textarea>' +
+            '<button type="submit" class="wa-send" id="wa-send" aria-label="Send">' + ICONS.send + '</button>' +
+          '</form>' +
+          '<input type="file" id="wa-file" hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,image/*">' +
+          '<input type="file" id="wa-img" hidden accept="image/*">' +
+        '</div>' +
+        '<div class="wa2-drop" id="wa-drop" hidden><div>Drop a picture or file to send it</div></div>' +
       '</section>');
-    var logEl = document.getElementById('wa-log');
-    logEl.scrollTop = logEl.scrollHeight;
-    var ta = document.getElementById('wa-text');
+    var log = document.getElementById('wa-log'), ta = document.getElementById('wa-text'), form = document.getElementById('wa-form'), sendBtn = document.getElementById('wa-send');
+    paintLog(true);
+    log.scrollTop = log.scrollHeight;
+    log.addEventListener('scroll', function () { if (log.scrollHeight - log.scrollTop - log.clientHeight < 60) document.getElementById('wa-jump').hidden = true; });
+    document.getElementById('wa-jump').addEventListener('click', function () { log.scrollTop = log.scrollHeight; this.hidden = true; });
+
     ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'; });
-    ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('wa-form').requestSubmit(); } });
-    async function refreshMessages() {
-      if (!document.getElementById('wa-log') || location.hash.split('/')[0] !== '#community' || communityRequest) return;
-      communityRequest = true;
-      try {
-        var fresh = await api('/api/courses/' + encodeURIComponent(course.id) + '/community');
-        var target = document.getElementById('wa-log');
-        if (!target) return;
-        var html = communityLog(fresh.threads);
-        if (target.innerHTML !== html) {
-          var atBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
-          var previousScroll = target.scrollTop;
-          target.innerHTML = html;
-          bindCommunityMessages(target, refreshMessages);
-          target.scrollTop = atBottom ? target.scrollHeight : previousScroll;
-        }
-      } catch (err) { /* Keep draft intact during temporary connection loss. */ }
-      finally { communityRequest = false; }
+    ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); form.requestSubmit(); } });
+    document.getElementById('wa-cancel').addEventListener('click', function () { setReply(null); });
+
+    function showAttach() {
+      var box = document.getElementById('wa-attach'), a = chat.attach;
+      box.hidden = !a;
+      if (!a) { box.innerHTML = ''; return; }
+      box.innerHTML = (a.preview ? '<img src="' + esc(a.preview) + '" alt="">' : '<span class="wa2-fico">' + ICONS.doc + '<em>' + esc(fileExt(a.name)) + '</em></span>') +
+        '<div><b>' + esc(a.name) + '</b><small>' + fileSize(a.size) + ' · ready to send</small></div><button type="button" id="wa-unattach" aria-label="Remove attachment">&times;</button>';
+      document.getElementById('wa-unattach').addEventListener('click', function () { chat.attach = null; showAttach(); });
     }
-    bindCommunityMessages(logEl, refreshMessages);
-    if (communityTimer) clearInterval(communityTimer);
-    communityTimer = setInterval(function () { if (!document.hidden) refreshMessages(); }, 3000);
-    var fileInput = document.getElementById('wa-file'), preview = document.getElementById('wa-preview');
-    fileInput.addEventListener('change', function () {
-      var file = fileInput.files[0];
-      preview.hidden = !file;
-      preview.innerHTML = '';
+    async function takeFile(file) {
       if (!file) return;
-      var thumb = document.createElement('div'); thumb.className = 'wa-preview-thumb';
-      if (file.type.indexOf('image/') === 0) {
-        var img = document.createElement('img'); img.alt = 'Selected image preview';
-        var url = URL.createObjectURL(file); img.src = url;
-        img.onload = function () { URL.revokeObjectURL(url); };
-        thumb.appendChild(img);
-      } else { thumb.textContent = '📄'; }
-      var details = document.createElement('div'); details.className = 'wa-preview-info';
-      var filename = document.createElement('strong'); filename.textContent = file.name;
-      var size = document.createElement('small'); size.textContent = (file.size / 1024).toFixed(1) + ' KB';
-      details.appendChild(filename); details.appendChild(size);
-      var remove = document.createElement('button'); remove.type = 'button'; remove.className = 'wa-preview-remove'; remove.textContent = '×'; remove.setAttribute('aria-label', 'Remove attachment');
-      remove.onclick = function () { fileInput.value = ''; preview.innerHTML = ''; preview.hidden = true; };
-      preview.appendChild(thumb); preview.appendChild(details); preview.appendChild(remove);
-      if (file.size > 55 * 1024) toast('File must be 55 KB or smaller. Please compress it before sending.', 'err');
+      try { chat.attach = await prepareFile(file); showAttach(); ta.focus(); }
+      catch (e) { toast(e.message, 'err'); }
+    }
+    document.getElementById('wa-pick-file').addEventListener('click', function () { document.getElementById('wa-file').click(); });
+    document.getElementById('wa-pick-img').addEventListener('click', function () { document.getElementById('wa-img').click(); });
+    ['wa-file', 'wa-img'].forEach(function (id) { document.getElementById(id).addEventListener('change', function () { takeFile(this.files[0]); this.value = ''; }); });
+    ta.addEventListener('paste', function (e) {
+      var items = (e.clipboardData && e.clipboardData.files) || [];
+      if (items.length) { e.preventDefault(); takeFile(items[0]); }
     });
-    document.getElementById('wa-cancel').addEventListener('click', function () { replyTo = null; document.getElementById('wa-replying').hidden = true; });
-    document.getElementById('wa-form').addEventListener('submit', async function (e) {
+    var shell = document.getElementById('wa-shell'), drop = document.getElementById('wa-drop'), dragN = 0;
+    shell.addEventListener('dragenter', function (e) { e.preventDefault(); dragN++; drop.hidden = false; });
+    shell.addEventListener('dragleave', function () { dragN = Math.max(0, dragN - 1); if (!dragN) drop.hidden = true; });
+    shell.addEventListener('dragover', function (e) { e.preventDefault(); });
+    shell.addEventListener('drop', function (e) { e.preventDefault(); dragN = 0; drop.hidden = true; if (e.dataTransfer.files[0]) takeFile(e.dataTransfer.files[0]); });
+
+    log.addEventListener('click', async function (e) {
+      var img = e.target.closest('[data-view-img]'); if (img) return openImage(img.getAttribute('data-view-img'));
+      var jump = e.target.closest('[data-jump]');
+      if (jump) { var t = log.querySelector('[data-id="' + jump.getAttribute('data-jump') + '"]'); if (t) { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); t.classList.add('wa2-flash'); setTimeout(function () { t.classList.remove('wa2-flash'); }, 1400); } return; }
+      var rb = e.target.closest('[data-act-reply]');
+      if (rb) { var rm = chat.msgs.find(function (x) { return x.id === rb.getAttribute('data-act-reply'); }); if (rm) setReply(rm); return; }
+      var db = e.target.closest('[data-act-del]');
+      if (db) {
+        var id = db.getAttribute('data-act-del');
+        if (!window.confirm('Delete this message for everyone?')) return;
+        var row = db.closest('.wa-row'); if (row) row.classList.add('wa2-removing');
+        try { await api('/api/community/chat/' + encodeURIComponent(id), { method: 'DELETE' }); toast('Message deleted.'); pollChat(); }
+        catch (err) { if (row) row.classList.remove('wa2-removing'); toast(err.message, 'err'); }
+      }
+    });
+
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
-      var text = ta.value.trim(), file = document.getElementById('wa-file').files[0]; if (!text && !file) return;
-      var btn = view.querySelector('.wa-send'); btn.disabled = true;
+      var text = ta.value.trim(), a = chat.attach;
+      if (!text && !a) return;
+      var reply = chat.replyTo;
+      sendBtn.disabled = true;
+      // Show the message at once, like WhatsApp, and confirm it when the server has it
+      chat.pending = { id: 'pending', mine: true, pending: true, name: 'You', text: text, createdAt: new Date().toISOString(), replyTo: reply ? { id: reply.id, name: reply.name, text: reply.text || '' } : null,
+        file: a ? { id: 'pending', name: a.name, size: a.size, kind: a.isImg ? 'image' : 'file' } : null };
+      var pm = chat.pending; chat.stick = true; paintLog(true);
+      if (a && a.preview) { var pi = log.querySelector('.wa-row.wa2-pending img'); if (pi) pi.src = a.preview; }
+      ta.value = ''; ta.style.height = 'auto'; chat.attach = null; showAttach(); setReply(null);
       try {
-        var attachment = null;
-        if (file) {
-          if (file.size > 55 * 1024) throw new Error('File must be 55 KB or smaller.');
-          attachment = { name: file.name, data: await new Promise(function(resolve,reject) { var reader = new FileReader(); reader.onload = function() { resolve(reader.result); }; reader.onerror = reject; reader.readAsDataURL(file); }) };
-        }
-        if (replyTo) await api('/api/community/threads/' + encodeURIComponent(replyTo) + '/replies', { method: 'POST', body: { body: text, attachment: attachment } });
-        else await api('/api/courses/' + encodeURIComponent(course.id) + '/community/threads', { method: 'POST', body: { title: (text || file.name).slice(0, 60), body: text, attachment: attachment } });
-        replyTo = null; ta.value = ''; fileInput.value = ''; preview.hidden = true; preview.innerHTML = ''; await refreshMessages();
-      } catch (err) { toast(err.message, 'err'); btn.disabled = false; }
+        await api('/api/courses/' + encodeURIComponent(course.id) + '/community/chat', { method: 'POST', body: { text: text, replyTo: reply ? reply.id : null, file: a ? { name: a.name, dataUrl: a.dataUrl } : null } });
+        chat.pending = null; chat.stick = true; await pollChat(); paintLog(true);
+      } catch (err) {
+        chat.pending = null; paintLog(true); toast(err.message, 'err');
+        ta.value = pm.text; chat.attach = a; showAttach(); chat.replyTo = reply; setReply(reply);
+      } finally { sendBtn.disabled = false; }
     });
+
+    // Live: a new message from anyone appears within a moment
+    chat.timer = setInterval(function () { if (!document.getElementById('wa-log')) return stopChat(); if (!document.hidden) pollChat(); }, 3000);
+    var onEvt = function () { if (!document.getElementById('wa-log')) { window.removeEventListener('debone:community', onEvt); return; } pollChat(); };
+    window.addEventListener('debone:community', onEvt);
   }
 
   /* ---------- Course reviews: clear stars, labelled form ---------- */

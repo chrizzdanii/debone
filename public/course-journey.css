@@ -49,3 +49,23 @@
 .gate-lock{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;color:var(--orange);background:rgba(224,168,0,.12);animation:jFloat 3s ease-in-out infinite}
 @keyframes jFloat{50%{transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){.jstep,.cert-card,.gate-card,.finish-bar,.jdot,.btn.pulse,.jlive i,.gate-lock,.unlock-pop{animation:none!important}}
+
+/* v52: clear completion rules, live / recording badges, locked next-lesson states */
+.rules-card{margin:14px 0 6px;padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:#101010;transition:border-color .5s,background .5s;animation:jRise .5s .2s both}
+.rules-card.ready{border-color:rgba(107,203,119,.5);background:linear-gradient(135deg,rgba(107,203,119,.1),#101010)}
+.rules-card ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:9px}
+.rules-card li{display:flex;align-items:flex-start;gap:10px;color:var(--ash);font-size:.92rem;transition:color .3s}
+.rules-card li i{font-style:normal;flex:0 0 22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.78rem;border:1.5px solid var(--line);color:var(--ash);transition:all .4s cubic-bezier(.34,1.56,.64,1)}
+.rules-card li.ok{color:var(--bone)}
+.rules-card li.ok i{background:var(--teal,#6BCB77);border-color:var(--teal,#6BCB77);color:#0B0B0B;transform:scale(1.08)}
+.rules-card li.rule-next{border-top:1px dashed var(--line);padding-top:10px;margin-top:2px}
+.rules-card li.rule-next i{border:0;font-size:.9rem}
+.jbadge{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-weight:700;font-size:.88rem;animation:jPop .5s}
+.jbadge.live{background:rgba(107,203,119,.14);color:#6BCB77}
+.jbadge.live span{font-size:.7rem;animation:jPulseTxt 1.6s infinite}
+.jbadge.rec{background:rgba(83,189,235,.14);color:#53BDEB}
+@keyframes jPulseTxt{50%{opacity:.35}}
+.jhint{font-size:.82rem;margin:8px 0 0}
+.finish-bar .btn[disabled]{opacity:.55;cursor:not-allowed;display:inline-flex;align-items:center;gap:6px}
+.finish-bar.is-done .btn[disabled]{opacity:1;cursor:default;background:rgba(107,203,119,.16);border-color:rgba(107,203,119,.5);color:#6BCB77}
+.lesson-btn.gated .st{color:var(--orange)}

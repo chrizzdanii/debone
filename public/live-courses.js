@@ -14,11 +14,12 @@
   }
   function paintStats(list) {
     var open = list.filter(function (c) { return !c.comingSoon; });
-    var seats = open.reduce(function (t, c) { return t + (c.seatsLeft != null ? c.seatsLeft : 0); }, 0);
+    // Seats are per course (up to 1,000 each), so show the roomiest course rather than adding every course together
+    var seats = open.reduce(function (m, c) { return Math.max(m, c.seatsLeft != null ? c.seatsLeft : (c.seats || 1000)); }, 0);
     var next = open.filter(function (c) { return c.startDate && daysUntil(c.startDate) >= 0; }).sort(function (a, b) { return a.startDate.localeCompare(b.startDate); })[0];
     document.getElementById('lc-stats').innerHTML =
       '<div class="lc-stat"><b data-count="' + open.length + '">0</b><span>Live courses open</span></div>' +
-      '<div class="lc-stat"><b data-count="' + seats + '">0</b><span>Seats left</span></div>' +
+      '<div class="lc-stat"><b data-count="' + seats + '">0</b><span>Seats available per course</span></div>' +
       '<div class="lc-stat"><b>' + (next ? esc(fmtDate(next.startDate)) : 'Soon') + '</b><span>Next start</span></div>';
     document.querySelectorAll('[data-count]').forEach(function (el) {
       var end = Number(el.getAttribute('data-count')), t0 = null;
@@ -56,7 +57,7 @@
         '<div><dt>Schedule</dt><dd>' + esc(c.schedule || 'To be announced') + '</dd></div>' +
         '<div><dt>Length</dt><dd>' + esc(c.duration || (c.sessionsTotal ? c.sessionsTotal + ' classes' : 'To be announced')) + '</dd></div>' +
       '</dl>' +
-      (total ? '<div class="lc-seats"><div class="lc-seats-top"><span>' + (left != null ? left + ' seats left' : '') + '</span><span>' + pct + '% taken</span></div><div class="lc-bar"><i style="--w:' + pct + '%"></i></div></div>' : '') +
+      (total ? '<div class="lc-seats"><div class="lc-seats-top"><span>' + (left > 0 ? left.toLocaleString('en-US') + ' of ' + total.toLocaleString('en-US') + ' seats available' : 'Fully booked') + '</span><span>' + (pct < 1 && left > 0 ? 'Just opened' : pct + '% taken') + '</span></div><div class="lc-bar"><i style="--w:' + Math.max(pct, left > 0 ? 2 : 0) + '%"></i></div></div>' : '') +
       '<div class="lc-foot"><b>' + (c.price > 0 ? naira(c.price) : 'Free') + '</b>' +
         (c.comingSoon ? '<span class="btn btn-ghost btn-sm lc-dis">Coming soon</span>' : '<a class="btn btn-solid btn-sm" href="login.html?next=dashboard">' + (c.price > 0 ? 'Enrol now' : 'Start free') + '</a>') +
       '</div></article>';

@@ -164,7 +164,7 @@
       ? '<section class="panel"><p class="eyebrow">Staff account</p><p class="muted">You are signed in as ' + esc(d.user.role) + '. Paid courses are locked for staff too, exactly as for students. To test payment, sign in with a separate student account.</p></section>'
       : '';
     setView(
-      '<div class="stagger">' + profileBanner(d.user) + couponBanner(d.user) +
+      '<div class="stagger">' + profileBanner(d.user) + qrBanner(d.user) + couponBanner(d.user) +
         viewHead('Welcome back', 'Hi, ' + first + '.', 'Here is where your learning stands today.') + staffNote +
         '<section class="kpis">' +
           kpi('Courses', d.stats.enrolled) +
@@ -248,8 +248,10 @@
   }
 
   var LOCK_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  function shortDay(k) { var d = new Date(k + 'T12:00:00Z'); return isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+  function lessonStatus(l) { return l.completed ? 'Done' : (l.waiting ? (l.opensOn ? 'Opens ' + shortDay(l.opensOn) : 'Waiting for live') : (l.locked ? 'Locked' : 'Open')); }
   function lessonButton(l) {
-    var status = l.completed ? 'Done' : (l.locked ? 'Locked' : 'Open');
+    var status = lessonStatus(l);
     return '<li><button class="lesson-btn' + (l.locked ? ' locked' : '') + (l.gated ? ' gated' : '') + (l.completed ? ' done' : '') +
       '" type="button" data-lesson="' + esc(l.id) + '" title="' + esc(l.lockReason || '') + '" aria-label="Lesson ' + l.number + ': ' + esc(l.title) + ', ' + status + '">' +
       '<span class="n">' + String(l.number).padStart(2, '0') + '</span>' +
@@ -316,6 +318,7 @@
     try {
       var d = await api('/api/lessons/' + encodeURIComponent(lid));
       lastLesson = { id: lid, sig: lessonSig(d) };
+      if (!document.getElementById('course-tick')) { var tk = document.createElement('i'); tk.id = 'course-tick'; tk.hidden = true; document.body.appendChild(tk); setInterval(function () { if (document.getElementById('pane') && !document.hidden) refreshCourseState(); }, 60000); }
       renderLesson(d);
     } catch (e) {
       if (e.status === 403 && e.data && e.data.gated) return renderGated(e.data);
@@ -323,15 +326,17 @@
       pane.innerHTML = emptyState(e.message);
     }
   }
-  function lessonSig(d) { return JSON.stringify([d.completed, d.journey]); }
+  function lessonSig(d) { return JSON.stringify([d.completed, d.journey, d.journey.nextOpenNow, d.journey.nextOpensLabel]); }
 
   function renderGated(g) {
     var pane = document.getElementById('pane');
+    var waiting = !!g.waiting;
     pane.innerHTML =
       '<div class="gate-card"><div class="gate-lock">' + LOCK_SVG.replace('width="14" height="14"', 'width="34" height="34"') + '</div>' +
-      '<p class="eyebrow" style="justify-content:center">Locked</p>' +
-      '<h2>Finish lesson ' + esc(g.previous ? g.previous.number : '') + ' first</h2>' +
-      '<p class="muted">This lesson opens after you finish the previous one: read it, join its live class (or watch the recording if you missed it) and submit its assignment.</p>' +
+      '<p class="eyebrow" style="justify-content:center">' + (waiting ? 'Not open yet' : 'Locked') + '</p>' +
+      (waiting
+        ? '<h2>Opens ' + esc(g.opensOnLabel || 'on the day of its class') + '</h2><p class="muted">Each lesson opens on the day its live class takes place. Come back then, join the class and finish the lesson.</p>'
+        : '<h2>Finish lesson ' + esc(g.previous ? g.previous.number : '') + ' first</h2><p class="muted">This lesson opens after you finish the previous one: join its live class (or watch the recorded video if you missed it) and submit its assignment. It then opens on the day of its own class.</p>') +
       (g.previous ? '<button class="btn btn-solid" type="button" data-go="' + esc(g.previous.id) + '">Go to lesson ' + esc(g.previous.number) + '</button>' : '') +
       '</div>';
   }
@@ -352,14 +357,20 @@
     var s = j.sessions[0];
     var state = req.classDone ? 'done' : 'todo', inner = '<p class="jmeta"><b>' + esc(s.title) + '</b> · ' + esc(fmtWhen(s.startsAt)) + '</p>';
     if (req.classDone) {
-      inner += '<p class="jok">' + (s.attendanceType === 'live' ? 'Live joined' : s.attendanceType === 'recording' ? 'You have watched the recorded video.' : 'Class done.') + ' ✓</p>';
+      // Two different proofs, shown in plain words: you were there, or you caught up with the recording
+      if (req.classHow === 'recording') {
+        inner += '<p class="jok jbadge rec"><span>▶</span> You have watched the recorded video ✓</p>';
+      } else {
+        inner += '<p class="jok jbadge live"><span>●</span> Live joined ✓</p>';
+      }
       if (s.recordingAvailable) inner += '<button class="btn btn-ghost btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch the recording again</button>';
-    } else if (s.status === 'live' || s.liveOpen) {
-      inner += '<p class="jlive"><i></i>Class is live now</p><button class="btn btn-solid btn-sm pulse" type="button" data-join="' + esc(s.id) + '" data-url="' + esc(s.joinUrl || '') + '" data-yt="' + (s.youtubeId ? '1' : '') + '">Join live class</button>';
-    } else if (s.status === 'ended') {
+    } else if (s.status === 'live' || (s.liveOpen && !s.ended)) {
+      inner += '<p class="jlive"><i></i>Class is live now</p><button class="btn btn-solid btn-sm pulse" type="button" data-join="' + esc(s.id) + '" data-url="' + esc(s.joinUrl || '') + '" data-yt="' + (s.embedUrl ? '1' : '') + '">Join live class</button>' +
+        '<p class="muted jhint">Joining counts as attending live. If you cannot join, you can watch the recorded video after the class.</p>';
+    } else if (s.ended) {
       inner += s.recordingAvailable
-        ? '<p class="muted">You missed the live class. Watch the recording to complete this step.</p><button class="btn btn-solid btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch recorded class</button>'
-        : '<p class="muted">The class has ended. The recording will appear here as soon as your instructor uploads it.</p>';
+        ? '<p class="muted">You missed the live class. Watch the recorded video to complete this step.</p><button class="btn btn-solid btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch recorded video</button>'
+        : '<p class="muted">The class has ended. The recorded video will appear here as soon as your instructor uploads it.</p>';
     } else {
       inner += '<p class="muted">The join button appears here when the class starts.</p>' + (s.countdownTo ? '<p class="jcount" data-countdown="' + esc(s.countdownTo) + '"></p>' : '');
     }
@@ -382,17 +393,36 @@
     return step(4, all ? 'done' : 'todo', 'Assignment', inner);
   }
 
+  /* A plain checklist of everything that must be true before the lesson can be marked completed */
+  function rulesCard(d) {
+    var j = d.journey, req = j.requirements, items = [];
+    if (req.hasClass) {
+      var cls = req.classDone ? (req.classHow === 'recording' ? 'You have watched the recorded video' : 'Live joined') : 'Join the live class, or watch the recorded video if you missed it';
+      items.push({ ok: req.classDone, text: cls });
+    }
+    if (req.hasAssignment) items.push({ ok: req.submitted, text: req.submitted ? 'Assignment submitted' : 'Submit your assignment (the last requirement)' });
+    else items.push({ ok: false, text: 'Your instructor still has to publish the assignment' });
+    if (!req.noteDone) items.push({ ok: false, text: 'Write your lesson note' });
+    if (!items.length) items.push({ ok: true, text: 'Read the lesson' });
+    var next = '';
+    if (d.next) next = '<li class="rule-next ' + (d.completed && d.journey.nextOpenNow ? 'ok' : '') + '"><i>' + (d.completed && d.journey.nextOpenNow ? '✓' : '🔒') + '</i><span>' +
+      (d.journey.nextOpensLabel ? 'The next lesson opens on <b>' + esc(d.journey.nextOpensLabel) + '</b>, the day of its class, once the live class has started' : 'The next lesson opens once this one is completed and its live class has started') + '</span></li>';
+    return '<aside class="rules-card' + (req.ready || d.completed ? ' ready' : '') + '"><p class="rf2-label">To mark this lesson completed</p><ul>' +
+      items.map(function (it) { return '<li class="' + (it.ok ? 'ok' : '') + '"><i>' + (it.ok ? '✓' : '○') + '</i><span>' + esc(it.text) + '</span></li>'; }).join('') + next + '</ul></aside>';
+  }
+
   function renderLesson(d) {
     var l = d.lesson, j = d.journey, req = j.requirements;
     var pane = document.getElementById('pane');
     var res = (d.resources || []).map(function (r) {
       return '<a class="lesson-res" href="' + esc(r.url) + '" target="_blank" rel="noopener"><span class="lesson-res-ico">↗</span>' + esc(r.title) + '</a>';
     }).join('');
-    var nextBtn = d.next
-      ? (d.completed
-        ? (j.nextLocked ? '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="' + esc(j.nextLockReason || 'Waiting for admin to go live') + '">Waiting for admin to go live</button>' : '<button class="btn btn-solid btn-sm unlock-pop" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>')
-        : '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="Finish this lesson to unlock the next one">' + LOCK_SVG + ' Next lesson locked</button>')
-      : '';
+    var nextBtn = '';
+    if (d.next) {
+      if (d.completed && d.journey.nextOpenNow) nextBtn = '<button class="btn btn-solid btn-sm unlock-pop" type="button" data-go="' + esc(d.next) + '">Next lesson →</button>';
+      else if (d.completed) nextBtn = '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="' + esc(j.nextLockReason || 'The next lesson opens on the day of its class') + '">' + LOCK_SVG + (j.nextOpensLabel ? ' Opens ' + esc(j.nextOpensLabel) : ' Opens when the live class starts') + '</button>';
+      else nextBtn = '<button class="btn btn-ghost btn-sm next-locked" type="button" disabled title="Complete this lesson first">' + LOCK_SVG + ' Next lesson locked</button>';
+    }
     pane.innerHTML =
       '<div class="lesson-top"><p class="eyebrow">' + esc(d.course.title) + '</p><span class="lesson-pos">Lesson ' + d.position + ' of ' + d.total + (d.minutes ? ' · ' + d.minutes + ' min' : '') + '</span></div>' +
       '<h2 class="lesson-title">' + esc(l.title) + '</h2>' +
@@ -402,13 +432,13 @@
         step(2, req.noteDone ? 'done' : 'todo', 'Write your notes', '<div class="lesson-notes"><div class="lesson-notes-head"><p class="rf2-label">My notes</p><span class="note-state" id="note-state">Saved privately</span></div>' +
           '<textarea class="input" id="lesson-note" rows="4" maxlength="4000" placeholder="Write down what matters to you. Only you can see these notes.">' + esc(d.note || '') + '</textarea></div>') +
         classStep(j) + assignStep(j) +
-      '</div>' +
+      '</div>' + rulesCard(d) +
       '<div class="finish-bar' + (d.completed ? ' is-done' : (req.ready ? ' is-ready' : '')) + '">' +
         '<div class="fb-text">' + (d.completed
-          ? '<b>Lesson complete ✓</b><span>' + (j.nextTitle ? 'Next up: ' + esc(j.nextTitle) : 'You have finished the last lesson.') + '</span>'
-          : (req.ready ? '<b>You are ready to finish this lesson</b><span>' + (j.nextTitle ? 'This unlocks: ' + esc(j.nextTitle) : 'This is the last lesson.') + '</span>'
+          ? '<b>Lesson complete ✓</b><span>' + (j.nextTitle ? 'Next up: ' + esc(j.nextTitle) + (d.journey.nextOpenNow ? '' : ' · opens ' + esc(d.journey.nextOpensLabel || 'on its class day')) : 'You have finished the last lesson.') + '</span>'
+          : (req.ready ? '<b>You are ready to mark this lesson completed</b><span>' + (j.nextTitle ? 'This unlocks ' + esc(j.nextTitle) + (d.journey.nextOpensLabel ? ' on ' + esc(d.journey.nextOpensLabel) : '') : 'This is the last lesson.') + '</span>'
             : '<b>Still to do</b><span>' + req.missing.map(esc).join(' · ') + '</span>')) + '</div>' +
-        '<button class="btn btn-solid btn-sm" type="button" data-lesson-done="' + esc(l.id) + '"' + (d.completed || !req.ready ? ' disabled' : '') + '>' + (d.completed ? '✓ Completed' : 'Finish lesson') + '</button>' +
+        '<button class="btn btn-solid btn-sm" type="button" data-lesson-done="' + esc(l.id) + '"' + (d.completed || !req.ready ? ' disabled aria-disabled="true"' : '') + ' title="' + (d.completed ? 'Lesson completed' : (req.ready ? 'Mark this lesson as completed' : 'Meet every requirement above first')) + '">' + (d.completed ? '✓ Completed' : (req.ready ? 'Mark as completed' : LOCK_SVG + ' Mark as completed')) + '</button>' +
       '</div>' +
       '<div class="lesson-nav"><div class="btn-row">' + (d.prev ? '<button class="btn btn-ghost btn-sm" type="button" data-go="' + esc(d.prev) + '">← Previous</button>' : '') + '</div>' +
         '<div class="btn-row">' + nextBtn + '</div></div>';
@@ -505,7 +535,7 @@
       btn.classList.toggle('gated', !!l.gated);
       btn.title = l.lockReason || '';
       var st = btn.querySelector('.st');
-      if (st) st.innerHTML = (l.locked ? LOCK_SVG : '') + (l.completed ? 'Done' : (l.locked ? 'Locked' : 'Open'));
+      if (st) st.innerHTML = (l.locked ? LOCK_SVG : '') + lessonStatus(l);
       if (wasLocked && !l.locked) { btn.classList.add('just-unlocked'); setTimeout(function () { btn.classList.remove('just-unlocked'); }, 1800); }
     });
   }
@@ -548,12 +578,12 @@
       celebrate(btn);
       await loadDash();
       await refreshCourseHeader(currentCourseId);
-      toast('Lesson complete. The next lesson is now unlocked.');
+      toast('Lesson completed. The next lesson opens on the day of its class.');
       setTimeout(function () { openLesson(lid, null, true); }, 700);
     } catch (e) {
       toast(e.message, 'err');
       btn.disabled = false;
-      btn.textContent = 'Mark as complete';
+      btn.textContent = 'Mark as completed';
     }
   }
 
@@ -563,16 +593,17 @@
     if (!course) return;
     if (course.comingSoon) { DModal.toast({ title: 'This course is coming soon.', tone: 'info' }); return; }
     var coupon = state.d.user.coupon;
-    var fee = Number(course.price) || 0;
+    var fee = Number(course.price) || 0, qrOff = state.d.user.qrOffer || null;
     var money = function (n) { return '₦' + Math.round(n).toLocaleString('en-US'); };
     if (fee === 0) { return doEnroll(courseId, '', btn); }
     DModal.open({ size: 'md', eyebrow: 'Enrol', title: esc(course.title), body:
       '<div class="enrol"><div class="enrol-row"><span>Course fee</span><b>' + money(fee) + '</b></div>' +
+      (qrOff ? '<div class="enrol-coupon"><span>Your <b>' + qrOff.percent + '% QR discount</b> is applied automatically</span></div>' : '') +
       (coupon ? '<div class="enrol-coupon"><span>Your 30% coupon <b>' + esc(coupon.code) + '</b></span><button type="button" class="btn btn-ghost btn-sm" data-use>Use it</button></div>' : '') +
       '<label class="enrol-label" for="enrol-code">Coupon code (optional)</label>' +
       '<input class="input" id="enrol-code" autocomplete="off" placeholder="Enter your coupon code" maxlength="20">' +
       '<p class="enrol-hint">Coupons work on the account registered with the email you subscribed with.</p>' +
-      '<div class="enrol-total"><span>You pay</span><b id="enrol-total">' + money(fee) + '</b></div>' +
+      '<div class="enrol-total"><span>You pay</span><b id="enrol-total" class="' + (qrOff ? 'discounted' : '') + '">' + money(qrOff ? fee * (100 - qrOff.percent) / 100 : fee) + '</b></div>' +
       '<p class="form-error" id="enrol-err" role="alert"></p>' +
       '<button type="button" class="btn btn-solid enrol-go" id="enrol-go">Continue to secure payment</button></div>',
       onMount: function (box, inst) {
@@ -580,8 +611,9 @@
         var preview = function () {
           var typed = input.value.trim().toUpperCase();
           var ok = coupon && typed === coupon.code;
-          total.textContent = money(ok ? fee * 0.7 : fee);
-          total.classList.toggle('discounted', !!ok);
+          var qrFee = qrOff ? fee * (100 - qrOff.percent) / 100 : fee;
+          total.textContent = money(ok ? Math.min(fee * 0.7, qrFee) : qrFee);
+          total.classList.toggle('discounted', !!ok || !!qrOff);
         };
         input.addEventListener('input', preview);
         var use = box.querySelector('[data-use]');
@@ -849,6 +881,11 @@
     return '<a class="pf-banner" href="#profile"><span><b>Complete your profile</b> ' + c.percent + '% done. Add your photo and details to finish registration.</span><span class="pf-banner-go">Finish</span></a>';
   }
 
+  function qrBanner(u) {
+    var o = u.qrOffer; if (!o) return '';
+    var days = Math.max(0, Math.ceil((new Date(o.until).getTime() - Date.now()) / 86400000));
+    return '<section class="qr-dash" aria-label="Your QR discount"><span class="qr-pct">' + o.percent + '%</span><div><b>Your ' + o.percent + '% QR discount is ready</b><p>Applied automatically on your first purchase. ' + days + ' day' + (days === 1 ? '' : 's') + ' left. <a class="lg-link" href="#browse">Choose a course</a></p></div></section>';
+  }
   function couponBanner(u) {
     if (!u.coupon) return '';
     return '<section class="coupon-card" aria-label="Your 30% coupon"><div class="cc-ico"></div><div class="cc-text"><p class="eyebrow">Your reward</p><h3>30% off your next course</h3>' +

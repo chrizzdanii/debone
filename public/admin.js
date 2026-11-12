@@ -570,7 +570,7 @@
         '<div class="field"><label>Class days and times</label><input class="input" name="schedule" maxlength="240" value="' + esc(c.schedule || '') + '" placeholder="e.g. Mon, Wed, Fri · 7:00 pm"></div></div>' +
         '<div class="grid-3"><div class="field"><label>Classes per week</label><input class="input" type="number" name="classesPerWeek" min="1" max="7" value="' + num(c.classesPerWeek) + '"></div>' +
         '<div class="field"><label>Live sessions in total</label><input class="input" type="number" name="sessionsTotal" min="1" max="60" value="' + num(c.sessionsTotal) + '"></div>' +
-        '<div class="field"><label>Maximum students (seats)</label><input class="input" type="number" name="seats" min="1" value="' + num(c.seats) + '" placeholder="No limit"></div></div>' +
+        '<div class="field"><label>Maximum students (seats)</label><input class="input" type="number" name="seats" min="1" max="5000" value="' + num(c.seats) + '" placeholder="1000 (default)"></div></div>' +
         '<div class="grid-3"><div class="field"><label>Minimum students to run the course</label><input class="input" type="number" name="minStudents" min="1" value="' + num(c.minStudents) + '" placeholder="Not set"></div>' +
         '<div class="field"><span></span></div><div class="field"><span></span></div></div>' +
         '<div class="row-actions"><button class="btn btn-solid" type="submit">Save details</button>' +
@@ -1330,65 +1330,90 @@
   }
 
   /* ---------- Bundles (admin) ---------- */
+  /* Shrinks a chosen picture to a 16:9 JPEG under about 300 KB so it uploads quickly */
+  function bundlePicture(file) {
+    return new Promise(function (resolve, reject) {
+      if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return reject(new Error('Please choose a JPG, PNG or WebP picture.'));
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var W = 1200, H = 675, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        var ctx = cv.getContext('2d'), sc = Math.max(W / img.width, H / img.height), w = img.width * sc, h = img.height * sc;
+        ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H); ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+        URL.revokeObjectURL(url);
+        var q = 0.85;
+        (function tryQ() { var out = cv.toDataURL('image/jpeg', q); if (out.length * 0.75 > 330 * 1024 && q > 0.4) { q -= 0.1; return tryQ(); } resolve(out); })();
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That picture could not be opened.')); };
+      img.src = url;
+    });
+  }
   async function renderBundles() {
     crumb.textContent = 'Course bundles';
     var d = await api('/api/staff/bundles'), courses = (await api('/api/courses')).courses;
     function form(b) {
-      var isNew = !b, it = b || { courseIds: [] };
+      var isNew = !b, it = b || { courseIds: [] }, picked = null, removed = false;
       DModal.open({ size: 'md', eyebrow: isNew ? 'New bundle' : 'Edit bundle', title: isNew ? 'Create a bundle' : esc(it.title), body:
-        '<form class="sub-form" id="bdf"><div class="field"><label>Bundle title</label><input class="input" name="title" required maxlength="120" value="' + esc(it.title || '') + '"></div>' +
-        '<div class="field"><label>Bundle cover image (PNG/JPEG/WebP, max 500 KB)</label><input class="input" type="file" name="bundleImage" accept="image/png,image/jpeg,image/webp"></div>' +
+        '<form class="sub-form" id="bdf">' +
+        '<div class="field"><label>Bundle picture</label><div class="bx-up" id="bx-up"><div class="bx-prev" id="bx-prev">' + (it.hasImage ? '<img src="/api/bundles/' + esc(it.id) + '/image?v=' + it.imageV + '" alt="">' : '<span>No picture yet</span>') + '</div>' +
+          '<div class="bx-upact"><label class="btn btn-ghost btn-sm" for="bx-file">Upload picture</label><input type="file" id="bx-file" accept="image/png,image/jpeg,image/webp" hidden>' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="bx-rm"' + (it.hasImage ? '' : ' hidden') + '>Remove</button><small class="muted">JPG, PNG or WebP. It is cropped to 16:9 and compressed for you.</small></div></div></div>' +
+        '<div class="field"><label>Bundle title</label><input class="input" name="title" required maxlength="120" value="' + esc(it.title || '') + '"></div>' +
         '<div class="field"><label>Description</label><textarea class="input" name="description" rows="2" maxlength="1000">' + esc(it.description || '') + '</textarea></div>' +
         '<div class="field"><label>Courses in the bundle (choose two or more)</label><div class="bd-pick">' + courses.filter(function (c) { return !c.comingSoon; }).map(function (c) {
-          return '<label class="bd-opt"><input type="checkbox" name="courseIds" value="' + esc(c.id) + '"' + (it.courseIds.indexOf(c.id) !== -1 ? ' checked' : '') + '> ' + esc(c.title) + (c.startDate ? ' · starts ' + esc(c.startDate) : '') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</label>';
+          return '<label class="bd-opt"><input type="checkbox" name="courseIds" value="' + esc(c.id) + '"' + (it.courseIds.indexOf(c.id) !== -1 ? ' checked' : '') + '> ' + esc(c.title) + (c.price ? ' · ' + naira(c.price) : '') + (c.startDate ? ' · starts ' + esc(c.startDate) : '') + '</label>';
         }).join('') + '</div></div>' +
-        '<div class="grid-2"><div class="field"><label>Bundle price in naira</label><input class="input" type="number" name="price" min="1" required value="' + (it.price || '') + '"></div>' +
+        '<div class="grid-2"><div class="field"><label>Bundle price in naira</label><input class="input" type="number" name="price" min="1" required value="' + (it.price || '') + '"><small class="hint" id="bx-save"></small></div>' +
         '<div class="field"><label>Visible on the website</label><select class="input" name="active"><option value="true"' + (it.active !== false ? ' selected' : '') + '>Yes</option><option value="false"' + (it.active === false ? ' selected' : '') + '>No</option></select></div></div>' +
         '<p class="form-error" id="bdf-err" role="alert"></p><div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid">' + (isNew ? 'Create bundle' : 'Save changes') + '</button></div></form>',
         onMount: function (box, inst) {
+          var f = box.querySelector('#bdf'), prev = box.querySelector('#bx-prev'), rm = box.querySelector('#bx-rm'), err = box.querySelector('#bdf-err');
           box.querySelector('[data-cancel]').addEventListener('click', inst.close);
-          var bundleFile = box.querySelector('[name=bundleImage]');
-          bundleFile.addEventListener('change', function () {
-            var preview = box.querySelector('#bundle-cover-preview'), file = bundleFile.files[0];
-            if (!file) return;
-            if (file.size > 500000 || !['image/png','image/jpeg','image/webp'].includes(file.type)) { toast('Choose PNG, JPEG or WebP under 500 KB.', 'err'); bundleFile.value=''; return; }
-            var reader = new FileReader();
-            reader.onload = function () { preview.src = reader.result; preview.style.display = 'block'; };
-            reader.readAsDataURL(file);
-          });
-          box.querySelector('#bdf').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            var f = e.target, err = box.querySelector('#bdf-err'); err.textContent = '';
+          function savings() {
             var ids = Array.prototype.slice.call(f.querySelectorAll('[name=courseIds]:checked')).map(function (x) { return x.value; });
+            var val = ids.reduce(function (t, id) { var c = courses.find(function (x) { return x.id === id; }); return t + (c ? c.price || 0 : 0); }, 0), p = Number(f.elements.price.value) || 0;
+            box.querySelector('#bx-save').textContent = val ? 'Courses cost ' + naira(val) + ' separately' + (p && p < val ? ' · students save ' + naira(val - p) + ' (' + Math.round((val - p) / val * 100) + '%)' : '') : '';
+          }
+          f.addEventListener('input', savings); f.addEventListener('change', savings); savings();
+          box.querySelector('#bx-file').addEventListener('change', async function () {
+            if (!this.files[0]) return; err.textContent = '';
+            try { picked = await bundlePicture(this.files[0]); removed = false; prev.innerHTML = '<img src="' + picked + '" alt="">'; rm.hidden = false; }
+            catch (ex) { err.textContent = ex.message; }
+            this.value = '';
+          });
+          rm.addEventListener('click', function () { picked = null; removed = true; prev.innerHTML = '<span>No picture yet</span>'; rm.hidden = true; });
+          f.addEventListener('submit', async function (e) {
+            e.preventDefault(); err.textContent = '';
+            var ids = Array.prototype.slice.call(f.querySelectorAll('[name=courseIds]:checked')).map(function (x) { return x.value; });
+            var body = { title: fv(f, 'title'), description: fv(f, 'description'), price: fv(f, 'price'), active: fv(f, 'active') === 'true', courseIds: ids };
+            if (picked) body.image = picked; else if (removed) body.removeImage = true;
             try {
-              var file = f.querySelector('[name=bundleImage]').files[0];
-              var image = it.image || '';
-              if (file) {
-                if (file.size > 500000 || !['image/png','image/jpeg','image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPEG or WebP under 500 KB.');
-                image = await new Promise(function (resolve, reject) { var reader = new FileReader(); reader.onload = function () { resolve(reader.result); }; reader.onerror = reject; reader.readAsDataURL(file); });
-              }
-              await api(isNew ? '/api/staff/bundles' : '/api/staff/bundles/' + encodeURIComponent(it.id), { method: isNew ? 'POST' : 'PATCH', body: { title: fv(f, 'title'), image: image, description: fv(f, 'description'), price: fv(f, 'price'), active: fv(f, 'active') === 'true', courseIds: ids } });
+              await api(isNew ? '/api/staff/bundles' : '/api/staff/bundles/' + encodeURIComponent(it.id), { method: isNew ? 'POST' : 'PATCH', body: body });
               inst.close(); toast('Bundle saved.'); renderBundles();
             } catch (ex) { err.textContent = ex.message; }
           });
         } });
     }
+    var sold = d.bundles.reduce(function (t, b) { return t + (b.sold || 0); }, 0);
     setView(head('Academy', 'Course bundles', 'Discounted packages. The system stops bundles whose courses clash in time.') +
-      '<div class="dt-tools"><span class="muted">' + d.bundles.length + ' bundles</span><button class="btn btn-solid" type="button" id="bd-new">New bundle</button></div>' +
-      '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th>Bundle</th><th>Courses</th><th>Price</th><th>Status</th><th></th></tr></thead><tbody>' +
-      (d.bundles.length ? d.bundles.map(function (b, i) {
-        return '<tr style="--i:' + i + '"><td><div class="admin-bundle-title">' + (b.image ? '<img src="' + esc(b.image) + '" alt="" loading="lazy">' : '<span class="admin-bundle-placeholder">D</span>') + '<b>' + esc(b.title) + '</b></div></td><td class="small">' + b.courseIds.map(function (id) { var c = courses.find(function (x) { return x.id === id; }); return esc(c ? c.title : id); }).join(', ') + '</td><td>' + naira(b.price) + '</td>' +
-          '<td><span class="gpill ' + (b.active !== false ? 'pass' : 'none') + '">' + (b.active !== false ? 'Live' : 'Hidden') + '</span></td>' +
-          '<td class="dt-act"><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(b.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(b.id) + '">Delete</button></td></tr>';
-      }).join('') : '<tr><td colspan="5" class="muted">No bundles yet.</td></tr>') + '</tbody></table></div></section>');
+      '<div class="bx-stats"><div><b>' + d.bundles.length + '</b><span>Bundles</span></div><div><b>' + d.bundles.filter(function (b) { return b.active !== false; }).length + '</b><span>Live on the website</span></div><div><b>' + sold + '</b><span>Sold</span></div></div>' +
+      '<div class="dt-tools"><span class="muted">Click a bundle to edit it</span><button class="btn btn-solid" type="button" id="bd-new">+ New bundle</button></div>' +
+      '<div class="bx-grid">' + (d.bundles.length ? d.bundles.map(function (b, i) {
+        return '<article class="bx-card' + (b.active === false ? ' off' : '') + '" style="--i:' + i + '" data-edit="' + esc(b.id) + '" tabindex="0">' +
+          '<div class="bx-img">' + (b.hasImage ? '<img loading="lazy" src="/api/bundles/' + esc(b.id) + '/image?v=' + b.imageV + '" alt="">' : '<div class="bx-ph"><span>' + esc(b.title.charAt(0)) + '</span></div>') +
+          (b.savingsPercent ? '<em class="bx-save">Save ' + b.savingsPercent + '%</em>' : '') + '<span class="gpill ' + (b.active !== false ? 'pass' : 'none') + ' bx-state">' + (b.active !== false ? 'Live' : 'Hidden') + '</span></div>' +
+          '<div class="bx-body"><h3>' + esc(b.title) + '</h3><p class="bx-price"><b>' + naira(b.price) + '</b>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s>' : '') + '</p>' +
+          '<ul class="bx-courses">' + b.courses.map(function (c) { return '<li>' + esc(c.title) + '</li>'; }).join('') + '</ul>' +
+          '<div class="bx-foot"><span>' + b.students + ' students · ' + (b.sold || 0) + ' sold</span><span><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(b.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(b.id) + '">Delete</button></span></div></div></article>';
+      }).join('') : '<div class="empty-state">No bundles yet. Create your first package.</div>') + '</div>');
     document.getElementById('bd-new').addEventListener('click', function () { form(null); });
-    view.querySelectorAll('[data-edit]').forEach(function (b) { b.addEventListener('click', function () { form(d.bundles.find(function (x) { return x.id === b.getAttribute('data-edit'); })); }); });
+    view.querySelectorAll('.bx-card').forEach(function (card) {
+      card.addEventListener('click', function (e) { if (e.target.closest('[data-del]')) return; form(d.bundles.find(function (x) { return x.id === card.getAttribute('data-edit'); })); });
+    });
     view.querySelectorAll('[data-del]').forEach(function (b) {
       b.addEventListener('click', async function () { if (!window.confirm('Delete this bundle?')) return; try { await api('/api/staff/bundles/' + encodeURIComponent(b.getAttribute('data-del')), { method: 'DELETE' }); renderBundles(); } catch (e) { toast(e.message, 'err'); } });
     });
   }
 
-  /* ---------- Studio bookings and quotations (admin) ---------- */
   async function renderBookings() {
     crumb.textContent = 'Bookings and quotes';
     var d = await api('/api/staff/bookings');
@@ -1464,26 +1489,226 @@
     });
   }
 
-  /* ---------- Revenue and analytics (admin) ---------- */
+  /* ---------- Reports and analytics (admin): live, animated ---------- */
+  var RP = { timer: null, data: null, metric: 'revenue', range: 30, seen: {}, tweens: {} };
+  function rpStop() { clearInterval(RP.timer); RP.timer = null; }
+  function rpCompact(n) { n = Number(n) || 0; return n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + 'k' : String(Math.round(n)); }
+  /* Numbers glide from the old value to the new one */
+  function rpTween(el, to, money) {
+    if (!el) return;
+    var from = Number(el.getAttribute('data-v')); if (!isFinite(from)) from = 0;
+    el.setAttribute('data-v', to);
+    var show = function (v) { el.textContent = money ? naira(Math.round(v)) : Math.round(v).toLocaleString('en-US'); };
+    if (from === to) { show(to); return; }
+    var t0 = null, dur = 900;
+    cancelAnimationFrame(RP.tweens[el.id] || 0);
+    var step = function (ts) {
+      if (!t0) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      show(from + (to - from) * e);
+      if (p < 1) RP.tweens[el.id] = requestAnimationFrame(step);
+    };
+    RP.tweens[el.id] = requestAnimationFrame(step);
+    if (from !== 0 || el.getAttribute('data-first') === '0') { var card = el.closest('.lv-kpi'); if (card) { card.classList.remove('lv-bump'); void card.offsetWidth; card.classList.add('lv-bump'); } }
+  }
+  function rpSpark(vals, colour) {
+    var w = 120, h = 34, max = Math.max.apply(null, vals.concat([1])), n = vals.length - 1 || 1;
+    var pts = vals.map(function (v, i) { return [(i / n) * w, h - 3 - (v / max) * (h - 8)]; });
+    var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+    return '<svg class="lv-spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true"><path class="lv-spark-a" d="' + d + ' L' + w + ' ' + h + ' L0 ' + h + ' Z" fill="' + colour + '" opacity=".14"/><path class="lv-spark-l" pathLength="1" d="' + d + '" fill="none" stroke="' + colour + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>';
+  }
+  var RP_METRICS = {
+    revenue: { label: 'Revenue', colour: '#E0A800', money: true },
+    signups: { label: 'New students', colour: '#6BCB77' },
+    enrolments: { label: 'Enrolments', colour: '#53BDEB' },
+    lessons: { label: 'Lessons completed', colour: '#B28DFF' },
+    views: { label: 'Page views', colour: '#FF8A7A' }
+  };
+  function rpChart(d) {
+    var m = RP_METRICS[RP.metric], vals = d.series[RP.metric].slice(-RP.range), days = d.days.slice(-RP.range);
+    var W = 800, H = 280, padT = 16, padB = 8, max = Math.max.apply(null, vals.concat([1])) * 1.12, n = vals.length - 1 || 1;
+    var X = function (i) { return (i / n) * W; }, Y = function (v) { return padT + (H - padT - padB) * (1 - v / max); };
+    var pts = vals.map(function (v, i) { return [X(i), Y(v)]; });
+    // smooth line through the points
+    var line = pts.map(function (p, i) {
+      if (!i) return 'M' + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+      var q = pts[i - 1], cx = (q[0] + p[0]) / 2;
+      return 'C' + cx.toFixed(1) + ' ' + q[1].toFixed(1) + ' ' + cx.toFixed(1) + ' ' + p[1].toFixed(1) + ' ' + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+    }).join(' ');
+    var grid = [0, .25, .5, .75, 1].map(function (f) { var y = padT + (H - padT - padB) * f; return '<line x1="0" x2="' + W + '" y1="' + y + '" y2="' + y + '"/>'; }).join('');
+    var ylab = [1, .75, .5, .25, 0].map(function (f) { return '<span>' + (m.money ? '₦' : '') + rpCompact(max * f) + '</span>'; }).join('');
+    var xl = [0, Math.floor(n / 3), Math.floor(2 * n / 3), n].map(function (i) { var dt = new Date(days[i] + 'T12:00:00Z'); return '<span>' + dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) + '</span>'; }).join('');
+    var total = vals.reduce(function (t, v) { return t + v; }, 0);
+    return '<div class="lv-chart-head"><div><b id="lv-total" data-v="0" data-money="' + (m.money ? 1 : 0) + '">0</b><span>' + esc(m.label) + ' · last ' + RP.range + ' days</span></div></div>' +
+      '<div class="lv-plot"><div class="lv-y">' + ylab + '</div><div class="lv-svgwrap" id="lv-svgwrap">' +
+        '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + esc(m.label) + ' over time">' +
+          '<defs><linearGradient id="lvg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="' + m.colour + '" stop-opacity=".42"/><stop offset="1" stop-color="' + m.colour + '" stop-opacity="0"/></linearGradient></defs>' +
+          '<g class="lv-grid">' + grid + '</g>' +
+          '<path class="lv-area" d="' + line + ' L' + W + ' ' + H + ' L0 ' + H + ' Z" fill="url(#lvg)"/>' +
+          '<path class="lv-line" pathLength="1" d="' + line + '" fill="none" stroke="' + m.colour + '" stroke-width="3" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
+        '</svg>' +
+        '<div class="lv-cross" id="lv-cross" hidden><i></i><u style="background:' + m.colour + '"></u></div><div class="lv-tip" id="lv-tip" hidden></div>' +
+      '</div></div><div class="lv-x">' + xl + '</div>' +
+      '<script type="application/json" id="lv-vals">' + JSON.stringify({ vals: vals, days: days, money: !!m.money, label: m.label, total: total }) + '<\/script>';
+  }
+  function rpBindChart() {
+    var wrap = document.getElementById('lv-svgwrap'), raw = document.getElementById('lv-vals'); if (!wrap || !raw) return;
+    var info = JSON.parse(raw.textContent), tip = document.getElementById('lv-tip'), cross = document.getElementById('lv-cross'), n = info.vals.length - 1 || 1;
+    rpTween(document.getElementById('lv-total'), info.total, info.money);
+    function move(e) {
+      var r = wrap.getBoundingClientRect(), x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left, i = Math.max(0, Math.min(n, Math.round((x / r.width) * n)));
+      var max = Math.max.apply(null, info.vals.concat([1])) * 1.12, yy = (16 + 256 * (1 - info.vals[i] / max)) / 280 * r.height;
+      cross.hidden = tip.hidden = false;
+      cross.style.left = (i / n) * 100 + '%'; cross.querySelector('u').style.top = yy + 'px';
+      var dt = new Date(info.days[i] + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+      tip.innerHTML = '<small>' + dt + '</small><b>' + (info.money ? naira(info.vals[i]) : info.vals[i].toLocaleString('en-US')) + '</b>';
+      tip.style.left = Math.min(Math.max((i / n) * 100, 12), 88) + '%';
+    }
+    wrap.addEventListener('mousemove', move); wrap.addEventListener('touchmove', move, { passive: true }); wrap.addEventListener('touchstart', move, { passive: true });
+    wrap.addEventListener('mouseleave', function () { cross.hidden = tip.hidden = true; });
+  }
+  function rpDonut(d) {
+    var kinds = { course: ['Courses', '#E0A800'], bundle: ['Bundles', '#6BCB77'], product: ['Digital products', '#53BDEB'], deposit: ['Studio deposits', '#B28DFF'] };
+    var items = Object.keys(d.byKind).map(function (k) { return { k: k, label: (kinds[k] || [k])[0], colour: (kinds[k] || [0, '#FF8A7A'])[1], v: d.byKind[k] }; }).filter(function (x) { return x.v > 0; });
+    var total = items.reduce(function (t, x) { return t + x.v; }, 0), R = 52, C = 2 * Math.PI * R, off = 0;
+    var arcs = items.map(function (x, i) {
+      var len = total ? (x.v / total) * C : 0, el = '<circle class="lv-arc" cx="70" cy="70" r="' + R + '" fill="none" stroke="' + x.colour + '" stroke-width="16" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" style="--d:' + i * 0.12 + 's" transform="rotate(-90 70 70)"/>';
+      off += len; return el;
+    }).join('');
+    return '<div class="lv-donut"><svg viewBox="0 0 140 140" aria-hidden="true"><circle cx="70" cy="70" r="' + R + '" fill="none" stroke="rgba(244,244,240,.07)" stroke-width="16"/>' + arcs + '</svg><div class="lv-donut-mid"><b>' + naira(total) + '</b><span>all-time sales</span></div></div>' +
+      '<ul class="lv-legend">' + (items.length ? items.map(function (x) { return '<li><i style="background:' + x.colour + '"></i><span>' + esc(x.label) + '</span><b>' + Math.round(x.v / total * 100) + '%</b></li>'; }).join('') : '<li class="muted">No sales yet.</li>') + '</ul>';
+  }
+  function rpCourses(d) {
+    var max = Math.max.apply(null, d.courses.map(function (c) { return c.students; }).concat([1]));
+    return d.courses.length ? d.courses.map(function (c, i) {
+      var R = 17, C = 2 * Math.PI * R;
+      return '<div class="lv-course" style="--i:' + i + '"><div class="lv-ring"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="' + R + '" fill="none" stroke="rgba(244,244,240,.08)" stroke-width="4"/><circle class="lv-ring-v" cx="22" cy="22" r="' + R + '" fill="none" stroke="#6BCB77" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + (c.completion / 100 * C).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 22 22)"/></svg><b>' + c.completion + '%</b></div>' +
+        '<div class="lv-cmain"><div class="lv-ctop"><b>' + esc(c.title) + '</b><span>' + c.students.toLocaleString('en-US') + ' / ' + c.seats.toLocaleString('en-US') + ' students</span></div><div class="lv-bar"><i style="--w:' + Math.max(c.students ? 3 : 0, Math.round(c.students / max * 100)) + '%"></i></div></div></div>';
+    }).join('') : '<p class="muted">No courses yet.</p>';
+  }
+  function rpFeed(d) {
+    var ICO = { sale: '₦', signup: '＋', enrol: '🎓', work: '✎', class: '●', lesson: '✓' };
+    var CLS = { sale: 'gold', signup: 'green', enrol: 'blue', work: 'purple', class: 'coral', lesson: 'green' };
+    return d.feed.length ? d.feed.map(function (f) {
+      var key = f.kind + f.t + f.text, fresh = RP.seen[key] === undefined && Object.keys(RP.seen).length > 0;
+      RP.seen[key] = 1;
+      return '<li class="' + (fresh ? 'lv-new' : '') + '"><span class="lv-fi ' + CLS[f.kind] + '">' + (ICO[f.kind] || '•') + '</span><div><b>' + esc(f.text) + '</b><small>' + rpAgo(f.t) + '</small></div></li>';
+    }).join('') : '<li class="muted">Activity will appear here as it happens.</li>';
+  }
+  function rpAgo(iso) {
+    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 10) return 'just now'; if (s < 60) return s + 's ago'; if (s < 3600) return Math.floor(s / 60) + ' min ago'; if (s < 86400) return Math.floor(s / 3600) + ' h ago'; return Math.floor(s / 86400) + ' d ago';
+  }
+  function rpTasks(k) {
+    var t = [['Assignments to mark', k.pendingGrading, '#assignments'], ['Payments to review', k.pendingOrders, '#payments'], ['Refund requests', k.pendingRefunds, '#refunds'], ['Certificate requests', k.pendingCerts, '#certificates']];
+    return t.map(function (x) { return '<a class="lv-task' + (x[1] ? ' hot' : '') + '" href="' + x[2] + '"><span>' + x[0] + '</span><b>' + x[1] + '</b></a>'; }).join('');
+  }
+  var RP_KPIS = [
+    ['revenueToday', 'Revenue today', '#E0A800', true, 'revenue'], ['revenue30', 'Revenue, 30 days', '#E0A800', true, 'revenue'],
+    ['students', 'Students', '#6BCB77', false, 'signups'], ['enrollments', 'Active enrolments', '#53BDEB', false, 'enrolments'],
+    ['online', 'Online now', '#FF8A7A', false, 'views'], ['liveNow', 'Live classes now', '#E5534B', false, null],
+    ['lessonsToday', 'Lessons completed today', '#B28DFF', false, 'lessons'], ['viewsToday', 'Page views today', '#FF8A7A', false, 'views']
+  ];
+  function rpPaint(d, first) {
+    var k = d.kpi, root = document.getElementById('lv-root'); if (!root) return;
+    RP.data = d;
+    RP_KPIS.forEach(function (c) { rpTween(document.getElementById('lv-k-' + c[0]), k[c[0]], c[3]); });
+    var sub = document.getElementById('lv-sub-online'); if (sub) sub.textContent = k.onlineStudents + ' signed-in students';
+    var chartSig = RP.metric + RP.range + JSON.stringify(d.series[RP.metric].slice(-RP.range));
+    if (RP.chartSig !== chartSig) { RP.chartSig = chartSig; document.getElementById('lv-chart').innerHTML = rpChart(d); rpBindChart(); }
+    var dn = document.getElementById('lv-donut'); var dsig = JSON.stringify(d.byKind); if (RP.dsig !== dsig) { RP.dsig = dsig; dn.innerHTML = rpDonut(d); }
+    var cs = document.getElementById('lv-courses'); var csig = JSON.stringify(d.courses); if (RP.csig !== csig) { RP.csig = csig; cs.innerHTML = rpCourses(d); }
+    document.getElementById('lv-feed').innerHTML = rpFeed(d);
+    document.getElementById('lv-tasks').innerHTML = rpTasks(k);
+    document.getElementById('lv-now').innerHTML =
+      (d.liveSessions.length ? d.liveSessions.map(function (s) { return '<div class="lv-live"><i></i><div><b>' + esc(s.title) + '</b><small>' + esc(s.course) + '</small></div><span>' + s.attendees + ' joined</span></div>'; }).join('') : '<p class="muted lv-none">No class is live right now.</p>') +
+      (d.activeNow.length ? '<div class="lv-people">' + d.activeNow.map(function (p) { return '<span title="' + esc(p.page) + '">' + esc(p.name) + '</span>'; }).join('') + '</div>' : '');
+    var pmax = Math.max.apply(null, d.pages.map(function (p) { return p.views; }).concat([1]));
+    document.getElementById('lv-pages').innerHTML = d.pages.length ? d.pages.map(function (p, i) { return '<div class="lv-page" style="--i:' + i + '"><span>' + esc(p.page.replace(/^\//, '')) + '</span><div class="lv-bar thin"><i style="--w:' + Math.max(3, Math.round(p.views / pmax * 100)) + '%"></i></div><b>' + p.views.toLocaleString('en-US') + '</b></div>'; }).join('') : '<p class="muted">Page views will show here.</p>';
+    var q = document.getElementById('lv-extra'); if (q) q.innerHTML =
+      '<div><b>' + k.liveShare + '%</b><span>attend live (the rest watch recordings)</span></div><div><b>' + k.messagesToday + '</b><span>community messages today</span></div><div><b>' + k.signupsToday + '</b><span>new students today</span></div><div><b>' + naira(k.refunded) + '</b><span>refunded in total</span></div>';
+    var st = document.getElementById('lv-stamp'); if (st) { st.setAttribute('data-at', d.at); st.textContent = 'Updated just now'; }
+    root.classList.add('lv-ready');
+  }
+  async function rpPoll() {
+    if (!document.getElementById('lv-root')) { rpStop(); return; }
+    if (document.hidden) return;
+    try { var d = await api('/api/staff/live-stats'); rpPaint(d); var dot = document.getElementById('lv-dot'); if (dot) dot.classList.remove('off'); }
+    catch (e) { var dot2 = document.getElementById('lv-dot'); if (dot2) dot2.classList.add('off'); }
+  }
+  // QR codes for adverts: make a code per advert, then see scans, signups and buyers for each.
+  function qrCard(d) {
+    var root = document.getElementById('lv-root'); if (!root || document.getElementById('qr-card')) return;
+    var pct = d.qrPercent || 15, days = d.qrDays || 7;
+    var sec = document.createElement('section'); sec.id = 'qr-card'; sec.className = 'lv-card qr-admin';
+    sec.innerHTML = '<p class="lv-t">QR code for adverts <small>' + pct + '% off for ' + days + ' days on the first purchase</small></p>' +
+      '<div class="qr-admin-grid"><div class="qr-make"><label>Name this advert<input id="qr-src" maxlength="30" value="flyer" placeholder="e.g. flyer-lagos"></label>' +
+      '<p class="muted" id="qr-link"></p><div class="qr-btns"><button class="btn btn-primary btn-sm" id="qr-png" type="button">Download PNG</button><button class="btn btn-ghost btn-sm" id="qr-svg" type="button">Download SVG</button><button class="btn btn-ghost btn-sm" id="qr-copy" type="button">Copy link</button></div></div>' +
+      '<div class="qr-img" id="qr-img"></div></div>' +
+      '<div id="qr-table"></div>';
+    root.appendChild(sec);
+    var src = sec.querySelector('#qr-src'), cur = null;
+    function url() { var s = (src.value || 'ad').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30) || 'ad'; return location.origin + '/signup.html?qr=' + s; }
+    function draw() {
+      var u = url(); sec.querySelector('#qr-link').textContent = u;
+      if (!window.qrcode) { sec.querySelector('#qr-img').textContent = 'QR library missing'; return; }
+      var q = window.qrcode(0, 'M'); q.addData(u); q.make(); cur = q;
+      sec.querySelector('#qr-img').innerHTML = q.createSvgTag(6, 4);
+    }
+    function save(name, blob) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000); }
+    src.addEventListener('input', draw); draw();
+    sec.querySelector('#qr-svg').onclick = function () { save('qr-' + url().split('=')[1] + '.svg', new Blob([cur.createSvgTag(10, 4)], { type: 'image/svg+xml' })); };
+    sec.querySelector('#qr-png').onclick = function () {
+      var n = cur.getModuleCount(), cs = 12, m = 4, size = (n + m * 2) * cs, c = document.createElement('canvas'); c.width = c.height = size;
+      var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, size, size); x.fillStyle = '#000';
+      for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (cur.isDark(r, k)) x.fillRect((k + m) * cs, (r + m) * cs, cs, cs);
+      c.toBlob(function (b) { save('qr-' + url().split('=')[1] + '.png', b); });
+    };
+    sec.querySelector('#qr-copy').onclick = function () { try { navigator.clipboard.writeText(url()); toast('Link copied'); } catch (e) {} };
+    function table(list) {
+      sec.querySelector('#qr-table').innerHTML = list.length ? '<table class="tbl"><thead><tr><th>Advert</th><th>Scans</th><th>Sign-ups</th><th>Buyers</th><th>Last scan</th></tr></thead><tbody>' +
+        list.map(function (q) { return '<tr><td><b>' + esc(q.src) + '</b></td><td>' + q.scans + '</td><td>' + q.signups + '</td><td>' + q.buyers + '</td><td>' + (q.lastScanAt ? new Date(q.lastScanAt).toLocaleString() : '-') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="muted">No scans yet. Print the code on your advert and results will show here.</p>';
+    }
+    table(d.qr || []);
+    var t = setInterval(function () { if (!document.getElementById('qr-card')) return clearInterval(t); api('/api/staff/live-stats').then(function (x) { table(x.qr || []); }).catch(function () {}); }, 8000);
+  }
   async function renderReports() {
     crumb.textContent = 'Reports and analytics';
-    var r = await api('/api/staff/reports/revenue'), a = await api('/api/staff/analytics');
-    var months = r.byMonth.map(function (m) { return '<div class="rp-bar"><i data-h="' + Math.max(4, Math.round(m.amount / Math.max(1, Math.max.apply(null, r.byMonth.map(function (x) { return x.amount; }))) * 100)) + '"></i><span>' + esc(m.month) + '</span><b>' + naira(m.amount) + '</b></div>'; }).join('') || '<p class="muted">No sales yet.</p>';
-    setView(head('Business', 'Reports and analytics', 'Sales, refunds and website activity.') +
-      '<div class="rp-live"><span class="rp-live-dot"></span> Auto-updating every 10 seconds <span class="rp-live-time">· Updated ' + new Date().toLocaleTimeString() + '</span></div>' +
-      '<div class="rp-stats"><div><span>Gross sales</span><b>' + naira(r.gross) + '</b></div><div><span>Refunded</span><b>' + naira(r.refunded) + '</b></div><div><span>Net</span><b>' + naira(r.net) + '</b></div><div><span>Orders</span><b>' + r.orders + '</b></div></div>' +
-      '<div class="rp-actions"><a class="btn btn-solid" href="/api/staff/reports/revenue?format=csv">Download sales report (CSV)</a></div>' +
-      '<div class="grid-2" style="margin-top:16px"><section class="box"><p class="eyebrow">Sales by month</p><div class="rp-chart">' + months + '</div></section>' +
-      '<section class="box"><p class="eyebrow">Sales by item</p><div class="dt-wrap"><table class="dt"><thead><tr><th>Item</th><th>Type</th><th>Orders</th><th>Amount</th></tr></thead><tbody>' +
-      (r.byItem.length ? r.byItem.map(function (i) { return '<tr><td>' + esc(i.item) + '</td><td class="muted small">' + esc(i.kind) + '</td><td>' + i.count + '</td><td>' + naira(i.amount) + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="muted">No sales yet.</td></tr>') + '</tbody></table></div></section></div>' +
-      '<div class="rp-stats" style="margin-top:16px"><div><span>Page views (30 days)</span><b>' + a.totalViews + '</b></div><div><span>Students</span><b>' + a.students + '</b></div><div><span>Newsletter subscribers</span><b>' + a.subscribers + '</b></div><div><span>New students (30 days)</span><b>' + a.signups.reduce(function (t, x) { return t + x.count; }, 0) + '</b></div></div>' +
-      '<div class="grid-2" style="margin-top:16px"><section class="box"><p class="eyebrow">Most visited pages</p><div class="dt-wrap"><table class="dt"><thead><tr><th>Page</th><th>Views</th></tr></thead><tbody>' + (a.pages.length ? a.pages.map(function (p) { return '<tr><td>' + esc(p.page) + '</td><td>' + p.views + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="muted">No visits yet.</td></tr>') + '</tbody></table></div></section>' +
-      '<section class="box"><p class="eyebrow">Courses and products</p><div class="dt-wrap"><table class="dt"><thead><tr><th>Course</th><th>Students</th></tr></thead><tbody>' + a.topCourses.map(function (c) { return '<tr><td>' + esc(c.title) + '</td><td>' + c.students + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-      '<div class="dt-wrap" style="margin-top:12px"><table class="dt"><thead><tr><th>Product</th><th>Sales</th></tr></thead><tbody>' + (a.topProducts.length ? a.topProducts.map(function (p) { return '<tr><td>' + esc(p.title) + '</td><td>' + p.sales + '</td></tr>'; }).join('') : '<tr><td colspan="2" class="muted">No products yet.</td></tr>') + '</tbody></table></div></section></div>');
-    setTimeout(function () { view.querySelectorAll('[data-h]').forEach(function (el) { el.style.height = el.getAttribute('data-h') + '%'; }); }, 120);
-    // Refresh only while reports remain visible; no manual reload required.
-    if (window.deboneReportTimer) clearTimeout(window.deboneReportTimer);
-    window.deboneReportTimer = setTimeout(function () { if (location.hash.replace(/^#/, '').split('/')[0] === 'reports') renderReports().catch(function (e) { console.warn('Report refresh failed', e); }); }, 10000);
+    rpStop(); RP.seen = {}; RP.chartSig = RP.dsig = RP.csig = null;
+    var d = await api('/api/staff/live-stats'), r = await api('/api/staff/reports/revenue');
+    setTimeout(function () { qrCard(d); }, 0);
+    var kp = RP_KPIS.map(function (c, i) {
+      var spark = c[4] ? rpSpark(d.series[c[4]].slice(-14), c[2]) : '<div class="lv-pulsebar"><i></i><i></i><i></i><i></i><i></i></div>';
+      return '<article class="lv-kpi" style="--i:' + i + ';--c:' + c[2] + '"><span>' + c[1] + '</span><b id="lv-k-' + c[0] + '" data-v="0" data-first="1">0</b>' + (c[0] === 'online' ? '<small id="lv-sub-online"></small>' : '') + spark + '</article>';
+    }).join('');
+    setView('<div id="lv-root" class="lv-root">' +
+      '<header class="view-head lv-head"><div><p class="eyebrow">Business</p><h1>Reports &amp; analytics</h1><p class="muted">Everything here updates by itself. No refresh needed.</p></div>' +
+        '<div class="lv-status"><span class="lv-badge"><i id="lv-dot"></i>LIVE</span><small id="lv-stamp">Updated just now</small><a class="btn btn-ghost btn-sm" href="/api/staff/reports/revenue?format=csv">Download sales (CSV)</a></div></header>' +
+      '<div class="lv-kpis">' + kp + '</div>' +
+      '<div class="lv-grid2">' +
+        '<section class="lv-card lv-main"><div class="lv-tabs" id="lv-tabs" role="tablist">' + Object.keys(RP_METRICS).map(function (k) { return '<button type="button" role="tab" data-m="' + k + '" class="' + (k === RP.metric ? 'on' : '') + '">' + RP_METRICS[k].label + '</button>'; }).join('') +
+          '<span class="lv-range" id="lv-range"><button type="button" data-r="7" class="' + (RP.range === 7 ? 'on' : '') + '">7d</button><button type="button" data-r="30" class="' + (RP.range === 30 ? 'on' : '') + '">30d</button></span></div><div id="lv-chart"></div></section>' +
+        '<section class="lv-card"><p class="lv-t">Where sales come from</p><div id="lv-donut"></div></section>' +
+      '</div>' +
+      '<div class="lv-grid3">' +
+        '<section class="lv-card"><p class="lv-t">Courses <small>learners and completion</small></p><div id="lv-courses"></div></section>' +
+        '<section class="lv-card"><p class="lv-t">Live activity <span class="lv-badge sm"><i></i>realtime</span></p><ul class="lv-feed" id="lv-feed"></ul></section>' +
+        '<section class="lv-card"><p class="lv-t">Right now</p><div id="lv-now"></div><p class="lv-t" style="margin-top:18px">Needs your attention</p><div class="lv-tasks" id="lv-tasks"></div></section>' +
+      '</div>' +
+      '<div class="lv-grid2 even"><section class="lv-card"><p class="lv-t">Most visited pages <small>30 days</small></p><div id="lv-pages"></div></section>' +
+        '<section class="lv-card"><p class="lv-t">Learning health</p><div class="lv-extra" id="lv-extra"></div></section></div>' +
+      '<section class="lv-card" style="margin-top:16px"><p class="lv-t">Sales by item</p><div class="dt-wrap"><table class="dt"><thead><tr><th>Item</th><th>Type</th><th>Orders</th><th>Amount</th></tr></thead><tbody>' +
+        (r.byItem.length ? r.byItem.map(function (i) { return '<tr><td>' + esc(i.item) + '</td><td class="muted small">' + esc(i.kind) + '</td><td>' + i.count + '</td><td>' + naira(i.amount) + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="muted">No sales yet.</td></tr>') + '</tbody></table></div></section></div>');
+    document.getElementById('lv-tabs').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-m]'), rg = e.target.closest('[data-r]');
+      if (b) { RP.metric = b.getAttribute('data-m'); view.querySelectorAll('#lv-tabs [data-m]').forEach(function (x) { x.classList.toggle('on', x === b); }); }
+      if (rg) { RP.range = Number(rg.getAttribute('data-r')); view.querySelectorAll('#lv-range [data-r]').forEach(function (x) { x.classList.toggle('on', x === rg); }); }
+      if (b || rg) { RP.chartSig = null; rpPaint(RP.data); }
+    });
+    rpPaint(d, true);
+    RP.timer = setInterval(rpPoll, 4000);
+    window.addEventListener('debone:refresh', function onR() { if (!document.getElementById('lv-root')) return window.removeEventListener('debone:refresh', onR); rpPoll(); });
+    var tick = setInterval(function () { var st = document.getElementById('lv-stamp'); if (!st) return clearInterval(tick); var at = st.getAttribute('data-at'); if (at) { var s = Math.round((Date.now() - new Date(at).getTime()) / 1000); st.textContent = s < 5 ? 'Updated just now' : 'Updated ' + s + 's ago'; } }, 1000);
   }
 
   /* ---------- Community moderation and suspensions (admin) ---------- */

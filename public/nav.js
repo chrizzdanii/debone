@@ -20,25 +20,46 @@
     timers.set(g, setTimeout(function () { setOpen(g, false); }, 320));
   }
 
+  // Where clicking each heading goes. Hovering (or the arrow) still opens the dropdown as before.
+  var LANDING = { academy: 'academy.html', studio: 'studio.html', services: 'services.html', store: 'store.html', about: 'about.html' };
+
   groups.forEach(function (g) {
     var t = g.querySelector('.nav-trigger');
     var panel = g.querySelector('.nav-panel');
     if (!t) return;
+    var key = (t.textContent || '').trim().toLowerCase();
+    var href = LANDING[key];
+    if (href) {
+      // Turn the heading into a real link: click goes to the page, hover or the arrow opens the dropdown
+      var a = document.createElement('a');
+      a.className = t.className; a.href = href; a.id = t.id || '';
+      a.setAttribute('aria-haspopup', 'true'); a.setAttribute('aria-expanded', 'false');
+      if (t.getAttribute('aria-controls')) a.setAttribute('aria-controls', t.getAttribute('aria-controls'));
+      a.innerHTML = t.innerHTML;
+      t.parentNode.replaceChild(a, t);
+      t = a;
+      if (/\/?[\w-]+\.html$/.test(location.pathname) && location.pathname.split('/').pop() === href) a.setAttribute('aria-current', 'page');
+      if (panel) {
+        // On a phone the heading opens the list, so give a clear way into the section page itself
+        var first = panel.querySelector('.nav-col');
+        if (first && !panel.querySelector('.nav-all')) {
+          var all = document.createElement('a');
+          all.className = 'nav-all'; all.href = href; all.textContent = 'Open the ' + t.textContent.trim() + ' page →';
+          first.insertBefore(all, first.firstChild);
+        }
+      }
+    }
     t.addEventListener('click', function (e) {
+      var chev = e.target.closest && e.target.closest('.nav-chev');
+      if (desktop.matches && href && !chev) {
+        // Desktop: a click on the name goes to its page (hover already showed the menu)
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
-      if (desktop.matches) {
-        // Main label navigates; hovering or the chevron still opens the menu.
-        if (e.target.closest('.nav-chev')) { closeAll(g); setOpen(g, !g.classList.contains('open')); return; }
-        var label = (t.textContent || '').trim().toLowerCase();
-        var destinations = {academy:'academy.html', about:'about.html', services:'services.html', shop:'products.html'};
-        if (destinations[label]) window.location.href = destinations[label];
-        else { closeAll(g); setOpen(g, true); }
-      } else {
-        var open = !g.classList.contains('open');
-        closeAll(g);
-        setOpen(g, open);
-      }
+      var open = !g.classList.contains('open');
+      closeAll(g);
+      setOpen(g, open);
     });
     g.addEventListener('mouseenter', function () { if (desktop.matches) { closeAll(g); setOpen(g, true); } });
     g.addEventListener('mouseleave', function () { if (desktop.matches) closeSoon(g); });

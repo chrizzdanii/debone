@@ -1,0 +1,55 @@
+/* Community chat (WhatsApp style): pictures, files, replies, delete, live badge */
+.wa2-shell{position:relative}
+.wa2-shell .wa-row{animation:none}
+.wa2-shell .wa-row.wa2-new{animation:waIn .4s cubic-bezier(.2,.8,.2,1) both}
+.wa2-shell .wa-bubble{max-width:min(78%,560px)}
+.wa2-live{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6BCB77}
+.wa2-live i{width:9px;height:9px;border-radius:50%;background:#6BCB77;box-shadow:0 0 0 0 rgba(107,203,119,.6);animation:wa2Pulse 1.8s infinite}
+@keyframes wa2Pulse{70%{box-shadow:0 0 0 9px rgba(107,203,119,0)}100%{box-shadow:0 0 0 0 rgba(107,203,119,0)}}
+.wa2-staff{font-style:normal;font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--orange,#E0A800);color:#0B0B0B;border-radius:5px;padding:1px 6px;margin-left:4px}
+.wa2-quote{border-left:4px solid var(--orange,#E0A800);background:rgba(0,0,0,.22);border-radius:7px;padding:6px 10px;display:grid;gap:1px;cursor:pointer;font-size:.8rem;min-width:140px}
+.wa2-quote b{font-size:.76rem}
+.wa2-quote span{color:#AEBAC1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46ch}
+.wa2-img{display:block;border:0;padding:0;background:#0B141A;border-radius:8px;overflow:hidden;cursor:zoom-in;max-width:320px}
+.wa2-img img{display:block;width:100%;max-height:340px;object-fit:cover;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.wa2-img:hover img{transform:scale(1.04)}
+.wa2-file{display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.22);border-radius:10px;padding:10px 12px;color:inherit;text-decoration:none;min-width:220px;transition:background .25s}
+.wa2-file:hover{background:rgba(0,0,0,.34)}
+.wa2-fico{position:relative;width:44px;height:48px;display:grid;place-items:center;color:#8696A0;flex:0 0 auto}
+.wa2-fico em{position:absolute;bottom:4px;font:800 .54rem Inter,sans-serif;font-style:normal;color:var(--orange,#E0A800);letter-spacing:.04em}
+.wa2-finfo{display:grid;gap:2px;min-width:0}
+.wa2-finfo b{font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wa2-finfo small{color:#8696A0;font-size:.72rem}
+.wa2-tick{color:#53BDEB;font-size:.7rem;letter-spacing:-2px;margin-left:2px}
+.wa2-pending{opacity:.7}
+.wa2-gone .wa-bubble{background:#182229!important;color:#8696A0}
+.wa2-gone .wa-bubble::before{display:none}
+.wa2-actions{position:absolute;top:6px;right:8px;display:flex;gap:4px;opacity:0;transform:translateY(-3px);transition:all .2s;background:inherit;border-radius:8px;padding:2px}
+.wa-bubble:hover .wa2-actions,.wa-bubble:focus-within .wa2-actions{opacity:1;transform:none}
+.wa2-actions button{width:28px;height:28px;border-radius:8px;border:0;background:rgba(11,20,26,.85);color:#C5CFD4;display:grid;place-items:center;cursor:pointer;transition:all .2s}
+.wa2-actions button:hover{background:var(--orange,#E0A800);color:#0B0B0B}
+.wa2-actions button[data-act-del]:hover{background:#E5534B;color:#fff}
+@media (hover:none){.wa2-actions{opacity:1;transform:none;position:static;justify-content:flex-end;padding:0;margin-top:2px}}
+.wa2-removing{animation:wa2Out .35s forwards!important}
+@keyframes wa2Out{to{opacity:0;transform:scale(.9) translateX(30px)}}
+.wa2-flash .wa-bubble{animation:wa2Flash 1.4s}
+@keyframes wa2Flash{0%,60%{box-shadow:0 0 0 3px rgba(224,168,0,.8)}100%{box-shadow:0 0 0 0 rgba(224,168,0,0)}}
+.wa2-jump{position:absolute;right:18px;bottom:96px;z-index:3;display:inline-flex;align-items:center;gap:6px;background:var(--orange,#E0A800);color:#0B0B0B;border:0;border-radius:999px;padding:8px 14px;font:700 .78rem Inter,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:waIn .3s both}
+.wa2-attach{display:flex;align-items:center;gap:12px;background:#182229;border-radius:12px;padding:8px 10px;margin-bottom:8px;animation:waIn .3s both}
+.wa2-attach img{width:54px;height:54px;object-fit:cover;border-radius:8px}
+.wa2-attach div{display:grid;min-width:0;flex:1}
+.wa2-attach b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.86rem}
+.wa2-attach small{color:#8696A0;font-size:.72rem}
+.wa2-attach button{background:none;border:0;color:#8696A0;font-size:1.5rem;cursor:pointer;line-height:1}
+.wa-replying div{display:grid;min-width:0}
+.wa-replying small{color:#8696A0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wa2-btn{width:44px;height:46px;border-radius:50%;border:0;background:transparent;color:#8696A0;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;transition:color .25s,transform .3s}
+.wa2-btn:hover{color:var(--orange,#E0A800);transform:rotate(-12deg) scale(1.08)}
+.wa2-drop{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(11,20,26,.86);border:2px dashed var(--orange,#E0A800);border-radius:inherit;font-weight:700;color:var(--orange,#E0A800);backdrop-filter:blur(4px)}
+.wa2-lightbox{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);display:grid;place-items:center;opacity:0;transition:opacity .2s;cursor:zoom-out;padding:20px}
+.wa2-lightbox.in{opacity:1}
+.wa2-lightbox img{max-width:min(96vw,1200px);max-height:90vh;border-radius:10px;transform:scale(.94);transition:transform .25s}
+.wa2-lightbox.in img{transform:none}
+.wa2-lightbox button{position:absolute;top:14px;right:18px;background:none;border:0;color:#fff;font-size:2.2rem;cursor:pointer}
+@media (max-width:640px){.wa2-shell .wa-bubble{max-width:88%}.wa2-btn{width:38px}}
+@media (prefers-reduced-motion:reduce){.wa2-live i,.wa2-shell .wa-row.wa2-new,.wa2-jump{animation:none}}
