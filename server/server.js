@@ -18,6 +18,12 @@ const { createStore, SUPABASE, DATA_DIR } = require('./store');
 const SECRET_FILE = path.join(DATA_DIR, 'session.secret');
 const ON_VERCEL = !!process.env.VERCEL;
 const COURSES_FILE = path.join(__dirname, 'courses.json');
+const SITE_TZ = process.env.SITE_TZ || 'Africa/Lagos';   // lessons open on the calendar day of their class, in this time zone
+const QR_PERCENT = Number(process.env.QR_DISCOUNT_PERCENT) || 15;   // discount for people who register by scanning an advert's QR code
+const QR_DAYS = Number(process.env.QR_DISCOUNT_DAYS) || 7;          // how long the discount stays available after they register
+const DEFAULT_SEATS = 1000;                               // seats shown for a course when the admin has not set a limit
+// "2026-11-19" for a moment in time, as a calendar day in the school's time zone
+const dayKey = d => new Intl.DateTimeFormat('en-CA', { timeZone: SITE_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(d));
 
 /* ---------- Config ---------- */
 (function loadEnv() {
@@ -50,7 +56,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || (() => {
 const DB_DEFAULT = () => ({
   users: [], enrollments: [], progress: [], payments: [],
   courses: null, announcements: [],
-  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: []
+  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], communityMigrated: false, qrStats: {}
 });
 const store = createStore(DB_DEFAULT);
 let db = DB_DEFAULT();
@@ -287,9 +293,21 @@ function completion(u) {
   const missing = COMPLETION_REQUIRED.filter(k => !has[k]);
   return { percent: Math.round(((COMPLETION_REQUIRED.length - missing.length) / COMPLETION_REQUIRED.length) * 100), missing };
 }
+// The advert-QR discount: 15% on the first purchase, for 7 days after registering with the QR code
+function qrOffer(u) {
+  if (!u || !u.qrSource || !u.qrUntil || Date.now() > new Date(u.qrUntil).getTime()) return null;
+  if (db.payments.some(x => x.userId === u.id && x.status === 'success')) return null;
+  return { percent: QR_PERCENT, until: u.qrUntil, source: u.qrSource };
+}
+function qrSourceOf(v) { return clean(v, 30).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 30); }
+function recordQrSignup(user, src) {
+  if (!src) return;
+  user.qrSource = src; user.qrUntil = new Date(Date.now() + QR_DAYS * 86400000).toISOString();
+  const st = db.qrStats[src] = db.qrStats[src] || { scans: 0 }; st.lastSignupAt = now();
+}
 function publicUser(u) {
   return { id: u.id, name: u.name, email: u.email, phone: u.phone || '', role: u.role || 'student', createdAt: u.createdAt,
-    profile: u.profile || {}, hasAvatar: !!u.avatar, completion: completion(u), coupon: couponFor(u) };
+    profile: u.profile || {}, hasAvatar: !!u.avatar, completion: completion(u), coupon: couponFor(u), qrOffer: qrOffer(u) };
 }
 const isAdmin = u => !!u && u.role === 'admin';
 const isStaff = u => !!u && (u.role === 'admin' || u.role === 'instructor');
@@ -361,17 +379,27 @@ function lessonSessions(course, lesson) {
 }
 function lessonRequirements(user, course, lesson) {
   const sessions = lessonSessions(course, lesson);
-  const classDone = sessions.length === 0 || sessions.some(s => db.attendance.some(a => a.sessionId === s.id && a.userId === user.id));
+  const mine = sessions.map(s => db.attendance.find(a => a.sessionId === s.id && a.userId === user.id)).filter(Boolean);
+  const classDone = sessions.length === 0 || mine.length > 0;
+  // 'live' = joined the live class, 'recording' = missed it and watched the recorded video
+  const classHow = mine.length ? (mine.some(a => a.how === 'live') ? 'live' : 'recording') : null;
   const assignments = db.assignments.filter(a => a.courseId === course.id && a.lessonId === lesson.id);
   const submitted = assignments.length > 0 && assignments.every(a => db.submissions.some(x => x.assignmentId === a.id && x.userId === user.id));
   const note = (db.notes.find(n => n.userId === user.id && n.lessonId === lesson.id) || {}).text || '';
   const noteDone = !REQUIRE_NOTE || note.trim().length > 0;
   const missing = [];
-  if (!classDone) missing.push('Join the live class or watch its recording');
+  if (!classDone) missing.push('Join the live class, or watch the recorded video if you missed it');
   if (!assignments.length) missing.push('Wait for your instructor to publish the assignment');
   else if (!submitted) missing.push('Submit every assignment for this lesson');
   if (!noteDone) missing.push('Write your lesson note');
-  return { hasClass: sessions.length > 0, classDone, hasAssignment: assignments.length > 0, submitted, noteDone, ready: missing.length === 0, missing };
+  return { hasClass: sessions.length > 0, classDone, classHow, hasAssignment: assignments.length > 0, submitted, noteDone, ready: missing.length === 0, missing };
+}
+const fmtDay = k => new Date(k + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+// The calendar day a lesson opens: the day of its first live class. Lesson 1 and lessons without a class are not held back by date.
+function lessonOpensOn(course, lesson, index) {
+  if (index <= 0) return null;
+  const first = lessonSessions(course, lesson).find(s => s.startsAt);
+  return first ? dayKey(first.startsAt) : null;
 }
 // A saved progress record is not proof of completion when lesson requirements are unmet.
 function validLessonCompletion(user, course, lesson) {
@@ -394,16 +422,22 @@ function courseView(course, user) {
   const lessons = course.lessons.map((l, i) => {
     const prev = i > 0 ? course.lessons[i - 1] : null;
     const preview = !!l.free && course.price > 0;   // a free preview lesson inside a paid course stays open
-    const nextStart = lessonSessions(course, l).map(s => Date.parse(s.startsAt)).filter(Number.isFinite).sort((a,b) => a-b)[0];
-    // A calendar date alone never opens the next lesson. Staff must actually start its linked live class.
-    const sessions = lessonSessions(course, l);
-    const adminStarted = sessions.some(s => !!s.liveStartedAt || s.status === 'live');
-    const liveLocked = held && enrolled && !preview && !done.has(l.id) && i > 0 && !adminStarted;
-    const gated = held && enrolled && !preview && !!prev && !done.has(prev.id) && !done.has(l.id);
+    // A lesson opens only when ALL of these hold: the previous lesson is completed, the class day has arrived,
+    // and staff have actually started the lesson's live class (a calendar date alone never opens it).
+    const adminStarted = lessonSessions(course, l).some(s => !!s.liveStartedAt || s.status === 'live');
+    const prevUndone = held && enrolled && !preview && !!prev && !done.has(prev.id) && !done.has(l.id);
+    const opensOn = lessonOpensOn(course, l, i);
+    const early = held && enrolled && !preview && !done.has(l.id) && !!opensOn && dayKey(Date.now()) < opensOn;
+    const notStarted = held && enrolled && !preview && !done.has(l.id) && i > 0 && !adminStarted;
+    const gated = prevUndone || early || notStarted;
+    let lockReason = '';
+    if (prevUndone) lockReason = 'Finish lesson ' + i + ' (its live class and assignment) to unlock this lesson.';
+    else if (early) lockReason = 'This lesson opens on ' + fmtDay(opensOn) + ', the day of its class.';
+    else if (notStarted) lockReason = 'This lesson opens when your instructor starts its live class.';
     return {
       id: l.id, number: i + 1, title: l.title, free: !!l.free,
-      locked: !(enrolled || l.free) || gated || liveLocked, gated: gated || liveLocked, completed: done.has(l.id),
-      lockReason: gated ? 'Finish lesson ' + i + ' (its live class and assignment) to unlock this lesson.' : liveLocked ? 'Waiting for the admin to start the live class for this lesson.' : ''
+      locked: !(enrolled || l.free) || gated, gated, completed: done.has(l.id),
+      waiting: (early || notStarted) && !prevUndone, opensOn: opensOn, lockReason
     };
   });
   const completed = lessons.filter(l => l.completed).length;
@@ -414,7 +448,7 @@ function courseView(course, user) {
     category: course.category || null, categoryLabel: (COURSE_CATEGORIES.find(c => c.id === course.category) || {}).label || null,
     instructor: course.instructor || null, startDate: course.startDate || null, duration: course.duration || null,
     schedule: course.schedule || null, classesPerWeek: course.classesPerWeek || null, sessionsTotal: course.sessionsTotal || null,
-    seats: course.price > 0 ? (course.seats || 1000) : null, seatsLeft: course.price > 0 ? Math.max(0, (course.seats || 1000) - enrolledCount(course)) : null,
+    seats: course.seats || DEFAULT_SEATS, seatsLeft: Math.max(0, (course.seats || DEFAULT_SEATS) - enrolledCount(course)),
     minStudents: course.minStudents || null, enrolledCount: enrolledCount(course),
     progress: lessons.length ? Math.round((completed / lessons.length) * 100) : 0,
     rating: ratingFor(course.id)
@@ -428,6 +462,12 @@ function youtubeId(v) {
   const m = s.match(/(?:youtu\.be\/|v=|embed\/|live\/|shorts\/)([A-Za-z0-9_-]{11})/);
   return m ? m[1] : null;
 }
+// A class is over when the instructor ended it, or when its time (plus a short grace period) has passed and it was never left running
+function sessionEnded(s) {
+  if (s.status === 'ended') return true;
+  if (s.status === 'live' || !s.startsAt) return false;
+  return Date.now() > new Date(s.startsAt).getTime() + ((Number(s.durationMinutes) || 120) + 30) * 60000;
+}
 function safeYouTubeEmbed(value) {
   const id = youtubeId(value);
   return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0&controls=0&fs=1&playsinline=1` : null;
@@ -436,10 +476,10 @@ function sessionView(s, user) {
   const course = db.courses.find(c => c.id === s.courseId);
   const timing = sessionTiming(s, user);
   const liveAllowed = s.status === 'live' && timing.liveOpen;
-  const replayAllowed = s.status === 'ended' && !!s.recordingUrl && replayOpen(s);
+  const replayAllowed = sessionEnded(s) && !!s.recordingUrl && replayOpen(s);
   return {
     id: s.id, courseId: s.courseId, courseTitle: course ? course.title : '', title: s.title, lessonId: s.lessonId || null,
-    startsAt: s.startsAt || null, status: s.status || 'scheduled',
+    startsAt: s.startsAt || null, status: s.status || 'scheduled', ended: sessionEnded(s),
     // Playback identifiers are only returned to an authenticated, enrolled student.
     // YouTube embeds are not DRM and can still be extracted by a determined viewer.
     embedUrl: liveAllowed ? safeYouTubeEmbed(s.youtubeUrl) : null,
@@ -459,7 +499,7 @@ function sessionTiming(s, user) {
   const joinOpen = !!s.joinUrl && (s.status === 'live' || inWindow);
   const attendanceRecord = user && db.attendance.find(a => a.sessionId === s.id && a.userId === user.id);
   const attended = !!attendanceRecord;
-  return { joinOpen, attendanceType: attendanceRecord ? attendanceRecord.how : null, liveOpen: s.status === 'live' || inWindow, countdownTo: start && start > nowMs ? s.startsAt : null, attended,
+  return { joinOpen, attendanceType: attendanceRecord ? attendanceRecord.how : null, attendedHow: attendanceRecord ? (attendanceRecord.how === 'recording' ? 'recording' : 'live') : null, liveOpen: s.status === 'live' || inWindow, countdownTo: start && start > nowMs ? s.startsAt : null, attended,
     attendees: db.attendance.filter(a => a.sessionId === s.id).length };
 }
 // Reminders: enrolled students are told one hour before a class starts
@@ -668,6 +708,7 @@ route('POST', '/api/auth/signup', async ctx => {
   if (db.users.some(u => u.email === email)) throw httpError(409, 'An account with this email already exists. Try logging in.');
   const referrer = refCode ? db.users.find(u => u.referralCode === refCode && u.email !== email) : null;
   const user = { id: uid(), name, email, phone, role: 'student', passHash: hashPassword(password), createdAt: now(), referralCode: genReferralCode(), referredBy: referrer ? referrer.referralCode : null };
+  recordQrSignup(user, qrSourceOf(b.qr));
   db.users.push(user);
   save();
   json(ctx.res, 201, { user: publicUser(user) }, { 'Set-Cookie': sessionCookie(user) });
@@ -1336,7 +1377,7 @@ route('POST', '/api/sessions/:id/watched', async ctx => {
   const course = db.courses.find(c => c.id === s.courseId);
   if (!course || !courseAccess(user, course)) throw httpError(403, 'Enrol in this course to watch the recording.');
   if (!s.recordingUrl || !replayOpen(s)) throw httpError(400, 'The recording is not available yet.');
-  if (s.status !== 'ended') throw httpError(400, 'The recording opens once the live class has ended.');
+  if (!sessionEnded(s)) throw httpError(400, 'The recording opens once the live class has ended.');
   if (!db.attendance.some(a => a.sessionId === s.id && a.userId === user.id)) {
     db.attendance.push({ id: uid(8), sessionId: s.id, userId: user.id, at: now(), how: 'recording' }); save();
   }
@@ -1371,7 +1412,7 @@ route('GET', '/api/me/recordings', async ctx => {
     const status = !s.recordingUrl ? (s.startsAt && new Date(s.startsAt).getTime() > Date.now() ? 'upcoming' : 'processing')
       : (open ? 'available' : 'expired');
     return { id: s.id, courseId: s.courseId, courseTitle: course.title || '', title: s.title || 'Live class', startsAt: s.startsAt || null,
-      status, recordingAvailable: open && s.status === 'ended', replayUntil: replayUntilFor(s) };
+      status, recordingAvailable: open && sessionEnded(s), replayUntil: replayUntilFor(s) };
   }) });
 });
 // Playback is issued only after a fresh authenticated enrollment and expiry check.
@@ -1592,8 +1633,12 @@ route('GET', '/api/staff/purchases', async ctx => {
 
 /* ============ Course bundles ============ */
 function bundleView(b) {
-  return { id: b.id, title: b.title, description: b.description || '', image: b.image || '', price: b.price, active: b.active !== false,
-    courses: (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean).map(c => ({ id: c.id, title: c.title, startDate: c.startDate || null, schedule: c.schedule || null })) };
+  const courses = (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean);
+  const value = courses.reduce((t, c) => t + (c.price || 0), 0);
+  return { id: b.id, title: b.title, description: b.description || '', price: b.price, active: b.active !== false,
+    hasImage: !!b.image, imageV: b.image ? b.image.length % 100000 : 0, value, savings: Math.max(0, value - b.price), savingsPercent: value > b.price ? Math.round(((value - b.price) / value) * 100) : 0,
+    students: db.enrollments.filter(e => e.status === 'active' && (b.courseIds || []).includes(e.courseId)).length,
+    courses: courses.map(c => ({ id: c.id, title: c.title, price: c.price || 0, startDate: c.startDate || null, schedule: c.schedule || null, instructor: c.instructor || null, lessons: (c.lessons || []).length })) };
 }
 function bundleInput(b) {
   const title = clean(b.title, 120);
@@ -1621,18 +1666,31 @@ route('POST', '/api/bundles/:id/buy', async ctx => {
   const b = db.bundles.find(x => x.id === ctx.params.id && x.active !== false);
   if (!b) throw httpError(404, 'Bundle not found');
   if (b.courseIds.every(cid => enrollmentFor(user.id, cid))) return json(ctx.res, 200, { alreadyOwned: true });
-  return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: b.price })) });
+  const qr = qrOffer(user), price = qr ? Math.round(b.price * (100 - qr.percent) / 100) : b.price;
+  return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: price })) });
 });
-route('GET', '/api/staff/bundles', async ctx => { requireStaff(ctx, true); json(ctx.res, 200, { bundles: db.bundles.map(b => Object.assign(bundleView(b), { courseIds: b.courseIds })) }); });
+route('GET', '/api/staff/bundles', async ctx => { requireStaff(ctx, true); json(ctx.res, 200, { bundles: db.bundles.map(b => Object.assign(bundleView(b), { courseIds: b.courseIds, sold: db.payments.filter(p => p.status === 'success' && p.bundleId === b.id).length })) }); });
+route('GET', '/api/bundles/:id/image', async ctx => {
+  const b = db.bundles.find(x => x.id === ctx.params.id);
+  const m = b && b.image ? /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(b.image) : null;
+  if (!m) throw httpError(404, 'No picture for this bundle.');
+  ctx.res.writeHead(200, { 'Content-Type': m[1], 'Cache-Control': 'public, max-age=300', 'X-Content-Type-Options': 'nosniff' });
+  ctx.res.end(Buffer.from(m[2], 'base64'));
+});
 route('POST', '/api/staff/bundles', async ctx => {
   requireStaff(ctx, true);
-  db.bundles.push(Object.assign({ id: uid(8), createdAt: now() }, bundleInput(ctx.body))); save(); json(ctx.res, 201, { ok: true });
+  const b = Object.assign({ id: uid(8), createdAt: now() }, bundleInput(ctx.body));
+  db.bundles.push(b); save(); json(ctx.res, 201, { ok: true, id: b.id });
 });
 route('PATCH', '/api/staff/bundles/:id', async ctx => {
   requireStaff(ctx, true);
   const b = db.bundles.find(x => x.id === ctx.params.id);
   if (!b) throw httpError(404, 'Bundle not found');
-  Object.assign(b, bundleInput(ctx.body)); save(); json(ctx.res, 200, { ok: true });
+  const input = bundleInput(ctx.body);
+  // Keep the current picture unless a new one was sent or it was removed
+  if (ctx.body.image === undefined && ctx.body.removeImage !== true) input.image = b.image || '';
+  Object.assign(b, input);
+  save(); json(ctx.res, 200, { ok: true });
 });
 route('DELETE', '/api/staff/bundles/:id', async ctx => {
   requireStaff(ctx, true);
@@ -1841,82 +1899,234 @@ route('GET', '/api/staff/analytics', async ctx => {
     students: db.users.filter(u => u.role === 'student').length, subscribers: (db.newsletter || []).length });
 });
 
-/* Small, validated chat attachments; keep payloads below the existing JSON request limit. */
-function communityAttachment(raw) {
-  if (!raw) return null;
-  if (typeof raw !== 'object') throw httpError(400, 'Invalid attachment.');
-  const name = clean(raw.name, 100);
-  const data = String(raw.data || '');
-  const match = /^data:(image\/(?:png|jpeg|webp|gif)|application\/pdf|text\/plain);base64,([A-Za-z0-9+/]+={0,2})$/.exec(data);
-  if (!match || !name || Buffer.byteLength(match[2], 'base64') > 55 * 1024) throw httpError(400, 'Upload a PNG, JPG, WebP, GIF, PDF or TXT file up to 55 KB.');
-  return { name, type: match[1], data };
+/* ============ Live reports: one call the admin dashboard repeats every few seconds ============ */
+const presence = new Map();   // visitor key -> { at, userId, name, page }
+function touchPresence(req, user, pathname) {
+  const key = user ? 'u:' + user.id : 'ip:' + clientIp(req);
+  const prev = presence.get(key);
+  const page = /\.html$/.test(pathname) || pathname === '/' ? pathname : (prev && prev.page) || '';
+  presence.set(key, { at: Date.now(), userId: user ? user.id : null, name: user ? user.name : '', role: user ? user.role : '', page });
+  if (presence.size > 5000) for (const [k, v] of presence) if (Date.now() - v.at > 600000) presence.delete(k);
 }
-/* ============ Community (course discussions with moderation) ============ */
-route('GET', '/api/courses/:id/community', async ctx => {
-  const user = ctx.user;
-  if (!user || !canSeeCourse(user, ctx.params.id)) throw httpError(403, 'Join this course to see its community.');
-  const threads = db.threads.filter(t => t.courseId === ctx.params.id && !t.hidden).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => ({
-    id: t.id, title: t.title, body: t.body, attachment: t.attachment || null, authorName: t.authorName, createdAt: t.createdAt, mine: t.userId === user.id,
-    replies: db.replies.filter(r => r.threadId === t.id && !r.hidden).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(r => ({ id: r.id, body: r.body, attachment: r.attachment || null, authorName: r.authorName, createdAt: r.createdAt, mine: r.userId === user.id })) }));
-  json(ctx.res, 200, { threads });
+route('POST', '/api/qr/scan', async ctx => {
+  const src = qrSourceOf(ctx.body.src);
+  if (!src || limited('qrscan:' + clientIp(ctx.req), 30)) return json(ctx.res, 200, { ok: true });
+  const st = db.qrStats[src] = db.qrStats[src] || { scans: 0 };
+  st.scans++; st.lastScanAt = now(); save();
+  json(ctx.res, 200, { ok: true, percent: QR_PERCENT, days: QR_DAYS });
 });
-route('POST', '/api/courses/:id/community/threads', async ctx => {
+function qrReport() {
+  const names = new Set([...Object.keys(db.qrStats || {}), ...db.users.map(u => u.qrSource).filter(Boolean)]);
+  return [...names].map(src => {
+    const users = db.users.filter(u => u.qrSource === src);
+    const buyers = users.filter(u => db.payments.some(p => p.userId === u.id && p.status === 'success')).length;
+    const st = (db.qrStats || {})[src] || {};
+    return { src, scans: st.scans || 0, signups: users.length, buyers, lastScanAt: st.lastScanAt || null };
+  }).sort((a, b) => b.scans - a.scans);
+}
+route('GET', '/api/staff/live-stats', async ctx => {
+  requireStaff(ctx, true);
+  const nowMs = Date.now(), DAY = 86400000;
+  const days = []; for (let i = 29; i >= 0; i--) days.push(dayKey(nowMs - i * DAY));
+  const today = days[days.length - 1];
+  const kobo = p => (p.amountKobo || 0) / 100;
+  const paid = db.payments.filter(p => p.status === 'success');
+  const paidDay = p => dayKey(p.paidAt || p.createdAt);
+  const sumBy = fn => { const m = {}; paid.forEach(p => { const k = fn(p); m[k] = (m[k] || 0) + kobo(p); }); return m; };
+  const revByDay = sumBy(paidDay);
+  const countByDay = (list, get) => { const m = {}; list.forEach(x => { const t = get(x); if (t) { const k = dayKey(t); m[k] = (m[k] || 0) + 1; } }); return m; };
+  const students = db.users.filter(u => (u.role || 'student') === 'student');
+  const signupByDay = countByDay(students, u => u.createdAt);
+  const enrolByDay = countByDay(db.enrollments.filter(e => e.status === 'active'), e => e.enrolledAt);
+  const doneByDay = countByDay(db.progress, p => p.completedAt);
+  const viewsByDay = {};
+  Object.values(db.pageViews || {}).forEach(pv => Object.keys(pv).forEach(d => { viewsByDay[d] = (viewsByDay[d] || 0) + pv[d]; }));
+  const series = key => days.map(d => key[d] || 0);
+  const sum = (arr, n) => arr.slice(-n).reduce((t, v) => t + v, 0);
+  const revenue = series(revByDay);
+  const refunded = db.refunds.filter(r => r.status === 'paid').reduce((t, r) => t + (r.amountKobo || 0) / 100, 0);
+  // Courses: learners, finished lessons, completion rate
+  const courses = db.courses.filter(c => !c.comingSoon).map(c => {
+    const learners = db.enrollments.filter(e => e.courseId === c.id && e.status === 'active');
+    const lessonIds = new Set((c.lessons || []).map(l => l.id));
+    const done = db.progress.filter(p => lessonIds.has(p.lessonId) && learners.some(e => e.userId === p.userId)).length;
+    const possible = learners.length * lessonIds.size;
+    const earned = paid.filter(p => (p.kind || 'course') === 'course' && p.courseId === c.id).reduce((t, p) => t + kobo(p), 0);
+    return { id: c.id, title: c.title, students: learners.length, completion: possible ? Math.round((done / possible) * 100) : 0, revenue: earned, seats: c.seats || DEFAULT_SEATS };
+  }).sort((a, b) => b.students - a.students);
+  const byKind = {};
+  paid.forEach(p => { const k = p.kind || 'course'; byKind[k] = (byKind[k] || 0) + kobo(p); });
+  // Right now
+  const online = [...presence.values()].filter(v => nowMs - v.at < 5 * 60000);
+  const liveSessions = db.sessions.filter(s => s.status === 'live' || (s.startsAt && sessionTiming(s, null).liveOpen && !sessionEnded(s))).map(s => ({
+    id: s.id, title: s.title, course: (db.courses.find(c => c.id === s.courseId) || {}).title || '', attendees: db.attendance.filter(a => a.sessionId === s.id).length }));
+  // Attendance quality: live vs recording
+  const att = db.attendance.length, attLive = db.attendance.filter(a => a.how !== 'recording').length;
+  // Activity feed (newest first)
+  const nameOf = id => ((db.users.find(u => u.id === id) || {}).name || 'Someone').split(' ')[0];
+  const feed = [];
+  paid.slice(-12).forEach(p => feed.push({ t: p.paidAt || p.createdAt, kind: 'sale', text: nameOf(p.userId) + ' paid ' + '₦' + Math.round(kobo(p)).toLocaleString('en-US') }));
+  students.slice(-12).forEach(u => feed.push({ t: u.createdAt, kind: 'signup', text: u.name.split(' ')[0] + ' created an account' }));
+  db.enrollments.filter(e => e.status === 'active').slice(-12).forEach(e => feed.push({ t: e.enrolledAt, kind: 'enrol', text: nameOf(e.userId) + ' enrolled in ' + ((db.courses.find(c => c.id === e.courseId) || {}).title || 'a course') }));
+  db.submissions.slice(-12).forEach(x => feed.push({ t: x.submittedAt, kind: 'work', text: nameOf(x.userId) + ' submitted an assignment' }));
+  db.attendance.slice(-12).forEach(a => feed.push({ t: a.at, kind: 'class', text: nameOf(a.userId) + (a.how === 'recording' ? ' watched a class recording' : ' joined a live class') }));
+  db.progress.slice(-12).forEach(p => feed.push({ t: p.completedAt, kind: 'lesson', text: nameOf(p.userId) + ' completed a lesson' }));
+  feed.sort((a, b) => String(b.t).localeCompare(String(a.t)));
+  const pages = Object.keys(db.pageViews || {}).map(pg => ({ page: pg, views: days.reduce((t, d) => t + ((db.pageViews[pg] || {})[d] || 0), 0), today: (db.pageViews[pg] || {})[today] || 0 })).sort((a, b) => b.views - a.views).slice(0, 8);
+  json(ctx.res, 200, {
+    at: now(), days,
+    kpi: {
+      revenueToday: revenue[29], revenue7: sum(revenue, 7), revenue30: sum(revenue, 30), revenueAll: paid.reduce((t, p) => t + kobo(p), 0), refunded,
+      orders: paid.length, students: students.length, enrollments: db.enrollments.filter(e => e.status === 'active').length,
+      signupsToday: signupByDay[today] || 0, lessonsToday: doneByDay[today] || 0, viewsToday: viewsByDay[today] || 0,
+      online: online.length, onlineStudents: online.filter(v => v.userId).length, liveNow: liveSessions.length,
+      pendingGrading: db.submissions.filter(s => s.marks == null).length,
+      pendingOrders: db.orders.filter(o => ['proof_uploaded', 'awaiting_proof'].includes(o.status)).length,
+      pendingRefunds: db.refunds.filter(r => r.status === 'pending').length,
+      pendingCerts: (db.certRequests || []).filter(r => r.status === 'pending').length,
+      liveShare: att ? Math.round((attLive / att) * 100) : 0, messagesToday: db.communityMsgs.filter(m => m.createdAt && dayKey(m.createdAt) === today && !m.deletedAt).length
+    },
+    series: { revenue, signups: series(signupByDay), enrolments: series(enrolByDay), lessons: series(doneByDay), views: series(viewsByDay) },
+    courses, byKind, liveSessions, pages, qr: qrReport(), qrPercent: QR_PERCENT, qrDays: QR_DAYS,
+    activeNow: online.filter(v => v.userId).slice(0, 8).map(v => ({ name: v.name.split(' ')[0], page: v.page })),
+    feed: feed.slice(0, 14)
+  });
+});
+
+/* ============ Community: a WhatsApp-style group chat for each course ============
+   Students send text, pictures and files, reply to a message, and delete their own messages.
+   Staff can hide or delete any message. Files live in storage; the message only keeps a small record of them. */
+const COMMUNITY_FILE_TYPES = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif',
+  pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  txt: 'text/plain', csv: 'text/csv', zip: 'application/zip'
+};
+const COMMUNITY_FILE_MAX = 2.4 * 1024 * 1024;
+function migrateCommunity() {
+  if (db.communityMigrated) return;
+  (db.threads || []).forEach(t => db.communityMsgs.push({ id: t.id, courseId: t.courseId, userId: t.userId, authorName: t.authorName, role: 'student', text: t.title && t.body.indexOf(t.title) !== 0 ? t.title + '\n' + t.body : t.body, replyTo: null, file: null, createdAt: t.createdAt, hidden: !!t.hidden }));
+  (db.replies || []).forEach(r => { const t = (db.threads || []).find(x => x.id === r.threadId); if (t) db.communityMsgs.push({ id: r.id, courseId: t.courseId, userId: r.userId, authorName: r.authorName, role: 'student', text: r.body, replyTo: t.id, file: null, createdAt: r.createdAt, hidden: !!r.hidden }); });
+  db.communityMigrated = true; save();
+}
+function communityMsgView(m, user, byId) {
+  const gone = !!m.deletedAt;
+  const parent = m.replyTo ? byId.get(m.replyTo) : null;
+  return {
+    id: m.id, name: m.authorName, role: m.role || 'student', mine: m.userId === user.id, createdAt: m.createdAt,
+    deleted: gone, text: gone ? '' : m.text || '',
+    file: !gone && m.file ? { id: m.file.id, name: m.file.name, size: m.file.size, kind: m.file.kind, mime: m.file.mime } : null,
+    replyTo: parent ? { id: parent.id, name: parent.authorName, text: parent.deletedAt ? 'This message was deleted' : (parent.text || (parent.file ? (parent.file.kind === 'image' ? 'Photo' : parent.file.name) : '')).slice(0, 90) } : null
+  };
+}
+route('GET', '/api/courses/:id/community/chat', async ctx => {
+  const user = requireUser(ctx);
+  if (!canSeeCourse(user, ctx.params.id)) throw httpError(403, 'Join this course to see its community.');
+  migrateCommunity();
+  const all = db.communityMsgs.filter(m => m.courseId === ctx.params.id && !m.hidden).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const byId = new Map(all.map(m => [m.id, m]));
+  const msgs = all.slice(-300).map(m => communityMsgView(m, user, byId));
+  const course = db.courses.find(c => c.id === ctx.params.id);
+  json(ctx.res, 200, { messages: msgs, members: course ? enrolledCount(course) : 0, serverTime: now() });
+});
+route('POST', '/api/courses/:id/community/chat', async ctx => {
   const user = requireUser(ctx);
   if (!canSeeCourse(user, ctx.params.id)) throw httpError(403, 'Join this course to post.');
-  if (limited('post:' + user.id, 10, 10 * 60 * 1000)) throw httpError(429, 'You are posting very quickly. Please wait a few minutes.');
-  const title = clean(ctx.body.title, 120), body = clean(ctx.body.body, 2000), attachment = communityAttachment(ctx.body.attachment);
-  if (title.length < 4) throw httpError(400, 'Give your question a short title.');
-  if (body.length < 5 && !attachment) throw httpError(400, 'Write a message or attach a file.');
-  db.threads.push({ id: uid(8), courseId: ctx.params.id, userId: user.id, authorName: user.name.split(' ')[0], title, body, attachment, createdAt: now(), hidden: false });
-  save(); json(ctx.res, 201, { ok: true });
+  migrateCommunity();
+  if (limited('cmsg:' + user.id, 40, 60 * 1000)) throw httpError(429, 'You are sending messages too fast. Please slow down.');
+  const text = clean(ctx.body.text, 2000);
+  let file = null;
+  const up = ctx.body.file;
+  if (up && up.dataUrl) {
+    const m = /^data:[^;,]*;base64,([A-Za-z0-9+\/=]+)$/.exec(String(up.dataUrl));
+    if (!m) throw httpError(400, 'That file could not be read. Please try again.');
+    const name = clean(up.name, 120).replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_') || 'file';
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const mime = COMMUNITY_FILE_TYPES[ext];
+    if (!mime) throw httpError(400, 'That file type is not allowed. You can share pictures, PDF, Word, Excel, PowerPoint, text and zip files.');
+    const buf = Buffer.from(m[1], 'base64');
+    if (!buf.length) throw httpError(400, 'That file is empty.');
+    if (buf.length > COMMUNITY_FILE_MAX) throw httpError(413, 'That file is larger than 2.4 MB. Please send a smaller one.');
+    const isImg = mime.startsWith('image/');
+    if (isImg) {
+      const ok = (mime === 'image/jpeg' && buf[0] === 0xFF && buf[1] === 0xD8) || (mime === 'image/png' && buf.slice(1, 4).toString() === 'PNG') ||
+        (mime === 'image/webp' && buf.slice(0, 4).toString() === 'RIFF') || (mime === 'image/gif' && buf.slice(0, 3).toString() === 'GIF');
+      if (!ok) throw httpError(400, 'That picture is not a valid image.');
+    }
+    const id = uid(10);
+    await store.putFile('community/' + id, buf, mime);
+    file = { id, name, mime, size: buf.length, kind: isImg ? 'image' : 'file' };
+  }
+  if (!text && !file) throw httpError(400, 'Type a message or attach a file first.');
+  let replyTo = null;
+  if (ctx.body.replyTo) {
+    const p = db.communityMsgs.find(x => x.id === String(ctx.body.replyTo) && x.courseId === ctx.params.id);
+    if (p) replyTo = p.id;
+  }
+  const msg = { id: uid(10), courseId: ctx.params.id, userId: user.id, authorName: isStaff(user) ? user.name : user.name.split(' ')[0], role: isStaff(user) ? 'staff' : 'student', text, replyTo, file, createdAt: now(), hidden: false };
+  db.communityMsgs.push(msg);
+  if (db.communityMsgs.length > 20000) db.communityMsgs = db.communityMsgs.slice(-20000);
+  save();
+  sendEvent(null, 'community', { courseId: ctx.params.id });
+  const byId = new Map([[msg.id, msg]]);
+  if (replyTo) byId.set(replyTo, db.communityMsgs.find(x => x.id === replyTo));
+  json(ctx.res, 201, { message: communityMsgView(msg, user, byId) });
 });
-route('POST', '/api/community/threads/:id/replies', async ctx => {
+route('DELETE', '/api/community/chat/:id', async ctx => {
   const user = requireUser(ctx);
-  const t = db.threads.find(x => x.id === ctx.params.id && !x.hidden);
-  if (!t) throw httpError(404, 'Thread not found');
-  if (!canSeeCourse(user, t.courseId)) throw httpError(403, 'Join this course to reply.');
-  if (limited('reply:' + user.id, 20, 10 * 60 * 1000)) throw httpError(429, 'You are replying very quickly. Please wait a few minutes.');
-  const body = clean(ctx.body.body, 2000), attachment = communityAttachment(ctx.body.attachment);
-  if (body.length < 2 && !attachment) throw httpError(400, 'Write your reply or attach a file.');
-  db.replies.push({ id: uid(8), threadId: t.id, userId: user.id, authorName: user.name.split(' ')[0], body, attachment, createdAt: now(), hidden: false });
-  save(); json(ctx.res, 201, { ok: true });
+  const m = db.communityMsgs.find(x => x.id === ctx.params.id);
+  if (!m) throw httpError(404, 'That message is already gone.');
+  if (m.userId !== user.id && !isStaff(user)) throw httpError(403, 'You can only delete your own messages.');
+  if (m.file) { store.deleteFiles(['community/' + m.file.id]).catch(() => {}); }
+  // Keep a small "this message was deleted" mark so replies to it still make sense, like WhatsApp
+  m.deletedAt = now(); m.text = ''; m.file = null; m.deletedBy = user.id;
+  save();
+  sendEvent(null, 'community', { courseId: m.courseId });
+  json(ctx.res, 200, { ok: true });
 });
-route('DELETE', '/api/community/threads/:id', async ctx => {
+route('GET', '/api/community/files/:id', async ctx => {
   const user = requireUser(ctx);
-  const thread = db.threads.find(t => t.id === ctx.params.id);
-  if (!thread) throw httpError(404, 'Message not found');
-  if (thread.userId !== user.id && !isStaff(user)) throw httpError(403, 'You can only delete your own messages.');
-  db.threads = db.threads.filter(t => t.id !== thread.id);
-  db.replies = db.replies.filter(r => r.threadId !== thread.id);
-  save(); json(ctx.res, 200, { ok: true });
+  const m = db.communityMsgs.find(x => x.file && x.file.id === ctx.params.id);
+  if (!m || !canSeeCourse(user, m.courseId)) throw httpError(404, 'File not found');
+  const data = await store.getFile('community/' + m.file.id);
+  if (!data) throw httpError(404, 'File not found');
+  const inline = m.file.kind === 'image' && ctx.query.get('download') !== '1';
+  ctx.res.writeHead(200, { 'Content-Type': m.file.mime, 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff',
+    'Content-Disposition': (inline ? 'inline' : 'attachment') + '; filename="' + m.file.name.replace(/"/g, '') + '"', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox" });
+  ctx.res.end(data);
 });
-route('DELETE', '/api/community/replies/:id', async ctx => {
-  const user = requireUser(ctx);
-  const reply = db.replies.find(r => r.id === ctx.params.id);
-  if (!reply) throw httpError(404, 'Reply not found');
-  if (reply.userId !== user.id && !isStaff(user)) throw httpError(403, 'You can only delete your own messages.');
-  db.replies = db.replies.filter(r => r.id !== reply.id);
-  save(); json(ctx.res, 200, { ok: true });
-});
+// Admin moderation: top-level messages show as posts, replies underneath
 route('GET', '/api/staff/community', async ctx => {
   requireStaff(ctx);
-  json(ctx.res, 200, { threads: db.threads.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(t => ({ id: t.id, title: t.title, body: t.body, attachment: t.attachment || null, authorName: t.authorName, hidden: !!t.hidden, createdAt: t.createdAt,
-    course: (db.courses.find(c => c.id === t.courseId) || {}).title || '', replies: db.replies.filter(r => r.threadId === t.id).map(r => ({ id: r.id, body: r.body, attachment: r.attachment || null, authorName: r.authorName, hidden: !!r.hidden })) })) });
+  migrateCommunity();
+  const all = db.communityMsgs.filter(m => !m.deletedAt);
+  const label = m => m.text || (m.file ? '[' + (m.file.kind === 'image' ? 'Photo' : 'File') + ': ' + m.file.name + ']' : '');
+  const tops = all.filter(m => !m.replyTo || !all.some(x => x.id === m.replyTo)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 300);
+  json(ctx.res, 200, { threads: tops.map(t => ({ id: t.id, title: label(t).slice(0, 60), body: label(t), authorName: t.authorName, hidden: !!t.hidden, createdAt: t.createdAt,
+    course: (db.courses.find(c => c.id === t.courseId) || {}).title || '', replies: all.filter(r => r.replyTo === t.id).map(r => ({ id: r.id, body: label(r), authorName: r.authorName, hidden: !!r.hidden })) })) });
 });
 route('PATCH', '/api/staff/community/:kind/:id', async ctx => {
   requireStaff(ctx);
-  const list = ctx.params.kind === 'threads' ? db.threads : ctx.params.kind === 'replies' ? db.replies : null;
-  if (!list) throw httpError(404, 'Not found');
-  const it = list.find(x => x.id === ctx.params.id);
+  if (!['threads', 'replies'].includes(ctx.params.kind)) throw httpError(404, 'Not found');
+  const it = db.communityMsgs.find(x => x.id === ctx.params.id);
   if (!it) throw httpError(404, 'Not found');
-  it.hidden = !!ctx.body.hidden; save(); json(ctx.res, 200, { ok: true });
+  it.hidden = !!ctx.body.hidden; save();
+  sendEvent(null, 'community', { courseId: it.courseId });
+  json(ctx.res, 200, { ok: true });
 });
 route('DELETE', '/api/staff/community/:kind/:id', async ctx => {
   requireStaff(ctx);
-  if (ctx.params.kind === 'threads') { db.threads = db.threads.filter(x => x.id !== ctx.params.id); db.replies = db.replies.filter(r => r.threadId !== ctx.params.id); }
-  else if (ctx.params.kind === 'replies') db.replies = db.replies.filter(x => x.id !== ctx.params.id);
-  else throw httpError(404, 'Not found');
-  save(); json(ctx.res, 200, { ok: true });
+  if (!['threads', 'replies'].includes(ctx.params.kind)) throw httpError(404, 'Not found');
+  const it = db.communityMsgs.find(x => x.id === ctx.params.id);
+  if (!it) throw httpError(404, 'Not found');
+  const gone = new Set([it.id]);
+  if (ctx.params.kind === 'threads') db.communityMsgs.forEach(r => { if (r.replyTo === it.id) gone.add(r.id); });
+  const files = db.communityMsgs.filter(m => gone.has(m.id) && m.file).map(m => 'community/' + m.file.id);
+  if (files.length) store.deleteFiles(files).catch(() => {});
+  db.communityMsgs = db.communityMsgs.filter(m => !gone.has(m.id));
+  save(); sendEvent(null, 'community', { courseId: it.courseId });
+  json(ctx.res, 200, { ok: true });
 });
 route('POST', '/api/staff/users/:id/suspend', async ctx => {
   requireStaff(ctx, true);
@@ -2285,6 +2495,7 @@ route('GET', '/api/auth/google', async ctx => {
   const state = crypto.randomBytes(16).toString('hex');
   const remember = ctx.query.get('remember') === '1' ? '1' : '0';
   const ref = clean(ctx.query.get('ref'), 20).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const qr = qrSourceOf(ctx.query.get('qr'));
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
     redirect_uri: `${PUBLIC_URL}/api/auth/google/callback`,
@@ -2292,7 +2503,8 @@ route('GET', '/api/auth/google', async ctx => {
   });
   redirect(ctx.res, 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString(),
     { 'Set-Cookie': [`gstate=${state}.${remember}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`,
-      `gref=${ref}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`] });
+      `gref=${ref}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`,
+      `gqr=${qr}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${COOKIE_SECURE ? '; Secure' : ''}`] });
 });
 
 route('GET', '/api/auth/google/callback', async ctx => {
@@ -2320,6 +2532,8 @@ route('GET', '/api/auth/google/callback', async ctx => {
       user = { id: uid(), name: clean(info.name || email.split('@')[0], 80), email, phone: '', role: 'student',
         passHash: hashPassword(crypto.randomBytes(24).toString('hex')), createdAt: now(), profile: {},
         referralCode: genReferralCode(), referredBy: referrer ? referrer.referralCode : null };
+      const gq = (ctx.req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith('gqr='));
+      recordQrSignup(user, gq ? qrSourceOf(gq.slice(4)) : '');
       db.users.push(user); save();
     }
     if (isStaff(user)) return redirect(ctx.res, '/staff-login.html');
@@ -2337,7 +2551,7 @@ route('GET', '/api/dashboard', async ctx => {
   const enrolled = courses.filter(c => c.enrolled);
   let next = null;
   for (const c of enrolled) {
-    const l = c.lessons.find(x => !x.completed);
+    const l = c.lessons.find(x => !x.completed && !x.locked);
     if (l) { next = { courseId: c.id, courseTitle: c.title, lessonId: l.id, lessonTitle: l.title }; break; }
   }
   const payments = db.payments.filter(p => p.userId === user.id)
@@ -2382,9 +2596,11 @@ route('POST', '/api/courses/:id/enroll', async ctx => {
     if (!sub || sub.email !== user.email || sub.couponUsed) throw httpError(400, 'That coupon code is not valid for your account.');
     amountKobo = Math.round(course.price * 100 * 0.7);
     couponCode = code;
-  } else if (user.referredBy && !db.payments.some(x => x.userId === user.id && x.status === 'success')) {
-    amountKobo = Math.round(course.price * 100 * (100 - cfg('referralDiscountPercent')) / 100);
-    couponCode = 'REFERRAL';
+  } else {
+    const first = !db.payments.some(x => x.userId === user.id && x.status === 'success');
+    const refPct = user.referredBy && first ? cfg('referralDiscountPercent') : 0, qr = qrOffer(user), qrPct = qr ? qr.percent : 0;
+    const pct = Math.max(refPct, qrPct);   // one discount only: whichever is bigger
+    if (pct > 0) { amountKobo = Math.round(course.price * 100 * (100 - pct) / 100); couponCode = qrPct >= refPct ? 'QR' + qr.source.toUpperCase().slice(0, 12) : 'REFERRAL'; }
   }
   return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'course', courseId: course.id, amountNaira: amountKobo / 100 })) });
 });
@@ -2417,8 +2633,10 @@ route('GET', '/api/lessons/:id', async ctx => {
   const cv = courseView(course, user).lessons[idx];
   if (cv && cv.gated) {
     const prevL = course.lessons[idx - 1];
-    return json(ctx.res, 403, { error: 'This lesson is still locked.', gated: true, message: cv.lockReason, previous: { id: prevL.id, title: prevL.title, number: idx } });
+    return json(ctx.res, 403, { error: 'This lesson is still locked.', gated: true, waiting: !!cv.waiting, opensOn: cv.opensOn || null, opensOnLabel: cv.opensOn ? fmtDay(cv.opensOn) : null, message: cv.lockReason, previous: { id: prevL.id, title: prevL.title, number: idx } });
   }
+  const nextLesson = course.lessons[idx + 1];
+  const nextCv = nextLesson ? courseView(course, user).lessons[idx + 1] : null;
   const journey = {
     requirements: lessonRequirements(user, course, lesson),
     sessions: lessonSessions(course, lesson).map(s => sessionView(s, user)),
@@ -2428,14 +2646,17 @@ route('GET', '/api/lessons/:id', async ctx => {
         submission: mine ? { text: mine.text, link: mine.link, submittedAt: mine.submittedAt, marks: mine.marks ?? null, feedback: mine.feedback || '', graded: mine.marks != null } : null };
     }),
     nextTitle: course.lessons[idx + 1] ? course.lessons[idx + 1].title : null,
-    nextLocked: !!(course.lessons[idx + 1] && courseView(course, user).lessons[idx + 1].locked),
-    nextLockReason: course.lessons[idx + 1] ? courseView(course, user).lessons[idx + 1].lockReason : ''
+    nextLocked: !!(nextCv && nextCv.gated), nextLockReason: nextCv ? nextCv.lockReason : '',
+    nextOpensOn: nextCv ? (nextCv.opensOn || null) : null,
+    nextOpensLabel: nextCv && nextCv.opensOn ? fmtDay(nextCv.opensOn) : null,
+    nextOpenNow: !nextCv || !nextCv.gated
   };
   json(ctx.res, 200, {
     journey,
     lesson: { id: lesson.id, title: lesson.title, body: lesson.body },
     course: { id: course.id, title: course.title },
     prev: course.lessons[idx - 1]?.id || null, next: course.lessons[idx + 1]?.id || null, completed: done,
+    nextLocked: !!(nextCv && nextCv.gated), nextWaiting: !!(nextCv && nextCv.waiting),
     position: idx + 1, total: course.lessons.length,
     resources: (lesson.resources || []).filter(r => r && /^https?:\/\//.test(r.url)).map(r => ({ title: clean(r.title, 120) || 'Resource', url: r.url })),
     note: (db.notes.find(n => n.userId === user.id && n.lessonId === lesson.id) || {}).text || '',
@@ -2982,12 +3203,13 @@ async function handler(req, res) {
         return json(res, exists ? 405 : 404, { error: exists ? 'Method not allowed' : 'Not found' });
       }
       const ctx = { req, res, params: found.m.groups || {}, query: url.searchParams, user: readSession(req), body: null };
-      if (['POST', 'PATCH', 'PUT'].includes(req.method) && !pathname.endsWith('/webhook')) ctx.body = await readJson(req, pathname.endsWith('/proof') ? 4.2 * 1024 * 1024 : (pathname.endsWith('/avatar') || pathname.endsWith('/image') || pathname.startsWith('/api/staff/works') || pathname.startsWith('/api/staff/products') || pathname.startsWith('/api/staff/services')) ? 400 * 1024 : 100 * 1024);
+      if (!/^\/api\/(events|live|staff\/live-stats)/.test(pathname)) touchPresence(req, ctx.user, pathname);
+      if (['POST', 'PATCH', 'PUT'].includes(req.method) && !pathname.endsWith('/webhook')) ctx.body = await readJson(req, pathname.endsWith('/proof') ? 4.2 * 1024 * 1024 : pathname.endsWith('/community/chat') ? 3.6 * 1024 * 1024 : (pathname.endsWith('/avatar') || pathname.endsWith('/image') || pathname.startsWith('/api/staff/works') || pathname.startsWith('/api/staff/bundles') || pathname.startsWith('/api/staff/products') || pathname.startsWith('/api/staff/services')) ? 400 * 1024 : 100 * 1024);
       const out = await found.r.handler(ctx);
-      if (req.method !== 'GET' && !/\/(chat|notifications|events)/.test(pathname)) broadcastRefresh();
+      if (req.method !== 'GET' && !/\/(chat|notifications|events|qr\/scan)/.test(pathname)) broadcastRefresh();
       return out;
     }
-    return serveStatic(req, res, pathname, readSession(req));
+    { const u = readSession(req); if (/\.html$|^\/$/.test(pathname)) touchPresence(req, u, pathname); return serveStatic(req, res, pathname, u); }
   } catch (err) {
     if (err.status) return json(res, err.status, { error: err.message });
     console.error(err);
