@@ -23,7 +23,6 @@ const COURSES_FILE = path.join(__dirname, 'courses.json');
 const SITE_TZ = process.env.SITE_TZ || 'Africa/Lagos';   // lessons open on the calendar day of their class, in this time zone
 const QR_PERCENT = Number(process.env.QR_DISCOUNT_PERCENT) || 15;   // discount for people who register by scanning an advert's QR code
 const QR_DAYS = Number(process.env.QR_DISCOUNT_DAYS) || 7;          // how long the discount stays available after they register
-const DEFAULT_SEATS = 1000;                               // seats shown for a course when the admin has not set a limit
 // "2026-11-19" for a moment in time, as a calendar day in the school's time zone
 const dayKey = d => new Intl.DateTimeFormat('en-CA', { timeZone: SITE_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(d));
 
@@ -68,7 +67,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || (() => {
 const DB_DEFAULT = () => ({
   users: [], enrollments: [], progress: [], payments: [],
   courses: null, announcements: [],
-  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], courseWaitlist: [], communityMigrated: false, qrStats: {}
+  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], waitlist: [], communityMigrated: false, qrStats: {}
 });
 const store = createStore(DB_DEFAULT);
 let db = DB_DEFAULT();
@@ -90,7 +89,7 @@ const COURSE_CATEGORIES = [
   { id: 'entrepreneur', label: 'Digital Entrepreneurship', group: 'F' },
   { id: 'advanced', label: 'Advanced Technology', group: 'G', comingSoon: true }
 ];
-const COURSE_DETAIL_KEYS = ['category', 'instructor', 'startDate', 'duration', 'schedule', 'classesPerWeek', 'sessionsTotal', 'seats', 'minStudents'];
+const COURSE_DETAIL_KEYS = ['category', 'instructor', 'startDate', 'duration', 'schedule', 'classesPerWeek', 'sessionsTotal', 'minStudents', 'originalPrice', 'offerEnds'];
 const SETTINGS_DEFAULTS = {
   businessName: 'DEBONE Photos & Video Editing Studio', tagline: 'Since 1997, in Port Harcourt.',
   phone1: '0803 598 8889', phone2: '0813 976 3301', whatsapp: '2348035988889', email: '',
@@ -153,7 +152,8 @@ function bootstrap() {
   if (!db.works) db.works = worksSeed.works.map(w => Object.assign({ createdAt: seedTime, updatedAt: seedTime }, w));
   seed.courses.forEach(sc => {
     const dc = db.courses.find(c => c.id === sc.id);
-    if (dc) ['comingSoon', 'liveStart', 'liveLabel'].forEach(k => { if (sc[k] !== undefined) dc[k] = sc[k]; });
+    // The admin controls "coming soon" from the course editor, so the seed value is only a starting point and never overrides a saved choice
+    if (dc) ['comingSoon', 'liveStart', 'liveLabel'].forEach(k => { if (sc[k] !== undefined && (k !== 'comingSoon' || dc[k] === undefined)) dc[k] = sc[k]; });
     if (dc) COURSE_DETAIL_KEYS.forEach(k => { if (dc[k] === undefined && sc[k] !== undefined) dc[k] = sc[k]; });
   });
 }
@@ -355,7 +355,6 @@ function enrolledCount(course) {
 }
 function courseDetailInput(b, c) {
   const out = {};
-  if (b.comingSoon !== undefined) out.comingSoon = b.comingSoon === true || b.comingSoon === "true";
   if (b.category !== undefined) {
     if (b.category && !COURSE_CATEGORIES.some(x => x.id === b.category)) throw httpError(400, 'Please choose a valid category.');
     out.category = b.category || null;
@@ -375,11 +374,18 @@ function courseDetailInput(b, c) {
   };
   if (b.classesPerWeek !== undefined) out.classesPerWeek = num(b.classesPerWeek, 7);
   if (b.sessionsTotal !== undefined) out.sessionsTotal = num(b.sessionsTotal, 60);
-  if (b.seats !== undefined) out.seats = num(b.seats, 5000);
   if (b.minStudents !== undefined) out.minStudents = num(b.minStudents, 5000);
-  const seats = out.seats !== undefined ? out.seats : c.seats;
-  const minS = out.minStudents !== undefined ? out.minStudents : c.minStudents;
-  if (seats && minS && minS > seats) throw httpError(400, 'The minimum number of students cannot be more than the maximum seats.');
+  // Coming soon: the course is shown but cannot be bought. Students join a waiting list instead.
+  if (b.comingSoon !== undefined) out.comingSoon = b.comingSoon === true || b.comingSoon === 'true';
+  // Offer: the "normal" price shown crossed out, and an optional last day for the discount
+  if (b.originalPrice !== undefined) out.originalPrice = Number(b.originalPrice) > 0 ? num(b.originalPrice, 100000000) : null;
+  if (b.offerEnds !== undefined) {
+    if (b.offerEnds && !/^\d{4}-\d{2}-\d{2}$/.test(String(b.offerEnds))) throw httpError(400, 'Enter the offer end date as a date.');
+    out.offerEnds = b.offerEnds || null;
+  }
+  const price = b.price !== undefined ? Math.max(0, Math.round(Number(b.price) || 0)) : c.price;
+  const orig = out.originalPrice !== undefined ? out.originalPrice : c.originalPrice;
+  if (orig && !(price > 0 && orig > price)) throw httpError(400, 'The normal price must be higher than the selling price, and the course must not be free.');
   return out;
 }
 /* ---------- Lesson journey: a lesson opens only after the previous one is finished ----------
@@ -419,6 +425,18 @@ function validLessonCompletion(user, course, lesson) {
   if (!user || !db.progress.some(p => p.userId === user.id && p.lessonId === lesson.id)) return false;
   return isStaff(user) || lessonRequirements(user, course, lesson).ready;
 }
+// A limited-time offer: the crossed-out normal price, how much is saved, and when it ends. Null when there is no live offer.
+function offerFor(course) {
+  const orig = Number(course.originalPrice) || 0;
+  if (!(course.price > 0 && orig > course.price)) return null;
+  let endsAt = null;
+  if (course.offerEnds) {
+    endsAt = new Date(course.offerEnds + 'T23:59:59').toISOString();
+    if (new Date(endsAt).getTime() < Date.now()) return null;   // the offer has finished
+  }
+  const save = orig - course.price;
+  return { originalPrice: orig, save, percent: Math.round((save / orig) * 100), endsAt };
+}
 function courseView(course, user) {
   // Revoke stale completion records created before the assignment gate existed.
   // Without this, submitting an assignment later could resurrect an old completion.
@@ -456,12 +474,13 @@ function courseView(course, user) {
   const completed = lessons.filter(l => l.completed).length;
   return {
     id: course.id, title: course.title, subtitle: course.subtitle, summary: course.summary, level: course.level,
-    price: course.price, compareAtPrice: course.compareAtPrice || null, free: course.price === 0, enrolled, lessons, completed, total: lessons.length,
-    comingSoon: !!course.comingSoon, waitlisted: !!(user && (db.courseWaitlist || []).some(w => w.userId === user.id && w.courseId === course.id)), waitlistCount: (db.courseWaitlist || []).filter(w => w.courseId === course.id).length, liveStart: course.liveStart || null, liveLabel: course.liveLabel || null, hasImage: !!course.image,
+    price: course.price, free: course.price === 0, enrolled, lessons, completed, total: lessons.length,
+    comingSoon: !!course.comingSoon, liveStart: course.liveStart || null, liveLabel: course.liveLabel || null, hasImage: !!course.image,
     category: course.category || null, categoryLabel: (COURSE_CATEGORIES.find(c => c.id === course.category) || {}).label || null,
     instructor: course.instructor || null, startDate: course.startDate || null, duration: course.duration || null,
     schedule: course.schedule || null, classesPerWeek: course.classesPerWeek || null, sessionsTotal: course.sessionsTotal || null,
-    seats: course.seats || DEFAULT_SEATS, seatsLeft: Math.max(0, (course.seats || DEFAULT_SEATS) - enrolledCount(course)),
+    offer: offerFor(course), originalPrice: course.originalPrice || 0, offerEnds: course.offerEnds || null, waitlistCount: (db.waitlist || []).filter(w => w.courseId === course.id).length,
+    onWaitlist: !!user && (db.waitlist || []).some(w => w.courseId === course.id && w.userId === user.id),
     minStudents: course.minStudents || null, enrolledCount: enrolledCount(course),
     progress: lessons.length ? Math.round((completed / lessons.length) * 100) : 0,
     rating: ratingFor(course.id)
@@ -1736,29 +1755,6 @@ route('GET', '/api/staff/purchases', async ctx => {
     downloads: x.downloads || 0, expiresAt: x.expiresAt, createdAt: x.createdAt })) });
 });
 
-/* ============ Coming-soon course waitlists ============ */
-route('POST', '/api/courses/:id/waitlist', async ctx => {
-  const user = requireUser(ctx);
-  const course = db.courses.find(c => c.id === ctx.params.id);
-  if (!course) throw httpError(404, 'Course not found.');
-  if (!course.comingSoon) throw httpError(400, 'This course is open for enrolment.');
-  db.courseWaitlist = db.courseWaitlist || [];
-  const existing = db.courseWaitlist.find(w => w.courseId === course.id && w.userId === user.id);
-  if (existing) return json(ctx.res, 200, { ok: true, joined: true, message: 'You are already on this waitlist.' });
-  db.courseWaitlist.push({ id: uid(8), courseId: course.id, userId: user.id, createdAt: now() });
-  save();
-  json(ctx.res, 201, { ok: true, joined: true, message: 'You joined the waitlist. We will notify you when enrolment opens.' });
-});
-route('GET', '/api/staff/course-waitlist', async ctx => {
-  requireStaff(ctx, true);
-  const rows = (db.courseWaitlist || []).map(w => {
-    const c = db.courses.find(x => x.id === w.courseId);
-    const u = db.users.find(x => x.id === w.userId);
-    return { id: w.id, courseId: w.courseId, courseTitle: c ? c.title : 'Deleted course',
-      name: u ? (u.name || u.fullName || '') : 'Deleted account', email: u ? u.email : '', createdAt: w.createdAt };
-  });
-  json(ctx.res, 200, { waitlist: rows });
-});
 /* ============ Course bundles ============ */
 function bundleView(b) {
   const courses = (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean);
@@ -1788,12 +1784,16 @@ function bundleInput(b) {
   if (image.length > 700000) throw httpError(400, 'Bundle image is too large (maximum 500 KB).');
   return { title, image, description: clean(b.description, 1000), price, courseIds: ids, active: b.active !== false && b.active !== 'false' };
 }
-route('GET', '/api/bundles', async ctx => json(ctx.res, 200, { bundles: db.bundles.filter(b => b.active !== false).map(bundleView) }));
+route('GET', '/api/bundles', async ctx => json(ctx.res, 200, { bundles: db.bundles.filter(b => b.active !== false).map(b => {
+  const v = bundleView(b);
+  // For a signed-in student: which courses of the bundle they already own
+  if (ctx.user) { v.courses.forEach(c => { c.owned = !!enrollmentFor(ctx.user.id, c.id); }); v.ownedCount = v.courses.filter(c => c.owned).length; v.owned = v.ownedCount === v.courses.length; }
+  return v;
+}) }));
 route('POST', '/api/bundles/:id/buy', async ctx => {
   const user = requireUser(ctx);
   const b = db.bundles.find(x => x.id === ctx.params.id && x.active !== false);
   if (!b) throw httpError(404, 'Bundle not found');
-  if (b.courseIds.some(cid => (db.courses.find(c => c.id === cid) || {}).comingSoon)) throw httpError(403, "One of these courses is not yet open.");
   if (b.courseIds.every(cid => enrollmentFor(user.id, cid))) return json(ctx.res, 200, { alreadyOwned: true });
   const qr = qrOffer(user), price = qr ? Math.round(b.price * (100 - qr.percent) / 100) : b.price;
   return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: price })) });
@@ -2081,7 +2081,7 @@ route('GET', '/api/staff/live-stats', async ctx => {
     const done = db.progress.filter(p => lessonIds.has(p.lessonId) && learners.some(e => e.userId === p.userId)).length;
     const possible = learners.length * lessonIds.size;
     const earned = paid.filter(p => (p.kind || 'course') === 'course' && p.courseId === c.id).reduce((t, p) => t + kobo(p), 0);
-    return { id: c.id, title: c.title, students: learners.length, completion: possible ? Math.round((done / possible) * 100) : 0, revenue: earned, seats: c.seats || DEFAULT_SEATS };
+    return { id: c.id, title: c.title, students: learners.length, completion: possible ? Math.round((done / possible) * 100) : 0, revenue: earned };
   }).sort((a, b) => b.students - a.students);
   const byKind = {};
   paid.forEach(p => { const k = p.kind || 'course'; byKind[k] = (byKind[k] || 0) + kobo(p); });
@@ -2715,7 +2715,6 @@ route('POST', '/api/courses/:id/enroll', async ctx => {
   const course = db.courses.find(c => c.id === ctx.params.id);
   if (!course) throw httpError(404, 'Course not found');
   if (course.comingSoon) throw httpError(403, 'This course is coming soon. Enrolment will open later.');
-  if (course.price > 0 && !courseAccess(user, course) && enrolledCount(course) >= (course.seats || 1000)) throw httpError(403, 'This course is full. Please check back for the next intake.');
   if (course.price === 0) return json(ctx.res, 200, { free: true, courseId: course.id });
   if (enrollmentFor(user.id, course.id)) return json(ctx.res, 200, { alreadyEnrolled: true, courseId: course.id });
   let amountKobo = course.price * 100, couponCode = '';
@@ -3059,8 +3058,7 @@ route('POST', '/api/staff/courses', async ctx => {
   const price = Math.max(0, Math.round(Number(b.price) || 0));
   let id = slug(title);
   while (db.courses.some(c => c.id === id)) id = slug(title) + '-' + uid(2);
-  const c = Object.assign({ id, title, subtitle: clean(b.subtitle, 80), summary: clean(b.summary, 500), level: clean(b.level, 30) || 'Beginner', price, compareAtPrice: Math.max(0, Math.round(Number(b.compareAtPrice) || 0)) || null, lessons: [] }, courseDetailInput(b, {}));
-  if (c.compareAtPrice && c.compareAtPrice <= c.price) throw httpError(400, 'Regular price must be higher than the selling price.');
+  const c = Object.assign({ id, title, subtitle: clean(b.subtitle, 80), summary: clean(b.summary, 500), level: clean(b.level, 30) || 'Beginner', price, lessons: [] }, courseDetailInput(b, {}));
   db.courses.push(c); save();
   json(ctx.res, 201, { course: courseView(c, null) });
 });
@@ -3070,15 +3068,22 @@ route('PATCH', '/api/staff/courses/:id', async ctx => {
   const c = db.courses.find(x => x.id === ctx.params.id);
   if (!c) throw httpError(404, 'Course not found');
   const b = ctx.body;
+  const detail = courseDetailInput(b, c);   // validates first, so a bad value changes nothing
+  const wasSoon = !!c.comingSoon;
   if (b.title !== undefined) c.title = clean(b.title, 120);
   if (b.subtitle !== undefined) c.subtitle = clean(b.subtitle, 80);
   if (b.summary !== undefined) c.summary = clean(b.summary, 500);
   if (b.level !== undefined) c.level = clean(b.level, 30);
   if (b.price !== undefined) c.price = Math.max(0, Math.round(Number(b.price) || 0));
-  if (b.compareAtPrice !== undefined) c.compareAtPrice = Math.max(0, Math.round(Number(b.compareAtPrice) || 0)) || null;
-  if (c.compareAtPrice && c.compareAtPrice <= c.price) throw httpError(400, 'The regular price must be higher than the actual selling price.');
   const oldStart = c.startDate;
-  Object.assign(c, courseDetailInput(b, c));
+  Object.assign(c, detail);
+  if (wasSoon && !c.comingSoon) {
+    // The class has been launched: tell everyone who asked to be told
+    (db.waitlist || []).filter(w => w.courseId === c.id && !w.notifiedAt).forEach(w => {
+      w.notifiedAt = now();
+      notify(w.userId, c.title + ' is now open!', 'The course you were waiting for has launched. Enrol now before the offer ends.', '#course/' + c.id, { kind: 'update' });
+    });
+  }
   if (c.startDate && c.startDate !== oldStart) {
     db.scheduleNotices.filter(n => n.courseId === c.id && n.status === 'waiting').forEach(n => {
       n.status = 'rescheduled'; n.newStartDate = c.startDate;
@@ -3086,6 +3091,50 @@ route('PATCH', '/api/staff/courses/:id', async ctx => {
     });
   }
   save(); json(ctx.res, 200, { course: courseView(c, null) });
+});
+
+/* ---------- Course waiting list (coming-soon courses) ---------- */
+route('POST', '/api/courses/:id/waitlist', async ctx => {
+  const user = requireUser(ctx);
+  const c = db.courses.find(x => x.id === ctx.params.id);
+  if (!c) throw httpError(404, 'Course not found');
+  if (!c.comingSoon) throw httpError(400, 'This course is already open for enrolment.');
+  db.waitlist = db.waitlist || [];
+  if (!db.waitlist.some(w => w.courseId === c.id && w.userId === user.id)) {
+    db.waitlist.push({ id: uid(6), courseId: c.id, userId: user.id, name: user.name, email: user.email, phone: user.phone || '', createdAt: now(), notifiedAt: null });
+  }
+  save(); json(ctx.res, 200, { ok: true, course: courseView(c, user) });
+});
+route('DELETE', '/api/courses/:id/waitlist', async ctx => {
+  const user = requireUser(ctx);
+  const c = db.courses.find(x => x.id === ctx.params.id);
+  if (!c) throw httpError(404, 'Course not found');
+  db.waitlist = (db.waitlist || []).filter(w => !(w.courseId === c.id && w.userId === user.id));
+  save(); json(ctx.res, 200, { ok: true, course: courseView(c, user) });
+});
+// Admin: who is waiting for which course, so the class can be launched when demand is high enough
+route('GET', '/api/staff/waitlist', async ctx => {
+  requireStaff(ctx, true);
+  const list = db.waitlist || [];
+  const courses = db.courses.map(c => {
+    const people = list.filter(w => w.courseId === c.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return { id: c.id, title: c.title, comingSoon: !!c.comingSoon, price: c.price, minStudents: c.minStudents || null, count: people.length,
+      people: people.map(w => { const u = db.users.find(x => x.id === w.userId) || {}; return { id: w.id, name: u.name || w.name, email: u.email || w.email, phone: u.phone || w.phone || '', createdAt: w.createdAt, notified: !!w.notifiedAt }; }) };
+  }).filter(c => c.count > 0 || c.comingSoon).sort((a, b) => b.count - a.count);
+  json(ctx.res, 200, { courses, total: list.length });
+});
+route('POST', '/api/staff/courses/:id/launch', async ctx => {
+  requireStaff(ctx, true);
+  const c = db.courses.find(x => x.id === ctx.params.id);
+  if (!c) throw httpError(404, 'Course not found');
+  const wasSoon = !!c.comingSoon;
+  c.comingSoon = false;
+  let told = 0;
+  if (wasSoon) (db.waitlist || []).filter(w => w.courseId === c.id && !w.notifiedAt).forEach(w => {
+    w.notifiedAt = now(); told++;
+    notify(w.userId, c.title + ' is now open!', 'The course you were waiting for has launched. Enrol now before the offer ends.', '#course/' + c.id, { kind: 'update' });
+  });
+  save(); json(ctx.res, 200, { ok: true, notified: told, course: courseView(c, null) });
 });
 
 route('DELETE', '/api/staff/courses/:id', async ctx => {
