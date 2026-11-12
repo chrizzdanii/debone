@@ -996,8 +996,6 @@
         SETTING_FIELDS.filter(function (f) { return f[2] === 'textarea'; }).map(function (f) {
           return '<div class="field"><label>' + esc(f[1]) + '</label><textarea class="input" name="' + f[0] + '" rows="2" maxlength="240">' + esc(s[f[0]] || '') + '</textarea></div>';
         }).join('') +
-        '<div class="set-announce"><label class="set-toggle"><input type="checkbox" name="announcementOn"' + (s.announcementOn ? ' checked' : '') + '><span class="set-slider"></span><b>Show an announcement on every page</b></label>' +
-        '<div class="field"><label>Announcement text</label><input class="input" name="announcement" maxlength="240" value="' + esc(s.announcement || '') + '" placeholder="e.g. Live training starts 19 November 2026"></div></div>' +
         '<p class="form-error" id="set-err" role="alert"></p>' +
         '<div class="sub-actions"><button type="submit" class="btn btn-solid" id="set-go">Save settings</button></div>' +
       '</form></section>');
@@ -1006,8 +1004,8 @@
       var f = e.target, err = document.getElementById('set-err'); err.textContent = '';
       var body = {};
       SETTING_FIELDS.forEach(function (x) { body[x[0]] = fv(f, x[0]); });
-      body.announcementOn = !!f.elements.announcementOn.checked;
-      body.announcement = fv(f, 'announcement');
+      body.announcementOn = false;
+      body.announcement = ''; 
       var go = document.getElementById('set-go'); go.disabled = true; go.textContent = 'Saving…';
       try { await api('/api/staff/settings', { method: 'PUT', body: body }); toast('Settings saved. The website is updated.'); }
       catch (ex) { err.textContent = ex.message; }

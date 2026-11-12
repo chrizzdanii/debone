@@ -47,7 +47,7 @@
       });
       var text = 'Hi DEBONE, I would like to place this order:\n' + lines.join('\n') +
         '\n\nPlease confirm the price, availability and how I can pay.';
-      return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text);
+      return (window.DeboneSiteContact && window.DeboneSiteContact.whatsapp(text)) || ('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text));
     }
   };
   window.DeboneCart = api;

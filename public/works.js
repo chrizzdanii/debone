@@ -10,7 +10,7 @@
   var works = [], active = 'all', shown = [], lb = null, lbIndex = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function label(c) { return LABEL[c] || c.charAt(0).toUpperCase() + c.slice(1); }
-  var WA = 'https://wa.me/2348035988889?text=';
+  var WA = 'https://wa.me/2348035988889?text='; // Dynamic links are also updated by settings.js
   /* Copy for the numbered category sections on the Our work page */
   var COPY = {
     studio: { title: 'Studio sessions', text: 'Portraits, fashion and brand shoots lit and directed in our studio, then retouched and ready to share or print.', bullets: ['Portraits, couples and family sessions', 'Fashion and brand shoots', 'Retouched selects, ready for print'], cta: 'Book a studio session' },
