@@ -351,7 +351,7 @@
             msg.textContent = 'Uploading to Cloudflare R2… Keep this page open.';
             var upload;
             try { upload = await fetch(ticket.url, { method: 'PUT', headers: { 'Content-Type': ticket.contentType }, body: file }); }
-            catch (err) { throw new Error('Cloudflare R2 upload connection failed. Check the bucket CORS policy and the signed upload URL.'); }
+            catch (err) { throw new Error('R2 upload connection failed (' + (err && err.message || 'network blocked') + '). Check Cloudflare connectivity, browser extensions, and the signed upload request.'); }
             if (!upload.ok) throw new Error('R2 upload failed (' + upload.status + '). Check bucket CORS settings.');
             msg.textContent = 'Verifying uploaded file…';
             await api('/api/staff/sessions/' + encodeURIComponent(id) + '/r2-publish', { method: 'POST', body: { key: ticket.key }, timeout: 45000 });
