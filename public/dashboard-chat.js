@@ -65,7 +65,41 @@
       : '<a href="' + href + '" download="' + name + '" class="wa-attachment">📎 ' + name + '</a>';
   }
   /* ---------- Community: a chat for each course ---------- */
-  var replyTo = null;
+  var replyTo = null, communityTimer = null, communityRequest = false;
+  function communityLog(threads) {
+    var last = null, log = '';
+    threads.slice().reverse().forEach(function (t) {
+      var day = dayLabel(t.createdAt);
+      if (day !== last) { log += '<div class="wa-day"><span>' + esc(day) + '</span></div>'; last = day; }
+      log += '<div class="wa-row' + (t.mine ? ' mine' : '') + '" data-thread="' + esc(t.id) + '"><div class="wa-bubble">' +
+        '<span class="wa-name">' + (t.mine ? 'You' : esc(t.authorName)) + '</span>' +
+        (t.body && t.body.indexOf(t.title) === 0 ? '' : '<b class="wa-title">' + esc(t.title) + '</b>') + '<p>' + esc(t.body || t.title) + '</p>' +
+        attachmentHtml(t.attachment) + '<span class="wa-meta">' + timeLabel(t.createdAt) + (t.mine ? '<button type="button" class="wa-reply-btn" data-delete-thread="' + esc(t.id) + '">Delete</button>' : '') + '<button type="button" class="wa-reply-btn" data-reply="' + esc(t.id) + '" data-who="' + esc(t.authorName) + '">Reply</button></span></div></div>';
+      (t.replies || []).forEach(function (r) {
+        log += '<div class="wa-row reply' + (r.mine ? ' mine' : '') + '"><div class="wa-bubble"><span class="wa-name">' + (r.mine ? 'You' : esc(r.authorName)) + '</span><p>' + esc(r.body || '') + '</p>' + attachmentHtml(r.attachment) + '<span class="wa-meta">' + timeLabel(r.createdAt) + (r.mine ? '<button type="button" class="wa-reply-btn" data-delete-reply="' + esc(r.id) + '">Delete</button>' : '') + '</span></div></div>';
+      });
+    });
+    return threads.length ? log : '<div class="wa-empty"><div class="wa-empty-ring"></div><b>No messages yet</b><p>Start the conversation. Ask a question or share your progress.</p></div>';
+  }
+  function bindCommunityMessages(root, refresh) {
+    root.querySelectorAll('[data-delete-thread], [data-delete-reply]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        if (!window.confirm('Delete this message?')) return;
+        var isReply = b.hasAttribute('data-delete-reply');
+        var id = b.getAttribute(isReply ? 'data-delete-reply' : 'data-delete-thread');
+        try { await api('/api/community/' + (isReply ? 'replies/' : 'threads/') + encodeURIComponent(id), { method: 'DELETE' }); await refresh(); }
+        catch (e) { toast(e.message, 'err'); }
+      });
+    });
+    root.querySelectorAll('[data-reply]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        replyTo = b.getAttribute('data-reply');
+        document.getElementById('wa-to').textContent = b.getAttribute('data-who');
+        document.getElementById('wa-replying').hidden = false;
+        document.getElementById('wa-text').focus();
+      });
+    });
+  }
   async function renderCommunity() {
     crumb.textContent = 'Community';
     var dash = await api('/api/dashboard');
@@ -75,48 +109,62 @@
     var course = enrolled.find(function (c) { return c.id === cur; }) || enrolled[0];
     var d = await api('/api/courses/' + encodeURIComponent(course.id) + '/community');
     replyTo = null;
-    var last = null, log = '';
-    d.threads.slice().reverse().forEach(function (t) {
-      var day = dayLabel(t.createdAt);
-      if (day !== last) { log += '<div class="wa-day"><span>' + esc(day) + '</span></div>'; last = day; }
-      log += '<div class="wa-row' + (t.mine ? ' mine' : '') + '" data-thread="' + esc(t.id) + '"><div class="wa-bubble">' +
-        '<span class="wa-name">' + (t.mine ? 'You' : esc(t.authorName)) + '</span>' +
-        (t.body && t.body.indexOf(t.title) === 0 ? '' : '<b class="wa-title">' + esc(t.title) + '</b>') + '<p>' + esc(t.body || t.title) + '</p>' +
-        attachmentHtml(t.attachment) + '<span class="wa-meta">' + timeLabel(t.createdAt) + (t.mine ? '<button type="button" class="wa-reply-btn" data-delete-thread="' + esc(t.id) + '">Delete</button>' : '') + '<button type="button" class="wa-reply-btn" data-reply="' + esc(t.id) + '" data-who="' + esc(t.authorName) + '">Reply</button></span></div></div>';
-      t.replies.forEach(function (r) {
-        log += '<div class="wa-row reply' + (r.mine ? ' mine' : '') + '"><div class="wa-bubble"><span class="wa-name">' + (r.mine ? 'You' : esc(r.authorName)) + '</span><p>' + esc(r.body) + '</p><span class="wa-meta">' + timeLabel(r.createdAt) + '</span></div></div>';
-      });
-    });
-    if (!d.threads.length) log = '<div class="wa-empty"><div class="wa-empty-ring"></div><b>No messages yet</b><p>Start the conversation. Ask a question or share your progress.</p></div>';
+    var log = communityLog(d.threads);
     setView(head('Learn together', 'Community', 'Ask questions, help classmates and share your progress.') +
       '<section class="wa-shell">' +
         '<div class="wa-top"><div class="wa-avatar">' + esc((course.title || 'C').charAt(0)) + '</div><div><b>' + esc(course.title) + '</b><span>' + d.threads.length + ' discussions · course group</span></div></div>' +
         '<div class="wa-courses">' + enrolled.map(function (c) { return '<a class="wa-chip' + (c.id === course.id ? ' on' : '') + '" href="#community/' + esc(c.id) + '">' + esc(c.title) + '</a>'; }).join('') + '</div>' +
         '<div class="wa-log" id="wa-log">' + log + '</div>' +
         '<div class="wa-composer"><div class="wa-replying" id="wa-replying" hidden><span>Replying to <b id="wa-to"></b></span><button type="button" id="wa-cancel" aria-label="Cancel reply">&times;</button></div>' +
-          '<form class="wa-form" id="wa-form"><label class="wa-reply-btn" title="Attach image or file" style="cursor:pointer">📎<input id="wa-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" style="display:none"></label><textarea id="wa-text" rows="1" maxlength="2000" placeholder="Type a message"></textarea><button type="submit" class="wa-send" aria-label="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2-7-8-1z"/></svg></button></form></div>' +
+          '<div class="wa-preview" id="wa-preview" hidden></div><form class="wa-form" id="wa-form"><label class="wa-plus" title="Add image or file" aria-label="Add image or file"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><input id="wa-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" style="display:none"></label><textarea id="wa-text" rows="1" maxlength="2000" placeholder="Type a message"></textarea><button type="submit" class="wa-send" aria-label="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2-7-8-1z"/></svg></button></form></div>' +
       '</section>');
     var logEl = document.getElementById('wa-log');
     logEl.scrollTop = logEl.scrollHeight;
     var ta = document.getElementById('wa-text');
     ta.addEventListener('input', function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'; });
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('wa-form').requestSubmit(); } });
-    view.querySelectorAll('[data-delete-thread], [data-delete-reply]').forEach(function (b) {
-      b.addEventListener('click', async function () {
-        if (!window.confirm('Delete this message?')) return;
-        var isReply = b.hasAttribute('data-delete-reply');
-        var id = b.getAttribute(isReply ? 'data-delete-reply' : 'data-delete-thread');
-        try { await api('/api/community/' + (isReply ? 'replies/' : 'threads/') + encodeURIComponent(id), { method: 'DELETE' }); renderCommunity(); }
-        catch (e) { toast(e.message, 'err'); }
-      });
-    });
-    view.querySelectorAll('[data-reply]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        replyTo = b.getAttribute('data-reply');
-        document.getElementById('wa-to').textContent = b.getAttribute('data-who');
-        document.getElementById('wa-replying').hidden = false;
-        ta.focus();
-      });
+    async function refreshMessages() {
+      if (!document.getElementById('wa-log') || location.hash.split('/')[0] !== '#community' || communityRequest) return;
+      communityRequest = true;
+      try {
+        var fresh = await api('/api/courses/' + encodeURIComponent(course.id) + '/community');
+        var target = document.getElementById('wa-log');
+        if (!target) return;
+        var html = communityLog(fresh.threads);
+        if (target.innerHTML !== html) {
+          var atBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+          var previousScroll = target.scrollTop;
+          target.innerHTML = html;
+          bindCommunityMessages(target, refreshMessages);
+          target.scrollTop = atBottom ? target.scrollHeight : previousScroll;
+        }
+      } catch (err) { /* Keep draft intact during temporary connection loss. */ }
+      finally { communityRequest = false; }
+    }
+    bindCommunityMessages(logEl, refreshMessages);
+    if (communityTimer) clearInterval(communityTimer);
+    communityTimer = setInterval(function () { if (!document.hidden) refreshMessages(); }, 3000);
+    var fileInput = document.getElementById('wa-file'), preview = document.getElementById('wa-preview');
+    fileInput.addEventListener('change', function () {
+      var file = fileInput.files[0];
+      preview.hidden = !file;
+      preview.innerHTML = '';
+      if (!file) return;
+      var thumb = document.createElement('div'); thumb.className = 'wa-preview-thumb';
+      if (file.type.indexOf('image/') === 0) {
+        var img = document.createElement('img'); img.alt = 'Selected image preview';
+        var url = URL.createObjectURL(file); img.src = url;
+        img.onload = function () { URL.revokeObjectURL(url); };
+        thumb.appendChild(img);
+      } else { thumb.textContent = '📄'; }
+      var details = document.createElement('div'); details.className = 'wa-preview-info';
+      var filename = document.createElement('strong'); filename.textContent = file.name;
+      var size = document.createElement('small'); size.textContent = (file.size / 1024).toFixed(1) + ' KB';
+      details.appendChild(filename); details.appendChild(size);
+      var remove = document.createElement('button'); remove.type = 'button'; remove.className = 'wa-preview-remove'; remove.textContent = '×'; remove.setAttribute('aria-label', 'Remove attachment');
+      remove.onclick = function () { fileInput.value = ''; preview.innerHTML = ''; preview.hidden = true; };
+      preview.appendChild(thumb); preview.appendChild(details); preview.appendChild(remove);
+      if (file.size > 55 * 1024) toast('File must be 55 KB or smaller. Please compress it before sending.', 'err');
     });
     document.getElementById('wa-cancel').addEventListener('click', function () { replyTo = null; document.getElementById('wa-replying').hidden = true; });
     document.getElementById('wa-form').addEventListener('submit', async function (e) {
@@ -131,7 +179,7 @@
         }
         if (replyTo) await api('/api/community/threads/' + encodeURIComponent(replyTo) + '/replies', { method: 'POST', body: { body: text, attachment: attachment } });
         else await api('/api/courses/' + encodeURIComponent(course.id) + '/community/threads', { method: 'POST', body: { title: (text || file.name).slice(0, 60), body: text, attachment: attachment } });
-        replyTo = null; renderCommunity();
+        replyTo = null; ta.value = ''; fileInput.value = ''; preview.hidden = true; preview.innerHTML = ''; await refreshMessages();
       } catch (err) { toast(err.message, 'err'); btn.disabled = false; }
     });
   }
