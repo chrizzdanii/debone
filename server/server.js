@@ -68,7 +68,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || (() => {
 const DB_DEFAULT = () => ({
   users: [], enrollments: [], progress: [], payments: [],
   courses: null, announcements: [],
-  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], communityMigrated: false, qrStats: {}
+  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], courseWaitlist: [], communityMigrated: false, qrStats: {}
 });
 const store = createStore(DB_DEFAULT);
 let db = DB_DEFAULT();
@@ -355,6 +355,7 @@ function enrolledCount(course) {
 }
 function courseDetailInput(b, c) {
   const out = {};
+  if (b.comingSoon !== undefined) out.comingSoon = b.comingSoon === true || b.comingSoon === "true";
   if (b.category !== undefined) {
     if (b.category && !COURSE_CATEGORIES.some(x => x.id === b.category)) throw httpError(400, 'Please choose a valid category.');
     out.category = b.category || null;
@@ -455,8 +456,8 @@ function courseView(course, user) {
   const completed = lessons.filter(l => l.completed).length;
   return {
     id: course.id, title: course.title, subtitle: course.subtitle, summary: course.summary, level: course.level,
-    price: course.price, free: course.price === 0, enrolled, lessons, completed, total: lessons.length,
-    comingSoon: !!course.comingSoon, liveStart: course.liveStart || null, liveLabel: course.liveLabel || null, hasImage: !!course.image,
+    price: course.price, compareAtPrice: course.compareAtPrice || null, free: course.price === 0, enrolled, lessons, completed, total: lessons.length,
+    comingSoon: !!course.comingSoon, waitlisted: !!(user && (db.courseWaitlist || []).some(w => w.userId === user.id && w.courseId === course.id)), waitlistCount: (db.courseWaitlist || []).filter(w => w.courseId === course.id).length, liveStart: course.liveStart || null, liveLabel: course.liveLabel || null, hasImage: !!course.image,
     category: course.category || null, categoryLabel: (COURSE_CATEGORIES.find(c => c.id === course.category) || {}).label || null,
     instructor: course.instructor || null, startDate: course.startDate || null, duration: course.duration || null,
     schedule: course.schedule || null, classesPerWeek: course.classesPerWeek || null, sessionsTotal: course.sessionsTotal || null,
@@ -1735,6 +1736,29 @@ route('GET', '/api/staff/purchases', async ctx => {
     downloads: x.downloads || 0, expiresAt: x.expiresAt, createdAt: x.createdAt })) });
 });
 
+/* ============ Coming-soon course waitlists ============ */
+route('POST', '/api/courses/:id/waitlist', async ctx => {
+  const user = requireUser(ctx);
+  const course = db.courses.find(c => c.id === ctx.params.id);
+  if (!course) throw httpError(404, 'Course not found.');
+  if (!course.comingSoon) throw httpError(400, 'This course is open for enrolment.');
+  db.courseWaitlist = db.courseWaitlist || [];
+  const existing = db.courseWaitlist.find(w => w.courseId === course.id && w.userId === user.id);
+  if (existing) return json(ctx.res, 200, { ok: true, joined: true, message: 'You are already on this waitlist.' });
+  db.courseWaitlist.push({ id: uid(8), courseId: course.id, userId: user.id, createdAt: now() });
+  save();
+  json(ctx.res, 201, { ok: true, joined: true, message: 'You joined the waitlist. We will notify you when enrolment opens.' });
+});
+route('GET', '/api/staff/course-waitlist', async ctx => {
+  requireStaff(ctx, true);
+  const rows = (db.courseWaitlist || []).map(w => {
+    const c = db.courses.find(x => x.id === w.courseId);
+    const u = db.users.find(x => x.id === w.userId);
+    return { id: w.id, courseId: w.courseId, courseTitle: c ? c.title : 'Deleted course',
+      name: u ? (u.name || u.fullName || '') : 'Deleted account', email: u ? u.email : '', createdAt: w.createdAt };
+  });
+  json(ctx.res, 200, { waitlist: rows });
+});
 /* ============ Course bundles ============ */
 function bundleView(b) {
   const courses = (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean);
@@ -1769,6 +1793,7 @@ route('POST', '/api/bundles/:id/buy', async ctx => {
   const user = requireUser(ctx);
   const b = db.bundles.find(x => x.id === ctx.params.id && x.active !== false);
   if (!b) throw httpError(404, 'Bundle not found');
+  if (b.courseIds.some(cid => (db.courses.find(c => c.id === cid) || {}).comingSoon)) throw httpError(403, "One of these courses is not yet open.");
   if (b.courseIds.every(cid => enrollmentFor(user.id, cid))) return json(ctx.res, 200, { alreadyOwned: true });
   const qr = qrOffer(user), price = qr ? Math.round(b.price * (100 - qr.percent) / 100) : b.price;
   return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: price })) });
@@ -3034,7 +3059,8 @@ route('POST', '/api/staff/courses', async ctx => {
   const price = Math.max(0, Math.round(Number(b.price) || 0));
   let id = slug(title);
   while (db.courses.some(c => c.id === id)) id = slug(title) + '-' + uid(2);
-  const c = Object.assign({ id, title, subtitle: clean(b.subtitle, 80), summary: clean(b.summary, 500), level: clean(b.level, 30) || 'Beginner', price, lessons: [] }, courseDetailInput(b, {}));
+  const c = Object.assign({ id, title, subtitle: clean(b.subtitle, 80), summary: clean(b.summary, 500), level: clean(b.level, 30) || 'Beginner', price, compareAtPrice: Math.max(0, Math.round(Number(b.compareAtPrice) || 0)) || null, lessons: [] }, courseDetailInput(b, {}));
+  if (c.compareAtPrice && c.compareAtPrice <= c.price) throw httpError(400, 'Regular price must be higher than the selling price.');
   db.courses.push(c); save();
   json(ctx.res, 201, { course: courseView(c, null) });
 });
@@ -3049,6 +3075,8 @@ route('PATCH', '/api/staff/courses/:id', async ctx => {
   if (b.summary !== undefined) c.summary = clean(b.summary, 500);
   if (b.level !== undefined) c.level = clean(b.level, 30);
   if (b.price !== undefined) c.price = Math.max(0, Math.round(Number(b.price) || 0));
+  if (b.compareAtPrice !== undefined) c.compareAtPrice = Math.max(0, Math.round(Number(b.compareAtPrice) || 0)) || null;
+  if (c.compareAtPrice && c.compareAtPrice <= c.price) throw httpError(400, 'The regular price must be higher than the actual selling price.');
   const oldStart = c.startDate;
   Object.assign(c, courseDetailInput(b, c));
   if (c.startDate && c.startDate !== oldStart) {
