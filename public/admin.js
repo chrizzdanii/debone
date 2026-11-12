@@ -557,6 +557,8 @@
         '<div class="field"><label>Summary</label><textarea class="input" name="summary" maxlength="500"></textarea></div>' +
         '<div class="grid-3"><div class="field"><label>Level</label><input class="input" name="level" value="Beginner" maxlength="30"></div>' +
         '<div class="field"><label>Price (' + 'NGN' + ', 0 = free)</label><input class="input" type="number" name="price" min="0" value="0"></div></div>' +
+        '<label class="check"><input type="checkbox" name="comingSoon"> Coming soon — show Join waitlist instead of enrolment</label>' +
+        '<div class="field"><label>Regular price before discount (optional, NGN)</label><input class="input" type="number" name="compareAtPrice" min="0" placeholder="Leave blank if no real discount"></div>' +
         '<div class="field"><label>Course image</label><div class="img-up"><div class="img-prev" id="new-prev"><span>No image yet</span></div>' +
         '<div class="img-up-side"><input type="file" name="image" id="new-file" accept="image/jpeg,image/png,image/webp" class="input">' +
         '<p class="muted" style="font-size:.85rem;margin:8px 0 0">JPG, PNG or WebP, under 200 KB. Shown on the course card.</p></div></div></div>' +
@@ -573,7 +575,7 @@
         .catch(function (e) { toast(e.message, 'err'); });
     });
     bindForm('#course-form', async function (f) {
-      var r = await api('/api/staff/courses', { method: 'POST', body: { title: fv(f, 'title'), subtitle: fv(f, 'subtitle'), summary: fv(f, 'summary'), level: fv(f, 'level'), price: Number(fv(f, 'price')) || 0 } });
+      var r = await api('/api/staff/courses', { method: 'POST', body: { title: fv(f, 'title'), subtitle: fv(f, 'subtitle'), summary: fv(f, 'summary'), level: fv(f, 'level'), price: Number(fv(f, 'price')) || 0, comingSoon: !!f.elements.comingSoon.checked, compareAtPrice: Number(fv(f, 'compareAtPrice')) || 0 } });
       var file = f.querySelector('input[type=file]').files[0];
       if (file) {
         try { await api('/api/staff/courses/' + encodeURIComponent(r.course.id) + '/image', { method: 'POST', body: { data: await readImage(file) } }); }
@@ -582,6 +584,21 @@
       toast('Course created. Now add its lessons.');
       location.hash = '#courses/' + r.course.id;
     });
+  }
+
+  async function renderWaitlist() {
+    if (!isAdmin()) return denied();
+    crumb.textContent = 'Course waitlists';
+    var d = await api('/api/staff/course-waitlist');
+    var rows = d.waitlist || [];
+    var grouped = {};
+    rows.forEach(function (w) { (grouped[w.courseTitle] = grouped[w.courseTitle] || []).push(w); });
+    setView(head('Academy', 'Course waitlists', 'Real student interest in courses marked Coming soon.') +
+      '<div class="bx-stats"><div><b>' + rows.length + '</b><span>Total signups</span></div><div><b>' + Object.keys(grouped).length + '</b><span>Courses with demand</span></div></div>' +
+      (Object.keys(grouped).map(function (title) { return '<section class="box"><h2>' + esc(title) + ' — ' + grouped[title].length + ' interested</h2>' +
+        '<div class="table-wrap"><table class="tbl"><thead><tr><th>Student</th><th>Email</th><th>Joined</th></tr></thead><tbody>' +
+        grouped[title].map(function (w) { return '<tr><td>' + esc(w.name) + '</td><td>' + esc(w.email) + '</td><td>' + esc(w.createdAt.slice(0,10)) + '</td></tr>'; }).join('') +
+        '</tbody></table></div></section>'; }).join('') || '<div class="empty-state">No waitlist signups yet.</div>'));
   }
 
   async function renderCourseEditor(id) {
@@ -602,6 +619,9 @@
         '<div class="field"><label>Summary</label><textarea class="input" name="summary" maxlength="500">' + esc(c.summary || '') + '</textarea></div>' +
         '<div class="grid-3"><div class="field"><label>Level</label><input class="input" name="level" value="' + esc(c.level || '') + '"></div>' +
         '<div class="field"><label>Price (NGN, 0 = free)</label><input class="input" type="number" name="price" min="0" value="' + c.price + '"></div></div>' +
+        '<label class="check"><input type="checkbox" name="comingSoon"' + (c.comingSoon ? ' checked' : '') + '> Coming soon — accept waitlist signups, not payments</label>' +
+        '<p class="muted">Waitlist interest: <b>' + (c.waitlistCount || 0) + '</b> student(s). <a href="#waitlist">See names and emails</a></p>' +
+        '<div class="field"><label>Regular price before discount (optional, NGN)</label><input class="input" type="number" name="compareAtPrice" min="0" value="' + (c.compareAtPrice || '') + '" placeholder="Only enter a genuine regular price"></div>' +
         '<div class="grid-2"><div class="field"><label>Category</label><select class="input" name="category"><option value="">Not set</option>' + CATS.map(function (x) { return opt(x.id, x.label + (x.comingSoon ? ' (coming soon)' : ''), c.category); }).join('') + '</select></div>' +
         '<div class="field"><label>Instructor</label><input class="input" name="instructor" maxlength="120" value="' + esc(c.instructor || '') + '" placeholder="Name of the qualified instructor"></div></div>' +
         '<div class="grid-3"><div class="field"><label>Start date</label><input class="input" type="date" name="startDate" value="' + esc(c.startDate || '') + '"></div>' +
@@ -654,7 +674,7 @@
     bindForm('#edit-course', async function (f) {
       var det = { title: fv(f, 'title'), subtitle: fv(f, 'subtitle'), summary: fv(f, 'summary'), level: fv(f, 'level'), price: Number(fv(f, 'price')) || 0,
         category: fv(f, 'category'), instructor: fv(f, 'instructor'), startDate: fv(f, 'startDate'), duration: fv(f, 'duration'), schedule: fv(f, 'schedule'),
-        classesPerWeek: fv(f, 'classesPerWeek'), sessionsTotal: fv(f, 'sessionsTotal'), seats: fv(f, 'seats'), minStudents: fv(f, 'minStudents') };
+        classesPerWeek: fv(f, 'classesPerWeek'), sessionsTotal: fv(f, 'sessionsTotal'), seats: fv(f, 'seats'), minStudents: fv(f, 'minStudents'), comingSoon: !!f.elements.comingSoon.checked, compareAtPrice: Number(fv(f, 'compareAtPrice')) || 0 };
       try { await api('/api/staff/courses/' + encodeURIComponent(id), { method: 'PATCH', body: det }); }
       catch (e) { toast(e.message, 'err'); return; }
       toast('Course saved.');
@@ -1934,7 +1954,7 @@
     silent = silent === true;
     var parts = (location.hash || '#overview').replace(/^#/, '').split('/');
     var name = parts[0] || 'overview', arg = parts[1] ? decodeURIComponent(parts[1]) : null;
-    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification'].includes(name)) name = 'overview';
+    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification', 'waitlist'].includes(name)) name = 'overview';
     document.querySelectorAll('.side-nav a[data-view]').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('data-view') === name);
     });
@@ -1961,6 +1981,7 @@
       if (name === 'certificates') return await renderCertificates();
       if (name === 'digital') return await renderDigital();
       if (name === 'bundles') return await renderBundles();
+      if (name === 'waitlist') return await renderWaitlist();
       if (name === 'bookings') return await renderBookings();
       if (name === 'refunds') return await renderRefunds();
       if (name === 'reports') return await renderReports();

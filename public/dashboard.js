@@ -215,7 +215,7 @@
     var status, action;
     if (c.comingSoon && !c.enrolled) {
       status = '<span class="tag soon">Coming soon</span>';
-      action = '<span class="btn btn-ghost btn-sm is-disabled" aria-disabled="true">Coming soon</span>';
+      action = '<button class="btn btn-solid btn-sm" type="button" data-waitlist="' + esc(c.id) + '"' + (c.waitlisted ? ' disabled' : '') + '>' + (c.waitlisted ? '✓ Joined waitlist' : 'Join waitlist') + '</button>';
     } else if (c.enrolled) {
       status = '<span class="tag ' + (c.free ? 'free' : 'paid') + '">' + (c.free ? 'Free intro' : 'Unlocked') + '</span>';
       action = '<a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">Open course</a>';
@@ -223,10 +223,11 @@
       status = '<span class="tag paid">Locked</span>';
       action = '<button class="btn btn-solid btn-sm" type="button" data-enroll="' + esc(c.id) + '">Enrol for ' + naira(c.price) + '</button>';
     }
+    var offer = c.compareAtPrice > c.price && c.price > 0 && !c.comingSoon ? '<div class="debone-course-offer"><s>' + naira(c.compareAtPrice) + '</s><b>Save ' + naira(c.compareAtPrice - c.price) + ' (' + Math.round((c.compareAtPrice - c.price) / c.compareAtPrice * 100) + '% off)</b></div>' : '';
     return '<article class="dcourse">' + thumb(c) + status +
       '<h3>' + esc(c.title) + '</h3>' +
       '<p>' + esc(c.summary) + '</p>' +
-      '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons' + (c.free || c.comingSoon ? '' : ' · ' + naira(c.price) + ' one-time') + '</p>' +
+      offer + '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons' + (c.free || c.comingSoon ? '' : ' · ' + naira(c.price) + ' one-time') + '</p>' +
       '<div class="foot">' + action + '</div>' +
     '</article>';
   }
@@ -234,6 +235,26 @@
   function renderBrowse() {
     setView(viewHead('Catalogue', 'Browse courses', 'Start the free intro now. Unlock full courses with secure payment.') +
       '<div class="grid-courses stagger">' + state.d.courses.map(browseCard).join('') + '</div>');
+  }
+
+  /* ---------- Bundles inside the student dashboard ---------- */
+  async function renderBundles() {
+    setView(viewHead('Save more together', 'Course bundles', 'Unlock multiple courses with one secure payment.') + '<div class="skeleton" style="min-height:220px"></div>');
+    try {
+      var data = await api('/api/bundles');
+      var list = data.bundles || [];
+      setView(viewHead('Curated learning', 'Course bundles', 'Choose a package and save compared with buying each course separately.') +
+        '<div class="debone-bundle-grid stagger">' + (list.map(function (b) {
+          var owned = b.courses.every(function (c) { return state.d.courses.some(function (x) { return x.id === c.id && x.enrolled; }); });
+          var pic = b.hasImage ? '<img loading="lazy" src="/api/bundles/' + encodeURIComponent(b.id) + '/image" alt="">' : '<div class="debone-bundle-art">✦</div>';
+          return '<article class="debone-bundle-card"><div class="debone-bundle-cover">' + pic +
+            (b.savings > 0 ? '<span class="debone-saving">Save ' + naira(b.savings) + ' · ' + b.savingsPercent + '% off</span>' : '') + '</div>' +
+            '<div class="debone-bundle-body"><span class="debone-overline">' + b.courses.length + ' courses in one package</span><h3>' + esc(b.title) + '</h3><p>' + esc(b.description || 'Build your skills with a complete course package.') + '</p>' +
+            '<ul>' + b.courses.map(function (c) { return '<li>✓ ' + esc(c.title) + '</li>'; }).join('') + '</ul>' +
+            '<div class="debone-bundle-pricing"><strong>' + naira(b.price) + '</strong>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s>' : '') + '</div>' +
+            (owned ? '<a class="btn btn-solid" href="#courses">Open my courses</a>' : '<button type="button" class="btn btn-solid" data-buy-bundle="' + esc(b.id) + '">Get this bundle</button>') + '</div></article>';
+        }).join('') || '<div class="empty-state">No course bundles are available yet.</div>') + '</div>');
+    } catch (e) { setView(viewHead('Catalogue', 'Course bundles') + emptyState(e.message)); }
   }
 
   /* ---------- Course player ---------- */
@@ -894,7 +915,7 @@
   }
 
   /* ---------- Router ---------- */
-  var TITLES = { overview: 'Overview', courses: 'My courses', browse: 'Browse courses', live: 'Live classes', assignments: 'Assignments', payments: 'Payments', profile: 'Profile', performance: 'Performance', certificates: 'Certificates', reviews: 'Course reviews', downloads: 'Downloads', recordings: 'Recordings', requests: 'Requests and refunds', referrals: 'Refer a friend', community: 'Community', portfolio: 'Talent profile', course: 'Course' };
+  var TITLES = { overview: 'Overview', courses: 'My courses', browse: 'Browse courses', bundles: 'Course bundles', live: 'Live classes', assignments: 'Assignments', payments: 'Payments', profile: 'Profile', performance: 'Performance', certificates: 'Certificates', reviews: 'Course reviews', downloads: 'Downloads', recordings: 'Recordings', requests: 'Requests and refunds', referrals: 'Refer a friend', community: 'Community', portfolio: 'Talent profile', course: 'Course' };
 
   function openSide(open) {
     side.classList.toggle('open', open);
@@ -919,6 +940,7 @@
     if (name === 'overview') return renderOverview();
     if (name === 'courses') return renderCourses();
     if (name === 'browse') return renderBrowse();
+    if (name === 'bundles') return renderBundles();
     if (name === 'payments') return renderPayments();
     if (name === 'profile') return renderProfile();
     if (name === 'course') return renderCourse(arg ? decodeURIComponent(arg) : null);
@@ -926,6 +948,22 @@
 
   /* ---------- Global events ---------- */
   document.addEventListener('click', function (e) {
+    var waitBtn = e.target.closest('[data-waitlist]');
+    if (waitBtn) {
+      waitBtn.disabled = true;
+      api('/api/courses/' + encodeURIComponent(waitBtn.getAttribute('data-waitlist')) + '/waitlist', { method: 'POST', body: {} })
+        .then(function (res) { waitBtn.textContent = '✓ Joined waitlist'; toast(res.message || 'Joined waitlist.'); var c = state.d.courses.find(function (x) { return x.id === waitBtn.getAttribute('data-waitlist'); }); if (c) c.waitlisted = true; })
+        .catch(function (err) { waitBtn.disabled = false; toast(err.message, 'err'); });
+      return;
+    }
+    var bundleBtn = e.target.closest('[data-buy-bundle]');
+    if (bundleBtn) {
+      bundleBtn.disabled = true; bundleBtn.textContent = 'Preparing checkout…';
+      api('/api/bundles/' + encodeURIComponent(bundleBtn.getAttribute('data-buy-bundle')) + '/buy', { method: 'POST', body: {} })
+        .then(function (res) { if (res.order) location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); else { toast('These courses are already unlocked.'); location.hash = '#courses'; } })
+        .catch(function (err) { bundleBtn.disabled = false; bundleBtn.textContent = 'Get this bundle'; toast(err.message, 'err'); });
+      return;
+    }
     var enrollBtn = e.target.closest('[data-enroll]');
     if (enrollBtn) return enroll(enrollBtn.getAttribute('data-enroll'), enrollBtn);
 

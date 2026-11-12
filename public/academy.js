@@ -26,7 +26,6 @@
     }
     if (c.schedule) rows.push(['Class days', c.schedule]);
     rows.push(['Instructor', c.instructor || 'To be announced']);
-    if (c.seats) rows.push(['Seats', c.seatsLeft > 0 ? c.seatsLeft + ' left of ' + c.seats : 'Full']);
     if (c.minStudents) rows.push(['Runs with', 'at least ' + c.minStudents + ' students']);
     if (!rows.length) return '';
     return '<dl class="course-facts">' + rows.map(function (r) {
@@ -39,6 +38,7 @@
     var cat = c.categoryLabel ? '<p class="course-cat">' + esc(c.categoryLabel) + '</p>' : '';
     var price = c.comingSoon ? '<span class="price">Coming soon</span>'
       : (c.free ? '<span class="price">Free<small>No payment</small></span>' : '<span class="price">' + naira(c.price) + '<small>One-time</small></span>');
+    var offer = c.compareAtPrice > c.price && c.price > 0 && !c.comingSoon ? '<p class="debone-course-offer"><s>' + naira(c.compareAtPrice) + '</s><b>Save ' + naira(c.compareAtPrice - c.price) + ' (' + Math.round((c.compareAtPrice - c.price) / c.compareAtPrice * 100) + '% off)</b></p>' : '';
     var live = c.liveLabel ? '<p class="course-live">' + esc(c.liveLabel) + '</p>' : '';
     var rate = (c.rating && c.rating.count) ? '<p class="course-rating">★ ' + c.rating.avg + ' <span>(' + c.rating.count + (c.rating.count === 1 ? ' review' : ' reviews') + ')</span></p>' : '';
     var img = c.hasImage ? '<div class="course-img"><img src="/api/courses/' + encodeURIComponent(c.id) + '/image" alt="' + esc(c.title) + '" loading="lazy"></div>' : '';
@@ -47,10 +47,10 @@
     }).join('');
     var full = c.seats && c.seatsLeft === 0;
     var action = c.comingSoon || full
-      ? '<span class="btn btn-ghost btn-sm is-disabled" aria-disabled="true">' + (full ? 'Full' : 'Coming soon') + '</span>'
+      ? (c.comingSoon ? '<a class="btn btn-solid btn-sm" href="login.html?next=dashboard">Join waitlist</a>' : '<span class="btn btn-ghost btn-sm is-disabled" aria-disabled="true">Full</span>')
       : '<a class="btn btn-solid btn-sm" href="signup.html">' + (c.free ? 'Start free' : 'Sign up to enrol') + '</a>';
     return '<article class="course" data-cat="' + esc(c.category || '') + '">' + img + tag + cat +
-      '<h3>' + esc(c.title) + '</h3><p>' + esc(c.summary) + '</p>' + rate + live + facts(c) +
+      '<h3>' + esc(c.title) + '</h3><p>' + esc(c.summary) + '</p>' + offer + rate + live + facts(c) +
       (lessons ? '<ul class="lesson-list" aria-label="Lessons in ' + esc(c.title) + '">' + lessons + '</ul>' : '') +
       '<div class="foot">' + price + action + '</div></article>';
   }
