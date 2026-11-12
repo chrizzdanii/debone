@@ -10,6 +10,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const ROOT = path.join(__dirname, '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -35,6 +37,16 @@ const dayKey = d => new Intl.DateTimeFormat('en-CA', { timeZone: SITE_TZ, year: 
   }
 })();
 
+const R2_BUCKET = process.env.R2_BUCKET || '';
+const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || '';
+const r2Ready = () => !!(R2_BUCKET && R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY);
+let r2Client;
+function r2() {
+  if (!r2Ready()) throw httpError(503, 'Private recording storage is not configured. Contact the administrator.');
+  if (!r2Client) r2Client = new S3Client({ region: 'auto', endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
+  return r2Client;
+}
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_URL = (process.env.PUBLIC_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY || '';
@@ -476,7 +488,7 @@ function sessionView(s, user) {
   const course = db.courses.find(c => c.id === s.courseId);
   const timing = sessionTiming(s, user);
   const liveAllowed = s.status === 'live' && timing.liveOpen;
-  const replayAllowed = sessionEnded(s) && !!s.recordingUrl && replayOpen(s);
+  const replayAllowed = sessionEnded(s) && !!(s.r2RecordingKey || s.recordingUrl) && replayOpen(s);
   return {
     id: s.id, courseId: s.courseId, courseTitle: course ? course.title : '', title: s.title, lessonId: s.lessonId || null,
     startsAt: s.startsAt || null, status: s.status || 'scheduled', ended: sessionEnded(s),
@@ -486,7 +498,7 @@ function sessionView(s, user) {
     recordingAvailable: replayAllowed, recordingUrl: null,
     joinUrl: null, hasJoinLink: !!s.joinUrl,
     durationMinutes: Number(s.durationMinutes) || 120, ...timing,
-    replayUntil: replayUntilFor(s), replayExpired: !!s.recordingUrl && !replayOpen(s),
+    replayUntil: replayUntilFor(s), replayExpired: !!(s.r2RecordingKey || s.recordingUrl) && !replayOpen(s),
     chatOpen: s.chatOpen !== false
   };
 }
@@ -1417,7 +1429,7 @@ route('POST', '/api/sessions/:id/watched', async ctx => {
   if (!s) throw httpError(404, 'Class not found');
   const course = db.courses.find(c => c.id === s.courseId);
   if (!course || !courseAccess(user, course)) throw httpError(403, 'Enrol in this course to watch the recording.');
-  if (!s.recordingUrl || !replayOpen(s)) throw httpError(400, 'The recording is not available yet.');
+  if (!(s.r2RecordingKey || s.recordingUrl) || !replayOpen(s)) throw httpError(400, 'The recording is not available yet.');
   if (!sessionEnded(s)) throw httpError(400, 'The recording opens once the live class has ended.');
   if (!db.attendance.some(a => a.sessionId === s.id && a.userId === user.id)) {
     db.attendance.push({ id: uid(8), sessionId: s.id, userId: user.id, at: now(), how: 'recording' }); save();
@@ -1441,6 +1453,32 @@ route('PUT', '/api/lessons/:id/note', async ctx => {
   n.text = text; n.updatedAt = now();
   save(); json(ctx.res, 200, { ok: true, savedAt: n.updatedAt });
 });
+/* R2 direct browser uploads: MP4 bytes go to private R2, never through the app's JSON request body. */
+route('POST', '/api/staff/sessions/:id/r2-upload', async ctx => {
+  requireStaff(ctx);
+  const s = db.sessions.find(x => x.id === ctx.params.id);
+  if (!s) throw httpError(404, 'Class not found.');
+  const size = Number(ctx.body.size);
+  if (!Number.isSafeInteger(size) || size < 1 || size > 2 * 1024 ** 3) throw httpError(400, 'MP4 must be smaller than 2 GB.');
+  if (!/\.mp4$/i.test(String(ctx.body.filename || ''))) throw httpError(400, 'Choose an MP4 video.');
+  const key = `recordings/${s.id}/${crypto.randomUUID()}.mp4`;
+  const url = await getSignedUrl(r2(), new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, ContentType: 'video/mp4' }), { expiresIn: 600 });
+  json(ctx.res, 200, { url, key, contentType: 'video/mp4', maxBytes: 2 * 1024 ** 3 });
+});
+route('POST', '/api/staff/sessions/:id/r2-publish', async ctx => {
+  requireStaff(ctx);
+  const s = db.sessions.find(x => x.id === ctx.params.id);
+  if (!s) throw httpError(404, 'Class not found.');
+  const key = String(ctx.body.key || '');
+  if (!key.startsWith(`recordings/${s.id}/`) || !/^recordings\/[^/]+\/[0-9a-f-]{36}\.mp4$/.test(key)) throw httpError(400, 'Invalid upload identifier.');
+  const head = await r2().send(new HeadObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+  if (!head.ContentLength || head.ContentLength > 2 * 1024 ** 3 || head.ContentType !== 'video/mp4') throw httpError(400, 'Uploaded video could not be verified.');
+  s.r2RecordingKey = key;
+  s.recordingUrl = ''; // remove old YouTube recording URL; private R2 takes precedence
+  s.recordingPublishedAt = now();
+  save();
+  json(ctx.res, 200, { ok: true, recordingAvailable: true });
+});
 route('GET', '/api/me/recordings', async ctx => {
   const user = requireUser(ctx);
   const sessions = db.sessions.filter(s => {
@@ -1450,8 +1488,8 @@ route('GET', '/api/me/recordings', async ctx => {
   json(ctx.res, 200, { recordings: sessions.map(s => {
     const course = db.courses.find(c => c.id === s.courseId) || {};
     const open = replayOpen(s);
-    const status = !s.recordingUrl ? (s.startsAt && new Date(s.startsAt).getTime() > Date.now() ? 'upcoming' : 'processing')
-      : (open ? 'available' : 'expired');
+    const status = !(s.r2RecordingKey || s.recordingUrl) ? (s.startsAt && new Date(s.startsAt).getTime() > Date.now() ? 'upcoming' : 'processing')
+      : (open && sessionEnded(s) ? 'available' : open ? 'processing' : 'expired');
     return { id: s.id, courseId: s.courseId, courseTitle: course.title || '', title: s.title || 'Live class', startsAt: s.startsAt || null,
       status, recordingAvailable: open && sessionEnded(s), replayUntil: replayUntilFor(s) };
   }) });
@@ -1464,9 +1502,14 @@ route('GET', '/api/sessions/:id/playback', async ctx => {
   if (!canSeeCourse(user, s.courseId)) throw httpError(403, 'You must enrol in this course to watch.');
   const type = ctx.query.get('type') === 'recording' ? 'recording' : 'live';
   if (type === 'recording') {
-    if (s.status !== 'ended' || !s.recordingUrl || !replayOpen(s)) throw httpError(403, 'Recording is not available.');
+    if (s.status !== 'ended' || !(s.r2RecordingKey || s.recordingUrl) || !replayOpen(s)) throw httpError(403, 'Recording is not available.');
   } else if (s.status !== 'live' || !sessionTiming(s, user).liveOpen) {
     throw httpError(403, 'Live playback is not available yet.');
+  }
+  if (type === 'recording' && s.r2RecordingKey) {
+    const videoUrl = await getSignedUrl(r2(), new GetObjectCommand({ Bucket: R2_BUCKET, Key: s.r2RecordingKey }), { expiresIn: 120 });
+    ctx.res.setHeader('Cache-Control', 'private, no-store');
+    return json(ctx.res, 200, { videoUrl, title: s.title, type, format: 'mp4', expiresIn: 120 });
   }
   const embedUrl = safeYouTubeEmbed(type === 'recording' ? s.recordingUrl : s.youtubeUrl);
   if (!embedUrl) throw httpError(400, 'A valid YouTube video is not configured.');
@@ -3066,7 +3109,7 @@ route('GET', '/api/staff/courses/:id', async ctx => {
   requireStaff(ctx);
   const c = db.courses.find(x => x.id === ctx.params.id);
   if (!c) throw httpError(404, 'Course not found');
-  json(ctx.res, 200, { course: { ...courseView(c, null), lessons: c.lessons.map(l => ({ id: l.id, title: l.title, free: !!l.free, body: l.body.join('\n\n'), minutes: l.minutes || '', resources: (l.resources || []).map(r => r.title + ' | ' + r.url).join('\n') })), sessions: db.sessions.filter(s => s.courseId === c.id).map(s => Object.assign(sessionView(s, null), { recordingRaw: s.recordingUrl || '' })), assignments: db.assignments.filter(a => a.courseId === c.id) } });
+  json(ctx.res, 200, { course: { ...courseView(c, null), lessons: c.lessons.map(l => ({ id: l.id, title: l.title, free: !!l.free, body: l.body.join('\n\n'), minutes: l.minutes || '', resources: (l.resources || []).map(r => r.title + ' | ' + r.url).join('\n') })), sessions: db.sessions.filter(s => s.courseId === c.id).map(s => Object.assign(sessionView(s, null), { recordingRaw: s.recordingUrl || '', r2Uploaded: !!s.r2RecordingKey })), assignments: db.assignments.filter(a => a.courseId === c.id) } });
 });
 
 route('GET', '/api/staff/me', async ctx => {
