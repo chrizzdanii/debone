@@ -289,6 +289,7 @@
             '<div class="lv-f"><label>Video room</label><input class="input" name="joinUrl" value="' + esc(s.joinUrl || '') + '" placeholder="Google Meet or Zoom link"></div></div>' +
           '<div class="lv-two"><div class="lv-f"><label>YouTube live link</label><input class="input" name="youtubeUrl" value="' + esc(s.watchUrl || '') + '" placeholder="https://www.youtube.com/watch?v=…"></div>' +
             '<div class="lv-f"><label>Recording link</label><input class="input" name="recordingUrl" value="' + esc(s.recordingRaw || '') + '" placeholder="YouTube link of the recording"></div></div>' +
+          '<div class="lv-f" style="margin:12px 0"><label>Private Zoom recording (Cloudflare R2)</label><input type="file" accept="video/mp4,.mp4" data-r2-file><button class="btn btn-ghost btn-sm" type="button" data-r2-upload="' + esc(s.id) + '">Upload MP4 &amp; publish</button><small data-r2-progress>' + (s.r2Uploaded ? 'Private recording published' : 'Select a Zoom MP4 (up to 2 GB). Mark class Ended for playback.') + '</small></div>' +
           '<label class="lv-switch"><input type="checkbox" name="chatOpen"' + (s.chatOpen === false ? '' : ' checked') + '><span class="tr"></span>Class chat is open</label>' +
           '<div class="lv-actions" style="justify-content:flex-start"><button class="btn btn-solid btn-sm" type="button" data-save-session="' + esc(s.id) + '">Save changes</button>' +
             (isAdmin() ? '<button class="lv-btn danger" type="button" data-delete-session="' + esc(s.id) + '">' + ICON.trash + 'Delete</button>' : '') + '</div>' +
@@ -330,6 +331,27 @@
           b.disabled = true;
           try { await patch(b.closest('[data-row]').getAttribute('data-id'), { status: b.getAttribute('data-set-status') }, b.getAttribute('data-set-status') === 'live' ? 'You are live. Students were notified.' : 'Class ended.'); }
           catch (e) { toast(e.message, 'err'); b.disabled = false; }
+        });
+      });
+      view.querySelectorAll('[data-r2-upload]').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var row = btn.closest('[data-row]'), file = row.querySelector('[data-r2-file]').files[0], msg = row.querySelector('[data-r2-progress]');
+          if (!file || !/\.mp4$/i.test(file.name)) return toast('Choose a Zoom MP4 recording.', 'err');
+          if (file.size > 2 * 1024 ** 3) return toast('Video must be smaller than 2 GB.', 'err');
+          btn.disabled = true;
+          try {
+            msg.textContent = 'Preparing private upload…';
+            var id = btn.getAttribute('data-r2-upload');
+            var ticket = await api('/api/staff/sessions/' + encodeURIComponent(id) + '/r2-upload', { method: 'POST', body: { filename: file.name, size: file.size } });
+            msg.textContent = 'Uploading to Cloudflare R2… Keep this page open.';
+            var upload = await fetch(ticket.url, { method: 'PUT', headers: { 'Content-Type': ticket.contentType }, body: file });
+            if (!upload.ok) throw new Error('R2 upload failed (' + upload.status + '). Check bucket CORS settings.');
+            msg.textContent = 'Verifying uploaded file…';
+            await api('/api/staff/sessions/' + encodeURIComponent(id) + '/r2-publish', { method: 'POST', body: { key: ticket.key } });
+            msg.textContent = 'Recording published. Students can watch after the class ends.';
+            toast('Private recording published successfully.');
+          } catch (e) { msg.textContent = e.message; toast(e.message, 'err'); }
+          btn.disabled = false;
         });
       });
       view.querySelectorAll('[data-save-session]').forEach(function (btn) {

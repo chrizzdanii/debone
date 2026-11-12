@@ -137,7 +137,7 @@
         try {
           var playback = await api('/api/sessions/' + encodeURIComponent(b.getAttribute('data-replay')) + '/playback?type=recording');
           var frame = view.querySelector('.video-frame');
-          if (frame) frame.innerHTML = '<iframe src="' + esc(playback.embedUrl) + '" title="Recording" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+          if (frame) frame.innerHTML = playback.format === 'mp4' ? '<video controls controlsList="nodownload" playsinline preload="metadata" style="width:100%;max-height:70vh;background:#000" src="' + esc(playback.videoUrl) + '"></video>' : '<iframe src="' + esc(playback.embedUrl) + '" title="Recording" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>'; 
           // Missed the live class? Watching the recording counts as doing the class, so the lesson can be completed
           await api('/api/sessions/' + encodeURIComponent(b.getAttribute('data-replay')) + '/watched', { method: 'POST', body: {} });
           if (!selected.attended) toast('You have watched the recorded video. This step is complete.');

@@ -473,7 +473,7 @@
           var playback = await api('/api/sessions/' + encodeURIComponent(id) + '/playback?type=recording');
           var player = document.getElementById('recording-player');
           player.style.display = 'block';
-          player.innerHTML = '<iframe src="' + esc(playback.embedUrl) + '" title="' + esc(playback.title) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+          player.innerHTML = playback.format === 'mp4' ? '<video controls controlsList="nodownload" playsinline preload="metadata" style="width:100%;max-height:70vh;background:#000" src="' + esc(playback.videoUrl) + '"></video>' : '<iframe src="' + esc(playback.embedUrl) + '" title="' + esc(playback.title) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
           player.scrollIntoView({ behavior: 'smooth', block: 'center' });
           await api('/api/sessions/' + encodeURIComponent(id) + '/watched', { method: 'POST', body: {} });
         } catch (err) { toast(err.message, 'err'); }
