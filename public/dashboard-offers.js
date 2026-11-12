@@ -6,7 +6,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   var money = function (x) { return '₦' + Math.round(x).toLocaleString('en-NG'); };
   return '<span class="debone-price-comparison" aria-label="Illustrative price comparison">' +
     '<s>' + money(reference) + '</s><span class="debone-value-badge">✦ 33% below comparison</span>' +
-    '<small>Illustrative comparison, not a previous price</small></span>';
+    '</span>';
 };
 /* Student dashboard: course bundles (list + detail pages) and the shared urgency helpers (countdowns, confetti). */
 (function () {
