@@ -1,0 +1,2 @@
+# Illustrative pricing comparison
+Added an inline comparison beside the current price on course and bundle cards/details across student/public catalogue pages. Reference = 1.5 × current course/bundle list price, rounded to nearest naira. Difference is 1/3 of the reference, shown as "33% below comparison". The reference is explicitly labelled illustrative and not a previous selling price. Checkout pricing and payment-credit logic are unchanged. Existing genuine offers may still show their separate promotional information. Verify layout in a browser before deployment.
