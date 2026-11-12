@@ -307,7 +307,7 @@ function recordQrSignup(user, src) {
 }
 function publicUser(u) {
   return { id: u.id, name: u.name, email: u.email, phone: u.phone || '', role: u.role || 'student', createdAt: u.createdAt,
-    profile: u.profile || {}, hasAvatar: !!u.avatar, completion: completion(u), coupon: couponFor(u), qrOffer: qrOffer(u) };
+    zoomName: u.zoomName || '', profile: u.profile || {}, hasAvatar: !!u.avatar, completion: completion(u), coupon: couponFor(u), qrOffer: qrOffer(u) };
 }
 const isAdmin = u => !!u && u.role === 'admin';
 const isStaff = u => !!u && (u.role === 'admin' || u.role === 'instructor');
@@ -484,7 +484,7 @@ function sessionView(s, user) {
     // YouTube embeds are not DRM and can still be extracted by a determined viewer.
     embedUrl: liveAllowed ? safeYouTubeEmbed(s.youtubeUrl) : null,
     recordingAvailable: replayAllowed, recordingUrl: null,
-    joinUrl: liveAllowed ? (s.joinUrl || null) : null,
+    joinUrl: null, hasJoinLink: !!s.joinUrl,
     durationMinutes: Number(s.durationMinutes) || 120, ...timing,
     replayUntil: replayUntilFor(s), replayExpired: !!s.recordingUrl && !replayOpen(s),
     chatOpen: s.chatOpen !== false
@@ -728,6 +728,19 @@ route('POST', '/api/auth/login', async ctx => {
 route('POST', '/api/auth/logout', async ctx => json(ctx.res, 200, { ok: true }, { 'Set-Cookie': clearCookie() }));
 
 route('GET', '/api/me', async ctx => json(ctx.res, 200, { user: publicUser(requireUser(ctx)) }));
+
+/* Zoom Basic: compulsory registered display name before releasing meeting links. */
+route('PUT', '/api/me/zoom-name', async ctx => {
+  const user = requireUser(ctx);
+  const name = clean(ctx.body.zoomName, 80).replace(/\s+/g, ' ').trim();
+  if (name.length < 3 || !/[a-zA-Z\u00c0-\u024f]/.test(name)) throw httpError(400, 'Enter your actual Zoom display name (at least 3 characters).');
+  if (/https?:|zoom\.us|[<>]/i.test(name)) throw httpError(400, 'Enter a display name, not a meeting link.');
+  const duplicate = db.users.find(u => u.id !== user.id && String(u.zoomName || '').toLowerCase() === name.toLowerCase());
+  if (duplicate) throw httpError(409, 'This Zoom display name is already registered. Use a distinct name in Zoom, then try again.');
+  user.zoomName = name; user.zoomNameUpdatedAt = now(); save();
+  json(ctx.res, 200, { ok: true, zoomName: name });
+});
+
 
 route('PATCH', '/api/me', async ctx => {
   const user = requireUser(ctx);
@@ -1368,6 +1381,20 @@ route('POST', '/api/sessions/:id/attend', async ctx => {
     db.attendance.push({ id: uid(8), sessionId: s.id, userId: user.id, at: now(), how: 'live' }); save();
   }
   json(ctx.res, 200, { ok: true, attended: true });
+});
+/* Release the Zoom link only after a fresh enrollment and join-window check.
+   Zoom Basic still relies on Waiting Room/manual identity verification. */
+route('GET', '/api/sessions/:id/join', async ctx => {
+  const user = requireUser(ctx);
+  const s = db.sessions.find(x => x.id === ctx.params.id);
+  if (!s) throw httpError(404, 'Class not found');
+  const course = db.courses.find(c => c.id === s.courseId);
+  if (!course || !courseAccess(user, course)) throw httpError(403, 'Paid course enrollment is required.');
+  if (!user.zoomName || !String(user.zoomName).trim()) throw httpError(403, 'Register your Zoom display name in My Courses before joining the live class.');
+  if (!s.joinUrl || !/^https:\/\/(?:[a-z0-9-]+\.)?zoom\.us\//i.test(s.joinUrl)) throw httpError(400, 'A valid Zoom meeting link has not been configured.');
+  if (s.status === 'ended' || !sessionTiming(s, user).joinOpen) throw httpError(403, 'The Zoom classroom is not open yet.');
+  ctx.res.setHeader('Cache-Control', 'no-store');
+  json(ctx.res, 200, { url: s.joinUrl });
 });
 /* A student who missed the live class opens the recording: that counts as doing the class */
 route('POST', '/api/sessions/:id/watched', async ctx => {
