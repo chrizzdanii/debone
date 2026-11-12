@@ -65,3 +65,5 @@
   var path = document.querySelector('[data-path]'); if (path) path.textContent = location.pathname + location.search;
   var back = document.querySelector('[data-back]'); if (back) back.addEventListener('click', function(e){ if (history.length > 1) { e.preventDefault(); history.back(); } });
 })();
+/* Register the offline service worker */
+if ('serviceWorker' in navigator) addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){}); });

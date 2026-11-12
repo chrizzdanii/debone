@@ -19,7 +19,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: {} };
     if (opts.body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
     return fetch(url, init).then(function (r) {
-      if (r.status === 401) { location.replace('login.html?next=dashboard'); throw new Error('Please log in.'); }
+      if (r.status === 401) { location.replace('/401.html'); throw new Error('Please log in.'); }
       return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || 'Something went wrong.'); return d; });
     });
   }

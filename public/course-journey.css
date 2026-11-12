@@ -69,3 +69,17 @@
 .finish-bar .btn[disabled]{opacity:.55;cursor:not-allowed;display:inline-flex;align-items:center;gap:6px}
 .finish-bar.is-done .btn[disabled]{opacity:1;cursor:default;background:rgba(107,203,119,.16);border-color:rgba(107,203,119,.5);color:#6BCB77}
 .lesson-btn.gated .st{color:var(--orange)}
+
+/* Live class stages: Locked, Live, Recorded, Finished */
+.stage-rail{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 14px;padding:0;max-width:440px}
+.stage-rail li{position:relative;display:grid;gap:6px;justify-items:start;font-size:.74rem;font-weight:600;color:var(--ash)}
+.stage-rail li i{display:block;height:4px;width:100%;border-radius:4px;background:var(--line);transition:background .5s}
+.stage-rail li.past i{background:var(--teal,#6BCB77)}
+.stage-rail li.now i{background:var(--orange);animation:jBar 1.8s ease-in-out infinite}
+.stage-rail li.now.live i{background:#ff5d73}
+.stage-rail li.now.recorded i{background:#53BDEB;animation:none}
+.stage-rail li.now.finished i{background:var(--teal,#6BCB77);animation:none}
+.stage-rail li.now{color:var(--bone)}
+@keyframes jBar{50%{opacity:.45}}
+.jlocked{display:flex;align-items:center;gap:8px}
+@media (prefers-reduced-motion:reduce){.stage-rail li.now i{animation:none!important}}

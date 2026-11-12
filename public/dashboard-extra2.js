@@ -11,7 +11,7 @@
     if (opts.body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
     init.signal = AbortSignal.timeout(15000);
     var res = await fetch(url, init);
-    if (res.status === 401) { location.replace('login.html?next=dashboard'); throw new Error('Please log in.'); }
+    if (res.status === 401) { location.replace('/401.html'); throw new Error('Please log in.'); }
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok) { var e = new Error(data.error || 'Something went wrong.'); e.status = res.status; throw e; }
     return data;

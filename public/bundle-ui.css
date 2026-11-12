@@ -49,3 +49,16 @@ body.silent .bx-list li{opacity:1;transform:none;transition:none}
 
 /* The website's old list layout is replaced by .bx-grid, so the container itself is a plain block */
 .theme-brand #bd-list,#bd-list{display:block}
+
+/* v53 polish: coming soon, best value, focus, motion */
+.bx-save.soon{background:rgba(255,255,255,.12);color:var(--bone,#f4f4f0)}
+.bx-best{position:absolute;top:14px;right:14px;padding:6px 12px;border-radius:999px;background:var(--teal,#6BCB77);color:#0b0b0b;font:700 .74rem Inter,sans-serif;animation:bxBest 2.6s ease-in-out infinite}
+@keyframes bxBest{50%{transform:translateY(-3px)}}
+.bx-btn.wait{background:transparent;color:var(--bone,#f4f4f0);border:1.5px solid var(--orange,#E0A800)}
+.bx-btn.wait.done{background:rgba(107,203,119,.16);border-color:rgba(107,203,119,.6);color:#6BCB77}
+.bx-btn.busy{opacity:.6;cursor:progress}
+.bx-btn:disabled{cursor:default}
+.bx-waitnote{margin:10px 0 0;text-align:center;color:var(--ash,#9a9a9a);font-size:.82rem}
+.bx-btn:focus-visible,.bx-card a:focus-visible{outline:3px solid var(--orange,#E0A800);outline-offset:3px}
+@media (hover:none){.bx-card:hover{box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.bx-best{animation:none}.bx-card{transition:none;opacity:1;transform:none}}

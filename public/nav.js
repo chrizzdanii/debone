@@ -75,3 +75,53 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(null); });
   if (desktop.addEventListener) desktop.addEventListener('change', function () { closeAll(null); });
 })();
+
+/* v53 polish: current page, scroll progress, calmer phone menu */
+(function () {
+  'use strict';
+  var css = '.nav-progress{position:fixed;left:0;top:0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,#E0A800,#6BCB77);z-index:200;pointer-events:none}' +
+    '.nav nav a[aria-current="page"]:not(.btn){opacity:1;color:#E0A800}.nav nav a[aria-current="page"]:not(.btn)::after{transform:scaleX(1)}' +
+    '.nav .nav-item[aria-current="page"]{background:rgba(224,168,0,.12)}' +
+    '.nav a:focus-visible,.nav button:focus-visible{outline:3px solid #E0A800;outline-offset:3px;border-radius:8px}' +
+    'body.menu-locked{overflow:hidden}' +
+    '@media (prefers-reduced-motion:reduce){.nav-progress{display:none}}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  // 1. Mark the page you are on, in the bar and inside the dropdowns
+  var here = (location.pathname.split('/').pop() || 'index.html').replace(/^$/, 'index.html');
+  if (!/\.html$/.test(here)) here += '.html';
+  document.querySelectorAll('#menu a[href]').forEach(function (a) {
+    var h = a.getAttribute('href').split('#')[0];
+    if (!h || /^https?:/.test(h)) return;
+    var file = h.split('?')[0];
+    var sameQuery = !h.split('?')[1] || location.search.indexOf(h.split('?')[1]) !== -1;
+    if (file === here && sameQuery) {
+      a.setAttribute('aria-current', 'page');
+      var g = a.closest('.nav-group'); var t = g && g.querySelector('.nav-trigger');
+      if (t && !t.getAttribute('aria-current')) t.setAttribute('aria-current', 'page');
+    }
+  });
+
+  // 2. A thin bar that fills as you read
+  var bar = document.createElement('div'); bar.className = 'nav-progress'; bar.setAttribute('aria-hidden', 'true'); document.body.appendChild(bar);
+  var queued = false;
+  function paint() {
+    queued = false;
+    var h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, scrollY / h) : 0) + ')';
+  }
+  addEventListener('scroll', function () { if (!queued) { queued = true; requestAnimationFrame(paint); } }, { passive: true });
+  paint();
+
+  // 3. Phone menu: stop the page scrolling behind it, close when a link is chosen
+  var menu = document.getElementById('menu');
+  if (menu && 'MutationObserver' in window) {
+    new MutationObserver(function () { document.body.classList.toggle('menu-locked', menu.classList.contains('open') && !matchMedia('(min-width: 901px)').matches); })
+      .observe(menu, { attributes: true, attributeFilter: ['class'] });
+    menu.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href]');
+      if (a && menu.classList.contains('open') && !a.classList.contains('nav-trigger')) { var b = document.querySelector('.menu-btn'); if (b) b.click(); }
+    });
+    addEventListener('resize', function () { if (matchMedia('(min-width: 901px)').matches) document.body.classList.remove('menu-locked'); });
+  }
+})();

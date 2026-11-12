@@ -52,7 +52,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     init.signal = AbortSignal.timeout(15000);
     var res = await fetch(url, init);
     if (res.status === 401) {
-      location.replace('login.html?next=dashboard');
+      location.replace('/401.html');
       throw new Error('Please log in to continue.');
     }
     var data = await res.json().catch(function () { return {}; });
@@ -389,11 +389,22 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     return '<section class="jstep ' + state + '"><div class="jdot">' + (state === 'done' ? CHECK_SVG : n) + '</div>' +
       '<div class="jbody"><h3>' + title + '</h3>' + inner + '</div></section>';
   }
+  /* Four clear stages for a live class: Locked, Live, Recorded, Finished */
+  var STAGES = [['locked', 'Locked'], ['live', 'Live'], ['recorded', 'Recorded'], ['finished', 'Finished']];
+  function stageRail(current) {
+    var at = STAGES.findIndex(function (x) { return x[0] === current; });
+    return '<ol class="stage-rail" aria-label="Class progress: ' + STAGES[at][1] + '">' + STAGES.map(function (x, i) {
+      return '<li class="' + (i < at ? 'past' : i === at ? 'now ' + x[0] : '') + '"' + (i === at ? ' aria-current="step"' : '') + '><i></i><span>' + x[1] + '</span></li>';
+    }).join('') + '</ol>';
+  }
   function classStep(j) {
     var req = j.requirements;
     if (!j.sessions.length) return step(3, 'done', 'Live class', '<p class="muted">There is no live class for this lesson.</p>');
     var s = j.sessions[0];
-    var state = req.classDone ? 'done' : 'todo', inner = '<p class="jmeta"><b>' + esc(s.title) + '</b> · ' + esc(fmtWhen(s.startsAt)) + '</p>';
+    var state = req.classDone ? 'done' : 'todo';
+    var isLive = s.status === 'live' || (s.liveOpen && !s.ended);
+    var stage = req.classDone ? 'finished' : isLive ? 'live' : s.ended ? 'recorded' : 'locked';
+    var inner = stageRail(stage) + '<p class="jmeta"><b>' + esc(s.title) + '</b> · ' + esc(fmtWhen(s.startsAt)) + '</p>';
     if (req.classDone) {
       // Two different proofs, shown in plain words: you were there, or you caught up with the recording
       if (req.classHow === 'recording') {
@@ -410,7 +421,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
         ? '<p class="muted">You missed the live class. Watch the recorded video to complete this step.</p><button class="btn btn-solid btn-sm" type="button" data-watch="' + esc(s.id) + '">Watch recorded video</button>'
         : '<p class="muted">The class has ended. The recorded video will appear here as soon as your instructor uploads it.</p>';
     } else {
-      inner += '<p class="muted">The join button appears here when the class starts.</p>' + (s.countdownTo ? '<p class="jcount" data-countdown="' + esc(s.countdownTo) + '"></p>' : '');
+      inner += '<p class="muted jlocked">' + LOCK_SVG + ' Locked. The join button unlocks here when your instructor starts the class.</p>' + (s.countdownTo ? '<p class="jcount" data-countdown="' + esc(s.countdownTo) + '"></p>' : '');
     }
     return step(3, state, 'Live class', inner);
   }

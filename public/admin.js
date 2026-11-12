@@ -169,6 +169,7 @@
       '<section class="lv-hero"><div class="lv-hero-row"><div><p class="eyebrow">Teaching</p><h1>Live <span>classes</span></h1>' +
         '<p class="muted">Schedule a class, link it to a lesson, go live with one tap, and keep the class chat tidy.</p></div>' +
         '<button class="btn btn-solid lv-cta" type="button" id="lv-new">' + ICON.plus + 'Schedule a class</button></div></section>' +
+      '<div id="lv-room"></div>' +
       '<div class="lv-stats" id="lv-stats"></div>' +
       '<div class="lv-grid">' +
         '<aside class="lv-compose" id="lv-compose"><h2><small>New session</small>Schedule a class</h2>' +
@@ -265,6 +266,53 @@
       var on = box.querySelector('button.on'), ind = box.querySelector('.ind');
       if (on) { ind.style.width = on.offsetWidth + 'px'; ind.style.transform = 'translateX(' + on.offsetLeft + 'px)'; }
     }
+    function lifeRail(s) {
+      var rec = !!(s.recordingRaw || s.r2Uploaded);
+      var at = s.status === 'live' ? 1 : s.status === 'ended' ? (rec ? 3 : 2) : 0;
+      return '<ol class="lv-life" aria-label="Class stage">' + [['Scheduled', 'Students see it locked'], ['Live', 'Join button opens'], ['Ended', 'Recording needed'], ['Recorded', 'Students can catch up']].map(function (x, i) {
+        return '<li class="' + (i < at ? 'past' : i === at ? 'now' : '') + '"><i></i><b>' + x[0] + '</b></li>';
+      }).join('') + '</ol>';
+    }
+    function sinceText(iso) {
+      var t = new Date(iso).getTime(); if (isNaN(t)) return '';
+      var m = Math.max(0, Math.floor((Date.now() - t) / 60000));
+      return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min';
+    }
+    function untilText(iso) {
+      var t = new Date(iso).getTime(); if (isNaN(t)) return '';
+      var m = Math.round((t - Date.now()) / 60000);
+      if (m <= 0) return 'Time to start';
+      if (m < 60) return 'in ' + m + ' min';
+      if (m < 1440) return 'in ' + Math.floor(m / 60) + ' h ' + (m % 60) + ' min';
+      return 'in ' + Math.floor(m / 1440) + ' days';
+    }
+    function drawRoom() {
+      var box = view.querySelector('#lv-room'); if (!box) return;
+      var live = sessions.filter(function (x) { return x.status === 'live'; })[0];
+      var next = sessions.filter(function (x) { return x.status === 'scheduled' && x.startsAt; }).sort(function (a, b) { return a.startsAt.localeCompare(b.startsAt); })[0];
+      var needRec = sessions.filter(function (x) { return x.status === 'ended' && !x.recordingRaw && !x.r2Uploaded; }).length;
+      var enrolled = function (x) { return (courses.find(function (c) { return c.id === x.courseId; }) || {}).enrolledCount || 0; };
+      var html = '';
+      if (live) {
+        html = '<article class="lv-room live" data-row data-id="' + esc(live.id) + '"><div class="lv-room-main"><p class="lv-room-k"><i></i>Live now</p><h2>' + esc(live.title) + '</h2>' +
+          '<p class="muted">' + esc(live.courseTitle || '') + '</p></div>' +
+          '<div class="lv-room-nums"><div><b data-since="' + esc(live.liveStartedAt || live.startedAt || live.startsAt) + '">' + esc(sinceText(live.liveStartedAt || live.startedAt || live.startsAt)) + '</b><span>on air</span></div>' +
+          '<div><b>' + (live.attendees || 0) + (enrolled(live) ? '<small> / ' + enrolled(live) + '</small>' : '') + '</b><span>checked in</span></div></div>' +
+          '<div class="lv-actions"><button class="lv-btn stop" type="button" data-set-status="ended">' + ICON.stop + 'End class</button><button class="lv-btn" type="button" data-chat-session="' + esc(live.id) + '">' + ICON.chat + 'Class chat</button></div></article>';
+      } else if (next) {
+        html = '<article class="lv-room next" data-row data-id="' + esc(next.id) + '"><div class="lv-room-main"><p class="lv-room-k">Next class</p><h2>' + esc(next.title) + '</h2>' +
+          '<p class="muted">' + esc(next.courseTitle || '') + ' · ' + esc(new Date(next.startsAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) + '</p></div>' +
+          '<div class="lv-room-nums"><div><b data-until="' + esc(next.startsAt) + '">' + esc(untilText(next.startsAt)) + '</b><span>students see it locked until you go live</span></div></div>' +
+          '<div class="lv-actions"><button class="lv-btn go" type="button" data-set-status="live">' + ICON.play + 'Go live</button></div></article>';
+      }
+      if (needRec) html += '<p class="lv-room-warn" role="status">' + needRec + (needRec === 1 ? ' ended class has' : ' ended classes have') + ' no recording yet. Students who missed the live class cannot finish that lesson until you add one.</p>';
+      box.innerHTML = html;
+    }
+    setInterval(function () {
+      if (!document.getElementById('lv-room')) return;
+      document.querySelectorAll('#lv-room [data-since]').forEach(function (e) { e.textContent = sinceText(e.getAttribute('data-since')); });
+      document.querySelectorAll('#lv-room [data-until]').forEach(function (e) { e.textContent = untilText(e.getAttribute('data-until')); });
+    }, 30000);
     function card(s, i) {
       var d = s.startsAt ? new Date(s.startsAt) : null, valid = d && !isNaN(d);
       var lab = lessonLabel(s, lessonsByCourse), len = s.durationMinutes || 120;
@@ -280,7 +328,8 @@
             '<span class="lv-tag">' + ICON.book.replace('<svg', '<svg width="13" height="13"') + esc(s.courseTitle || '') + '</span>' +
             (lab ? '<span class="lv-tag">' + esc(lab) + '</span>' : '<span class="lv-tag">No lesson linked</span>') +
             '<span class="lv-tag">' + ICON.clock.replace('<svg', '<svg width="13" height="13"') + len + ' min</span>' +
-            (s.recordingRaw ? '<span class="lv-tag">Recording added</span>' : '') + '</div>' +
+            (s.recordingRaw ? '<span class="lv-tag">Recording added</span>' : '') +
+            (s.status === 'ended' && !s.recordingRaw && !s.r2Uploaded ? '<span class="lv-tag due">Recording needed</span>' : '') + '</div>' + lifeRail(s) +
           '<div class="lv-meter"><div class="bar"><i data-w="' + pct + '"></i></div><span><b>' + (s.attendees || 0) + '</b> checked in</span></div></div>' +
           '<div class="lv-actions">' + action +
             '<button class="lv-btn" type="button" data-toggle="edit">' + ICON.edit + 'Edit</button>' +
@@ -319,7 +368,7 @@
       if (flash) { var el = box.querySelector('[data-id="' + flash + '"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
       bindCards();
     }
-    function draw(flash) { drawStats(false); drawTabs(); drawList(flash); }
+    function draw(flash) { drawStats(false); drawTabs(); drawRoom(); drawList(flash); }
 
     async function patch(id, body, okMsg) {
       var r = await api('/api/staff/sessions/' + encodeURIComponent(id), { method: 'PATCH', body: body });
@@ -399,7 +448,7 @@
     }
     view.querySelector('#lv-search').addEventListener('input', function (e) { query = e.target.value; drawList(); });
 
-    drawStats(true); drawTabs(); drawList();
+    drawStats(true); drawTabs(); drawRoom(); drawList();
     window.addEventListener('resize', drawTabs, { once: true });
   }
 

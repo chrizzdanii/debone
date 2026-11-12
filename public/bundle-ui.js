@@ -9,12 +9,15 @@
     var c = ART[i % ART.length];
     return '<div class="bx-img art" style="--a:' + c[0] + ';--b:' + c[1] + '"><span>' + b.courses.length + '</span><em>courses</em></div>';
   }
+  function pct(b) { return Number(b.savingsPercent != null ? b.savingsPercent : b.savePct) || 0; }
   function card(b, i, o) {
-    var buy = b.owned
+    var buy = b.comingSoon && !b.owned
+      ? '<button class="bx-btn wait" type="button" data-wait="' + esc(b.id) + '"><span>Join the waiting list</span><i></i></button><p class="bx-waitnote">' + (b.waitlistCount ? b.waitlistCount + ' waiting. ' : '') + 'We will tell you the moment it opens.</p>'
+      : b.owned
       ? '<a class="bx-btn owned" href="' + (o.dashboard ? '#courses' : 'dashboard.html#courses') + '">You own this bundle · Open my courses</a>'
       : '<button class="bx-btn" type="button" data-bundle="' + esc(b.id) + '"><span>Buy the bundle</span><i></i></button>';
     return '<article class="bx-card" style="--i:' + i + '" data-tilt>' +
-      '<div class="bx-media">' + art(b, i) + (b.savePct > 0 ? '<span class="bx-save">Save ' + b.savePct + '%</span>' : '') + '<span class="bx-count">' + b.courses.length + ' courses · ' + b.lessons + ' lessons</span></div>' +
+      '<div class="bx-media">' + art(b, i) + (b.comingSoon ? '<span class="bx-save soon">Coming soon</span>' : pct(b) > 0 ? '<span class="bx-save">Save ' + pct(b) + '%</span>' : '') + (o.best === b.id && !b.comingSoon ? '<span class="bx-best">Best value</span>' : '') + '<span class="bx-count">' + b.courses.length + ' courses · ' + b.lessons + ' lessons</span></div>' +
       '<div class="bx-body"><p class="bx-eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3>' + (b.description ? '<p class="bx-desc">' + esc(b.description) + '</p>' : '') +
         '<ol class="bx-list">' + b.courses.map(function (c, k) {
           return '<li style="--k:' + k + '"><span class="n">' + (k + 1) + '</span><div><b>' + esc(c.title) + '</b><small>' + esc(c.startDate ? 'Starts ' + c.startDate : 'Start date to be announced') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</small></div></li>';
@@ -55,10 +58,24 @@
     render: function (box, list, opts) {
       opts = opts || {};
       if (!list.length) { box.innerHTML = '<div class="bx-empty"><div class="ring"></div><b>No bundles are open yet</b><p>Individual courses are always available on the Digital Academy page.</p></div>'; return; }
+      var best = list.filter(function (b) { return !b.comingSoon && !b.owned && pct(b) > 0; }).sort(function (a, b) { return pct(b) - pct(a); })[0];
+      opts.best = best ? best.id : null;
       var total = list.reduce(function (t, b) { return t + b.savings; }, 0);
-      box.innerHTML = (total > 0 ? '<p class="bx-banner">Buy together and save up to <b>' + Math.max.apply(null, list.map(function (b) { return b.savePct; })) + '%</b></p>' : '') +
+      box.innerHTML = (total > 0 ? '<p class="bx-banner">Buy together and save up to <b>' + Math.max.apply(null, list.map(pct)) + '%</b></p>' : '') +
         '<div class="bx-grid">' + list.map(function (b, i) { return card(b, i, opts); }).join('') + '</div>';
       enhance(box);
+      box.querySelectorAll('[data-wait]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          btn.disabled = true; btn.classList.add('busy');
+          fetch('/api/bundles/' + encodeURIComponent(btn.getAttribute('data-wait')) + '/waitlist', { method: 'POST', credentials: 'same-origin' })
+            .then(function (r) {
+              if (r.status === 401) { location.href = 'login.html?next=bundles'; return; }
+              btn.classList.remove('busy');
+              if (r.ok) { btn.classList.add('done'); btn.querySelector('span').textContent = 'You are on the list ✓'; }
+              else { btn.disabled = false; btn.querySelector('span').textContent = 'Try again'; }
+            }).catch(function () { btn.classList.remove('busy'); btn.disabled = false; btn.querySelector('span').textContent = 'Try again'; });
+        });
+      });
       box.querySelectorAll('[data-bundle]').forEach(function (btn) {
         btn.addEventListener('click', function () { if (opts.onBuy) opts.onBuy(btn.getAttribute('data-bundle'), btn); });
       });

@@ -142,3 +142,32 @@
 @media (max-width:1060px){.lv-grid{grid-template-columns:1fr}.lv-compose{position:static}.lv-stats{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:640px){.lv-row{grid-template-columns:62px 1fr;gap:14px;padding:16px 14px 16px 18px}.lv-row .lv-actions{grid-column:1/-1}.lv-two{grid-template-columns:1fr}.lv-drawer .in{padding-inline:16px}}
 @media (prefers-reduced-motion:reduce){.lv *,.lv *::before,.lv *::after{animation:none!important;transition:none!important}}
+
+/* ---------- Control room: what is on air, or what is next ---------- */
+.lv-room{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:22px;padding:clamp(18px,3vw,28px);border:1px solid var(--line);border-radius:24px;background:#121212;animation:lvRise .5s both}
+.lv-room.live{border-color:rgba(255,77,109,.6);background:linear-gradient(120deg,rgba(255,77,109,.14),#121212 60%);box-shadow:0 24px 60px -34px rgba(255,77,109,.7)}
+.lv-room.next{border-color:rgba(224,168,0,.45);background:linear-gradient(120deg,rgba(224,168,0,.1),#121212 60%)}
+.lv-room h2{font-size:clamp(1.3rem,3vw,1.9rem);line-height:1.1;margin:6px 0 4px}
+.lv-room-k{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.lv-room.live .lv-room-k{color:var(--live)}
+.lv-room-k i{width:10px;height:10px;border-radius:50%;background:var(--live);animation:lvPing 1.4s infinite}
+@keyframes lvPing{0%{box-shadow:0 0 0 0 rgba(255,77,109,.7)}100%{box-shadow:0 0 0 14px rgba(255,77,109,0)}}
+.lv-room-nums{display:flex;gap:26px}
+.lv-room-nums b{display:block;font:400 1.7rem Anton,Impact,sans-serif;line-height:1.1}
+.lv-room-nums b small{font-size:.95rem;color:var(--ash)}
+.lv-room-nums span{color:var(--ash);font-size:.8rem;max-width:18ch;display:block}
+.lv-room-warn{margin:0;padding:12px 16px;border:1px dashed rgba(224,168,0,.55);border-radius:14px;color:var(--gold);font-size:.9rem;background:rgba(224,168,0,.06)}
+#lv-room{display:grid;gap:12px}
+#lv-room:empty{display:none}
+
+/* ---------- Class life cycle on each card ---------- */
+.lv-life{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0 4px;padding:0;max-width:460px}
+.lv-life li{display:grid;gap:5px;font-size:.72rem;color:var(--ash)}
+.lv-life li i{display:block;height:4px;border-radius:4px;background:var(--line)}
+.lv-life li.past i{background:var(--ok)}
+.lv-life li.now{color:var(--bone,#f4f4f0)}
+.lv-life li.now i{background:var(--gold)}
+.lv-card.st-live .lv-life li.now i{background:var(--live);animation:lvBar 1.6s ease-in-out infinite}
+@keyframes lvBar{50%{opacity:.4}}
+@media (max-width:760px){.lv-room{grid-template-columns:1fr}.lv-room-nums{gap:20px}}
+@media (prefers-reduced-motion:reduce){.lv-room,.lv-room-k i,.lv-card.st-live .lv-life li.now i{animation:none!important}}
