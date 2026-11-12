@@ -43,7 +43,7 @@ const r2Ready = () => !!(R2_BUCKET && R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY
 let r2Client;
 function r2() {
   if (!r2Ready()) throw httpError(503, 'Private recording storage is not configured. Contact the administrator.');
-  if (!r2Client) r2Client = new S3Client({ region: 'auto', requestChecksumCalculation: 'WHEN_REQUIRED', responseChecksumValidation: 'WHEN_REQUIRED', endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  if (!r2Client) r2Client = new S3Client({ region: 'auto', forcePathStyle: true, requestChecksumCalculation: 'WHEN_REQUIRED', responseChecksumValidation: 'WHEN_REQUIRED', endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY } });
   return r2Client;
 }
@@ -1461,11 +1461,16 @@ route('GET', '/api/staff/r2-diagnostics', async ctx => {
     await r2().send(new HeadBucketCommand({ Bucket: R2_BUCKET }));
     json(ctx.res, 200, { configured: true, serverReachable: true, issue: null });
   } catch (e) {
-    const status = e && e.$metadata && e.$metadata.httpStatusCode;
-    const name = e && e.name;
-    json(ctx.res, 200, { configured: true, serverReachable: false, status: status || null,
-      issue: status === 403 ? 'R2 credentials do not have access to this bucket.' : status === 404 ? 'R2 bucket not found in this account.' :
-        name === 'TimeoutError' ? 'Vercel cannot reach Cloudflare R2.' : 'R2 server check failed (' + String(name || 'connection error').slice(0,60) + ').' });
+    const status = e?.$metadata?.httpStatusCode || null;
+    const name = String(e?.name || 'UnknownError').slice(0, 60);
+    const code = String(e?.code || e?.cause?.code || '').slice(0, 50);
+    // Avoid leaking S3 signed URLs, keys, or credential values in diagnostics.
+    const issue = status === 403 ? 'R2 rejected bucket access (403). Check token permissions and bucket scope.'
+      : status === 404 ? 'R2 bucket not found (404). Check bucket name and account ID.'
+      : code === 'ENOTFOUND' ? 'R2 hostname could not be resolved from Vercel (ENOTFOUND).'
+      : code === 'ETIMEDOUT' || code === 'ECONNRESET' ? 'Vercel network connection to R2 failed (' + code + ').'
+      : 'R2 request failed: ' + name + (code ? ' [' + code + ']' : '') + (status ? ' HTTP ' + status : '') + '.';
+    json(ctx.res, 200, { configured: true, serverReachable: false, status, issue });
   }
 });
 /* R2 direct browser uploads: MP4 bytes go to private R2, never through the app's JSON request body. */
