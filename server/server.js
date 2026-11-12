@@ -3320,22 +3320,37 @@ function countView(p) {
   db.pageViews[p][day] = (db.pageViews[p][day] || 0) + 1;
   pageViewsDirty = true;
 }
+/* ---------- Branded error pages (public/404.html, 403.html, 500.html, 503.html) ---------- */
+function sendErrorPage(res, status) {
+  const page = path.join(PUBLIC_DIR, status + '.html');
+  fs.readFile(page, (err, data) => {
+    const headers = { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
+    if (status === 503) headers['Retry-After'] = '300';
+    if (res.headersSent) return;
+    if (err) { res.writeHead(status, headers); return res.end('<h1 style="font-family:sans-serif">' + (status === 404 ? 'Page not found' : 'Something went wrong') + '</h1><p><a href="/">Back to home</a></p>'); }
+    res.writeHead(status, headers);
+    res.end(data);
+  });
+}
+// Set MAINTENANCE_MODE=1 in the environment to show the maintenance page to visitors. Staff pages and /api stay reachable.
+const MAINTENANCE_OPEN = /^\/(api\/|staff-login|admin|error-pages\.|favicon|503)/;
+
 function serveStatic(req, res, pathname, user) {
   let p = decodeURIComponent(pathname);
   if (p === '/') p = '/index.html';
   if (p === '/dashboard' || p === '/admin') p += '.html';   // Vercel serves clean URLs without .html
+  if (process.env.MAINTENANCE_MODE === '1' && !isStaff(user) && !MAINTENANCE_OPEN.test(p) && (/\.html$/.test(p) || !path.extname(p))) return sendErrorPage(res, 503);
   countView(p);
   if (p === '/dashboard.html' && !user) { res.writeHead(302, { Location: '/login.html?next=dashboard' }); return res.end(); }
   if (p === '/admin.html' && !isStaff(user)) { res.writeHead(302, { Location: '/staff-login.html' }); return res.end(); }
   // The dashboard and admin pages sit outside public/ so that only signed-in people can load them (Vercel serves public/ to everyone)
   const baseDir = (p === '/dashboard.html' || p === '/admin.html') ? PRIVATE_DIR : PUBLIC_DIR;
   let file = path.join(baseDir, path.normalize(p));
-  if (!file.startsWith(baseDir + path.sep) && file !== baseDir) { res.writeHead(403); return res.end('Forbidden'); }
+  if (!file.startsWith(baseDir + path.sep) && file !== baseDir) return sendErrorPage(res, 403);
   if (!path.extname(file) && fs.existsSync(file + '.html')) file += '.html';
   fs.readFile(file, (err, data) => {
     if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end('<h1 style="font-family:sans-serif">Page not found</h1><p><a href="/">Back to home</a></p>');
+      return sendErrorPage(res, 404);
     }
     res.writeHead(200, {
       'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
@@ -3469,6 +3484,7 @@ async function handler(req, res) {
   } catch (err) {
     if (err.status) return json(res, err.status, { error: err.message });
     console.error(err);
+    if (!pathname.startsWith('/api/') && String(req.headers.accept || '').includes('text/html')) return sendErrorPage(res, 500);
     return json(res, 500, { error: 'Something went wrong. Please try again.' });
   }
 }
