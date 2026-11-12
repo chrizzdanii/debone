@@ -1758,11 +1758,18 @@ route('GET', '/api/staff/purchases', async ctx => {
 /* ============ Course bundles ============ */
 function bundleView(b) {
   const courses = (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean);
-  const value = courses.reduce((t, c) => t + (c.price || 0), 0);
+  const courseTotal = courses.reduce((t, c) => t + (c.price || 0), 0);
+  // The crossed-out "normal price". If admin typed one it is used until the offer end date passes; otherwise the courses' own prices added together.
+  const manual = Number(b.originalPrice) > b.price ? Number(b.originalPrice) : 0;
+  let offerEndsAt = null, offerOver = false;
+  if (b.offerEnds) { offerEndsAt = new Date(b.offerEnds + 'T23:59:59').toISOString(); offerOver = new Date(offerEndsAt).getTime() < Date.now(); }
+  const value = manual ? (offerOver ? b.price : manual) : courseTotal;
   return { id: b.id, title: b.title, description: b.description || '', price: b.price, active: b.active !== false,
+    comingSoon: !!b.comingSoon, originalPrice: manual || 0, offerEnds: b.offerEnds || null, offerEndsAt: manual && !offerOver ? offerEndsAt : null, courseTotal,
+    waitlistCount: (db.waitlist || []).filter(w => w.bundleId === b.id).length,
     hasImage: !!b.image, imageV: b.image ? b.image.length % 100000 : 0, value, savings: Math.max(0, value - b.price), savingsPercent: value > b.price ? Math.round(((value - b.price) / value) * 100) : 0,
     students: db.enrollments.filter(e => e.status === 'active' && (b.courseIds || []).includes(e.courseId)).length,
-    courses: courses.map(c => ({ id: c.id, title: c.title, price: c.price || 0, startDate: c.startDate || null, schedule: c.schedule || null, instructor: c.instructor || null, lessons: (c.lessons || []).length })) };
+    courses: courses.map(c => ({ id: c.id, title: c.title, comingSoon: !!c.comingSoon, price: c.price || 0, startDate: c.startDate || null, schedule: c.schedule || null, instructor: c.instructor || null, lessons: (c.lessons || []).length })) };
 }
 function bundleInput(b) {
   const title = clean(b.title, 120);
@@ -1771,7 +1778,8 @@ function bundleInput(b) {
   if (ids.length < 2) throw httpError(400, 'A bundle needs at least two courses.');
   const courses = ids.map(id => db.courses.find(c => c.id === id));
   if (courses.some(c => !c)) throw httpError(400, 'One of the chosen courses does not exist.');
-  if (courses.some(c => c.comingSoon)) throw httpError(400, 'Coming soon courses cannot be sold in a bundle yet.');
+  const comingSoon = b.comingSoon === true || b.comingSoon === 'true';
+  if (!comingSoon && courses.some(c => c.comingSoon)) throw httpError(400, 'A course in this bundle is still coming soon. Set the bundle to "Coming soon" too, or choose open courses only.');
   for (let i = 0; i < courses.length; i++) for (let j = i + 1; j < courses.length; j++) {
     const a = courses[i], c2 = courses[j];
     if (a.startDate && a.startDate === c2.startDate && a.schedule && a.schedule === c2.schedule)
@@ -1779,21 +1787,26 @@ function bundleInput(b) {
   }
   const price = Math.max(0, Math.round(Number(b.price) || 0));
   if (!price) throw httpError(400, 'Set the bundle price in naira.');
+  const originalPrice = Math.max(0, Math.round(Number(b.originalPrice) || 0));
+  if (originalPrice && originalPrice <= price) throw httpError(400, 'The normal (crossed-out) price must be higher than the bundle price.');
+  const offerEnds = b.offerEnds ? String(b.offerEnds) : '';
+  if (offerEnds && !/^\d{4}-\d{2}-\d{2}$/.test(offerEnds)) throw httpError(400, 'Enter the offer end date as a date.');
   const image = String(b.image || '');
   if (image && !/^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(image)) throw httpError(400, 'Upload a PNG, JPEG or WebP image.');
   if (image.length > 700000) throw httpError(400, 'Bundle image is too large (maximum 500 KB).');
-  return { title, image, description: clean(b.description, 1000), price, courseIds: ids, active: b.active !== false && b.active !== 'false' };
+  return { title, image, description: clean(b.description, 1000), price, originalPrice: originalPrice || null, offerEnds: offerEnds || null, comingSoon, courseIds: ids, active: b.active !== false && b.active !== 'false' };
 }
 route('GET', '/api/bundles', async ctx => json(ctx.res, 200, { bundles: db.bundles.filter(b => b.active !== false).map(b => {
   const v = bundleView(b);
   // For a signed-in student: which courses of the bundle they already own
-  if (ctx.user) { v.courses.forEach(c => { c.owned = !!enrollmentFor(ctx.user.id, c.id); }); v.ownedCount = v.courses.filter(c => c.owned).length; v.owned = v.ownedCount === v.courses.length; }
+  if (ctx.user) { v.courses.forEach(c => { c.owned = !!enrollmentFor(ctx.user.id, c.id); }); v.ownedCount = v.courses.filter(c => c.owned).length; v.owned = v.ownedCount === v.courses.length; v.onWaitlist = (db.waitlist || []).some(w => w.bundleId === b.id && w.userId === ctx.user.id); }
   return v;
 }) }));
 route('POST', '/api/bundles/:id/buy', async ctx => {
   const user = requireUser(ctx);
   const b = db.bundles.find(x => x.id === ctx.params.id && x.active !== false);
   if (!b) throw httpError(404, 'Bundle not found');
+  if (b.comingSoon) throw httpError(403, 'This bundle is coming soon. Join the waiting list and we will tell you the moment it opens.');
   if (b.courseIds.every(cid => enrollmentFor(user.id, cid))) return json(ctx.res, 200, { alreadyOwned: true });
   const qr = qrOffer(user), price = qr ? Math.round(b.price * (100 - qr.percent) / 100) : b.price;
   return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: price })) });
@@ -1818,8 +1831,44 @@ route('PATCH', '/api/staff/bundles/:id', async ctx => {
   const input = bundleInput(ctx.body);
   // Keep the current picture unless a new one was sent or it was removed
   if (ctx.body.image === undefined && ctx.body.removeImage !== true) input.image = b.image || '';
+  const wasSoon = !!b.comingSoon;
   Object.assign(b, input);
+  if (wasSoon && !b.comingSoon) notifyBundleWaitlist(b);
   save(); json(ctx.res, 200, { ok: true });
+});
+function notifyBundleWaitlist(b) {
+  let told = 0;
+  (db.waitlist || []).filter(w => w.bundleId === b.id && !w.notifiedAt).forEach(w => {
+    w.notifiedAt = now(); told++;
+    notify(w.userId, b.title + ' is now open!', 'The bundle you were waiting for has launched. Get it before the offer ends.', '#bundle/' + b.id, { kind: 'update' });
+  });
+  return told;
+}
+route('POST', '/api/bundles/:id/waitlist', async ctx => {
+  const user = requireUser(ctx);
+  const b = db.bundles.find(x => x.id === ctx.params.id && x.active !== false);
+  if (!b) throw httpError(404, 'Bundle not found');
+  if (!b.comingSoon) throw httpError(400, 'This bundle is already open. You can buy it now.');
+  db.waitlist = db.waitlist || [];
+  if (!db.waitlist.some(w => w.bundleId === b.id && w.userId === user.id)) {
+    db.waitlist.push({ id: uid(6), bundleId: b.id, userId: user.id, name: user.name, email: user.email, phone: user.phone || '', createdAt: now(), notifiedAt: null });
+  }
+  save(); json(ctx.res, 200, { ok: true, waitlistCount: db.waitlist.filter(w => w.bundleId === b.id).length });
+});
+route('DELETE', '/api/bundles/:id/waitlist', async ctx => {
+  const user = requireUser(ctx);
+  db.waitlist = (db.waitlist || []).filter(w => !(w.bundleId === ctx.params.id && w.userId === user.id));
+  save(); json(ctx.res, 200, { ok: true });
+});
+route('POST', '/api/staff/bundles/:id/launch', async ctx => {
+  requireStaff(ctx, true);
+  const b = db.bundles.find(x => x.id === ctx.params.id);
+  if (!b) throw httpError(404, 'Bundle not found');
+  const wasSoon = !!b.comingSoon;
+  if (b.courseIds.some(cid => (db.courses.find(c => c.id === cid) || {}).comingSoon)) throw httpError(400, 'A course inside this bundle is still marked Coming soon. Launch that course first.');
+  b.comingSoon = false;
+  const told = wasSoon ? notifyBundleWaitlist(b) : 0;
+  save(); json(ctx.res, 200, { ok: true, notified: told });
 });
 route('DELETE', '/api/staff/bundles/:id', async ctx => {
   requireStaff(ctx, true);
@@ -3120,8 +3169,13 @@ route('GET', '/api/staff/waitlist', async ctx => {
     const people = list.filter(w => w.courseId === c.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     return { id: c.id, title: c.title, comingSoon: !!c.comingSoon, price: c.price, minStudents: c.minStudents || null, count: people.length,
       people: people.map(w => { const u = db.users.find(x => x.id === w.userId) || {}; return { id: w.id, name: u.name || w.name, email: u.email || w.email, phone: u.phone || w.phone || '', createdAt: w.createdAt, notified: !!w.notifiedAt }; }) };
-  }).filter(c => c.count > 0 || c.comingSoon).sort((a, b) => b.count - a.count);
-  json(ctx.res, 200, { courses, total: list.length });
+  }).filter(c => c.count > 0 || c.comingSoon);
+  const bundles = db.bundles.map(b => {
+    const people = list.filter(w => w.bundleId === b.id).sort((a, c) => a.createdAt.localeCompare(c.createdAt));
+    return { kind: 'bundle', id: b.id, title: b.title, comingSoon: !!b.comingSoon, price: b.price, minStudents: null, count: people.length,
+      people: people.map(w => { const u = db.users.find(x => x.id === w.userId) || {}; return { id: w.id, name: u.name || w.name, email: u.email || w.email, phone: u.phone || w.phone || '', createdAt: w.createdAt, notified: !!w.notifiedAt }; }) };
+  }).filter(c => c.count > 0 || c.comingSoon);
+  json(ctx.res, 200, { courses: courses.concat(bundles).sort((a, b) => b.count - a.count), total: list.length });
 });
 route('POST', '/api/staff/courses/:id/launch', async ctx => {
   requireStaff(ctx, true);
