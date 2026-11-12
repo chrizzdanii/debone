@@ -67,3 +67,58 @@
 .bx-upact{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.bx-upact small{flex-basis:100%}
 @media(max-width:520px){.bx-up{grid-template-columns:1fr}.bx-stats{grid-template-columns:1fr 1fr 1fr}}
 @media (prefers-reduced-motion:reduce){.bw-card,.bw-courses li,.bx-card{transition:none;animation:none;opacity:1;transform:none}.bw-card::before,.bw-foot .btn::after,.bw-ribbon{animation:none}}
+
+/* ===== v2: offer panel, coming soon, waiting list (public + student) ===== */
+.bw-ribbon.soon{background:#1FE0C4;color:#06201C}
+.bw-card.is-soon:hover{border-color:#1FE0C4;box-shadow:0 30px 70px -30px rgba(31,224,196,.4)}
+.bw-offer{display:grid;gap:8px;margin-top:auto;padding:16px 18px;border-radius:18px;border:1px solid rgba(224,168,0,.42);background:linear-gradient(135deg,rgba(224,168,0,.14),rgba(255,90,31,.07))}
+.bw-offer.soon{border-color:rgba(31,224,196,.4);background:linear-gradient(135deg,rgba(31,224,196,.1),rgba(224,168,0,.05))}
+.bw-offer-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-height:28px}
+.bw-pct{display:inline-block;padding:4px 12px;border-radius:999px;background:linear-gradient(135deg,#FF5A1F,#E0A800);color:#0A0A0C;font:400 .95rem Anton,Impact,sans-serif;letter-spacing:.06em}
+.bw-tag{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ash);font-weight:700}
+.bw-cd{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;font-weight:600;color:#F7D35C;font-variant-numeric:tabular-nums}
+.bw-cd i{width:8px;height:8px;border-radius:50%;background:#FF5A1F;animation:bwPing 1.6s infinite}
+.bw-cd em{font-style:normal}.bw-cd.urgent{color:#ff8a5c}.bw-cd.ended{color:var(--ash)}.bw-cd.ended i{animation:none;background:var(--ash)}
+@keyframes bwPing{0%{box-shadow:0 0 0 0 rgba(255,90,31,.7)}70%,100%{box-shadow:0 0 0 8px rgba(255,90,31,0)}}
+.bw-prices{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.bw-prices b{font:400 2.5rem/1 Anton,Impact,sans-serif;color:#F7D35C;letter-spacing:.01em}
+.bw-prices s{color:var(--ash);font-size:1.15rem;text-decoration-color:#FF5A1F;text-decoration-thickness:2px}
+.bw-body .bw-saveline{margin:0;font-size:.84rem;color:var(--bone,#F2EDE4)}.bw-saveline strong{color:#6BCB77}.bw-body .bw-saveline.muted{color:var(--ash)}
+.bw-cta{width:100%;justify-content:center;text-align:center;padding-block:15px;font-size:1rem;position:relative;overflow:hidden}
+.bw-cta.btn-solid::after{content:"";position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);animation:bwShine 3.2s infinite}
+.bw-wl-in{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;border:1px solid rgba(107,203,119,.4);background:rgba(107,203,119,.08)}
+.bw-wl-ok{color:#6BCB77;font-weight:700;font-size:.9rem}
+.bw-body .bw-wl-count{margin:-4px 0 0;text-align:center;font-size:.78rem}
+
+/* ===== v2: admin bundle editor ===== */
+.bx-card .bx-state{text-transform:none}
+.bd-count{font-style:normal;color:var(--orange,#E0A800);text-transform:none;letter-spacing:0;font-weight:600;margin-left:4px}
+.bd-seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bd-segopt{position:relative;display:block;cursor:pointer;text-transform:none;letter-spacing:0}
+.bd-segopt input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.bd-segopt span{display:grid;gap:3px;height:100%;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:#0d0d10;transition:border-color .25s,background .25s,box-shadow .25s}
+.bd-segopt b{font-size:.92rem;font-weight:700;color:var(--bone,#F2EDE4)}
+.bd-segopt small{font-size:.76rem;font-weight:400;color:var(--ash);line-height:1.4}
+.bd-segopt:hover span{border-color:rgba(244,244,240,.3)}
+.bd-segopt input:checked+span{border-color:var(--orange,#E0A800);background:rgba(224,168,0,.1);box-shadow:0 0 0 1px var(--orange,#E0A800) inset}
+.bd-segopt.soon input:checked+span{border-color:#1FE0C4;background:rgba(31,224,196,.09);box-shadow:0 0 0 1px #1FE0C4 inset}
+.bd-segopt input:focus-visible+span{outline:2px solid #fff;outline-offset:2px}
+.bd-pick{display:grid;gap:8px;max-height:310px;overflow:auto;padding:2px 4px 2px 0}
+.bd-opt{position:relative;display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#0d0d10;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;transition:border-color .2s,background .2s}
+.bd-opt:hover{border-color:rgba(244,244,240,.3)}
+.bd-opt.on{border-color:var(--orange,#E0A800);background:rgba(224,168,0,.08)}
+.bd-opt input{position:absolute;opacity:0;pointer-events:none}
+.bd-opt input:focus-visible~.bd-tick{outline:2px solid #fff;outline-offset:2px}
+.bd-tick{width:20px;height:20px;border-radius:6px;border:2px solid rgba(244,244,240,.3);display:grid;place-items:center;transition:background .2s,border-color .2s}
+.bd-opt.on .bd-tick{background:var(--orange,#E0A800);border-color:var(--orange,#E0A800)}
+.bd-opt.on .bd-tick::after{content:"";width:5px;height:10px;border:solid #0B0B0B;border-width:0 2.5px 2.5px 0;transform:translateY(-1px) rotate(45deg)}
+.bd-main{display:grid;gap:2px;min-width:0}.bd-main b{font-size:.9rem;font-weight:600;color:var(--bone,#F2EDE4)}.bd-main small{font-size:.74rem;color:var(--ash)}
+.bd-soon{font-style:normal;color:#1FE0C4;font-weight:700}
+.bd-pr{font-weight:700;color:#F7D35C;font-size:.86rem;white-space:nowrap}
+.bd-pricing{display:grid;gap:14px;padding:18px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+.bd-pricing-h{display:grid;gap:2px}.bd-pricing-h b{font-size:.95rem;color:var(--bone,#F2EDE4);text-transform:none;letter-spacing:0}.bd-pricing-h span{font-size:.82rem;color:var(--ash);text-transform:none;letter-spacing:0;font-weight:400}
+.bd-pricing .offer-fields{margin:0}
+.bd-link{background:none;border:0;padding:0;font:inherit;color:var(--orange,#E0A800);text-decoration:underline;cursor:pointer;text-transform:none;letter-spacing:0}
+@media(max-width:560px){.bd-seg{grid-template-columns:1fr}.bd-opt{grid-template-columns:22px 1fr}.bd-pr{grid-column:2}}
+@media (prefers-reduced-motion:reduce){.bw-cd i,.bw-cta.btn-solid::after{animation:none}}
+.bd-pricing>.grid-2{align-items:start}

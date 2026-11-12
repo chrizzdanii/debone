@@ -1427,28 +1427,44 @@
     var d = await api('/api/staff/bundles'), courses = (await api('/api/courses')).courses;
     function form(b) {
       var isNew = !b, it = b || { courseIds: [] }, picked = null, removed = false;
-      DModal.open({ size: 'md', eyebrow: isNew ? 'New bundle' : 'Edit bundle', title: isNew ? 'Create a bundle' : esc(it.title), body:
+      DModal.open({ size: 'lg', eyebrow: isNew ? 'New bundle' : 'Edit bundle', title: isNew ? 'Create a bundle' : esc(it.title), body:
         '<form class="sub-form" id="bdf">' +
         '<div class="field"><label>Bundle picture</label><div class="bx-up" id="bx-up"><div class="bx-prev" id="bx-prev">' + (it.hasImage ? '<img src="/api/bundles/' + esc(it.id) + '/image?v=' + it.imageV + '" alt="">' : '<span>No picture yet</span>') + '</div>' +
           '<div class="bx-upact"><label class="btn btn-ghost btn-sm" for="bx-file">Upload picture</label><input type="file" id="bx-file" accept="image/png,image/jpeg,image/webp" hidden>' +
           '<button type="button" class="btn btn-ghost btn-sm" id="bx-rm"' + (it.hasImage ? '' : ' hidden') + '>Remove</button><small class="muted">JPG, PNG or WebP. It is cropped to 16:9 and compressed for you.</small></div></div></div>' +
         '<div class="field"><label>Bundle title</label><input class="input" name="title" required maxlength="120" value="' + esc(it.title || '') + '"></div>' +
-        '<div class="field"><label>Description</label><textarea class="input" name="description" rows="2" maxlength="1000">' + esc(it.description || '') + '</textarea></div>' +
-        '<div class="field"><label>Courses in the bundle (choose two or more)</label><div class="bd-pick">' + courses.filter(function (c) { return !c.comingSoon; }).map(function (c) {
-          return '<label class="bd-opt"><input type="checkbox" name="courseIds" value="' + esc(c.id) + '"' + (it.courseIds.indexOf(c.id) !== -1 ? ' checked' : '') + '> ' + esc(c.title) + (c.price ? ' · ' + naira(c.price) : '') + (c.startDate ? ' · starts ' + esc(c.startDate) : '') + '</label>';
-        }).join('') + '</div></div>' +
-        '<div class="grid-2"><div class="field"><label>Bundle price in naira</label><input class="input" type="number" name="price" min="1" required value="' + (it.price || '') + '"><small class="hint" id="bx-save"></small></div>' +
-        '<div class="field"><label>Visible on the website</label><select class="input" name="active"><option value="true"' + (it.active !== false ? ' selected' : '') + '>Yes</option><option value="false"' + (it.active === false ? ' selected' : '') + '>No</option></select></div></div>' +
+        '<div class="field"><label>Description</label><textarea class="input" name="description" rows="3" maxlength="1000">' + esc(it.description || '') + '</textarea></div>' +
+        '<div class="field"><label>Sale status</label><div class="bd-seg" role="radiogroup" aria-label="Sale status">' +
+          '<label class="bd-segopt"><input type="radio" name="comingSoon" value="false"' + (it.comingSoon ? '' : ' checked') + '><span><b>Open for sale</b><small>Students can pay for it now.</small></span></label>' +
+          '<label class="bd-segopt soon"><input type="radio" name="comingSoon" value="true"' + (it.comingSoon ? ' checked' : '') + '><span><b>Coming soon</b><small>Shows a “Join waiting list” button instead of Buy.</small></span></label></div></div>' +
+        '<div class="field"><label>Courses in the bundle <em class="bd-count" id="bd-count"></em></label><div class="bd-pick">' + courses.map(function (c) {
+          var chk = it.courseIds.indexOf(c.id) !== -1;
+          return '<label class="bd-opt' + (chk ? ' on' : '') + '"><input type="checkbox" name="courseIds" value="' + esc(c.id) + '"' + (chk ? ' checked' : '') + '><span class="bd-tick" aria-hidden="true"></span>' +
+            '<span class="bd-main"><b>' + esc(c.title) + '</b><small>' + (c.comingSoon ? '<i class="bd-soon">Coming soon</i> ' : '') + (c.startDate ? 'Starts ' + esc(c.startDate) : 'Start date not set') + '</small></span>' +
+            '<span class="bd-pr">' + (c.price ? naira(c.price) : 'Free') + '</span></label>';
+        }).join('') + '</div><small class="hint">Choose two or more. Coming-soon courses can only go in a bundle that is also set to Coming soon.</small></div>' +
+        '<div class="bd-pricing"><div class="bd-pricing-h"><b>Pricing</b><span>The price students pay, and an optional higher “normal price” shown crossed out beside it.</span></div>' +
+        '<div class="grid-2"><div class="field"><label>Bundle price (NGN)</label><input class="input" type="number" name="price" min="1" required value="' + (it.price || '') + '" placeholder="e.g. 50000"><small class="hint" id="bx-save"></small></div>' +
+        '<div class="field"><label>Visible on the website</label><select class="input" name="active"><option value="true"' + (it.active !== false ? ' selected' : '') + '>Yes</option><option value="false"' + (it.active === false ? ' selected' : '') + '>No, keep it hidden</option></select></div></div>' +
+        offerFields(it.originalPrice, it.offerEnds) + '</div>' +
         '<p class="form-error" id="bdf-err" role="alert"></p><div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid">' + (isNew ? 'Create bundle' : 'Save changes') + '</button></div></form>',
         onMount: function (box, inst) {
           var f = box.querySelector('#bdf'), prev = box.querySelector('#bx-prev'), rm = box.querySelector('#bx-rm'), err = box.querySelector('#bdf-err');
           box.querySelector('[data-cancel]').addEventListener('click', inst.close);
+          function picks() { return Array.prototype.slice.call(f.querySelectorAll('[name=courseIds]:checked')).map(function (x) { return x.value; }); }
           function savings() {
-            var ids = Array.prototype.slice.call(f.querySelectorAll('[name=courseIds]:checked')).map(function (x) { return x.value; });
-            var val = ids.reduce(function (t, id) { var c = courses.find(function (x) { return x.id === id; }); return t + (c ? c.price || 0 : 0); }, 0), p = Number(f.elements.price.value) || 0;
-            box.querySelector('#bx-save').textContent = val ? 'Courses cost ' + naira(val) + ' separately' + (p && p < val ? ' · students save ' + naira(val - p) + ' (' + Math.round((val - p) / val * 100) + '%)' : '') : '';
+            var ids = picks();
+            var val = ids.reduce(function (t, id) { var c = courses.find(function (x) { return x.id === id; }); return t + (c ? c.price || 0 : 0); }, 0);
+            box.querySelector('#bx-save').innerHTML = val ? 'Courses cost ' + naira(val) + ' separately. <button type="button" class="bd-link" data-fill-orig="' + val + '">Use as normal price</button>' : '';
+            box.querySelector('#bd-count').textContent = ids.length ? '· ' + ids.length + ' selected' : '';
+            f.querySelectorAll('.bd-opt').forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); });
           }
-          f.addEventListener('input', savings); f.addEventListener('change', savings); savings();
+          f.addEventListener('change', savings); savings();
+          bindOfferPreview(f);
+          f.addEventListener('click', function (e) {
+            var t = e.target.closest('[data-fill-orig]'); if (!t) return;
+            f.elements.originalPrice.value = t.getAttribute('data-fill-orig'); f.elements.originalPrice.dispatchEvent(new Event('input', { bubbles: true }));
+          });
           box.querySelector('#bx-file').addEventListener('change', async function () {
             if (!this.files[0]) return; err.textContent = '';
             try { picked = await bundlePicture(this.files[0]); removed = false; prev.innerHTML = '<img src="' + picked + '" alt="">'; rm.hidden = false; }
@@ -1458,27 +1474,29 @@
           rm.addEventListener('click', function () { picked = null; removed = true; prev.innerHTML = '<span>No picture yet</span>'; rm.hidden = true; });
           f.addEventListener('submit', async function (e) {
             e.preventDefault(); err.textContent = '';
-            var ids = Array.prototype.slice.call(f.querySelectorAll('[name=courseIds]:checked')).map(function (x) { return x.value; });
-            var body = { title: fv(f, 'title'), description: fv(f, 'description'), price: fv(f, 'price'), active: fv(f, 'active') === 'true', courseIds: ids };
+            var ids = picks();
+            var soonEl = f.querySelector('[name=comingSoon]:checked');
+            var body = { title: fv(f, 'title'), description: fv(f, 'description'), price: fv(f, 'price'), active: fv(f, 'active') === 'true', courseIds: ids,
+              comingSoon: !!soonEl && soonEl.value === 'true', originalPrice: Number(fv(f, 'originalPrice')) || 0, offerEnds: fv(f, 'offerEnds') };
             if (picked) body.image = picked; else if (removed) body.removeImage = true;
             try {
               await api(isNew ? '/api/staff/bundles' : '/api/staff/bundles/' + encodeURIComponent(it.id), { method: isNew ? 'POST' : 'PATCH', body: body });
-              inst.close(); toast('Bundle saved.'); renderBundles();
+              inst.close(); toast(body.comingSoon ? 'Bundle saved as Coming soon.' : 'Bundle saved.'); renderBundles();
             } catch (ex) { err.textContent = ex.message; }
           });
         } });
     }
     var sold = d.bundles.reduce(function (t, b) { return t + (b.sold || 0); }, 0);
-    setView(head('Academy', 'Course bundles', 'Discounted packages. The system stops bundles whose courses clash in time.') +
+    setView(head('Academy', 'Course bundles', 'Packages of courses at one price. Set a crossed-out normal price, a countdown, or mark a bundle Coming soon to build a waiting list.') +
       '<div class="bx-stats"><div><b>' + d.bundles.length + '</b><span>Bundles</span></div><div><b>' + d.bundles.filter(function (b) { return b.active !== false; }).length + '</b><span>Live on the website</span></div><div><b>' + sold + '</b><span>Sold</span></div></div>' +
       '<div class="dt-tools"><span class="muted">Click a bundle to edit it</span><button class="btn btn-solid" type="button" id="bd-new">+ New bundle</button></div>' +
       '<div class="bx-grid">' + (d.bundles.length ? d.bundles.map(function (b, i) {
         return '<article class="bx-card' + (b.active === false ? ' off' : '') + '" style="--i:' + i + '" data-edit="' + esc(b.id) + '" tabindex="0">' +
           '<div class="bx-img">' + (b.hasImage ? '<img loading="lazy" src="/api/bundles/' + esc(b.id) + '/image?v=' + b.imageV + '" alt="">' : '<div class="bx-ph"><span>' + esc(b.title.charAt(0)) + '</span></div>') +
-          (b.savingsPercent ? '<em class="bx-save">Save ' + b.savingsPercent + '%</em>' : '') + '<span class="gpill ' + (b.active !== false ? 'pass' : 'none') + ' bx-state">' + (b.active !== false ? 'Live' : 'Hidden') + '</span></div>' +
+          (b.savingsPercent ? '<em class="bx-save">Save ' + b.savingsPercent + '%</em>' : '') + '<span class="gpill ' + (b.comingSoon ? 'none' : b.active !== false ? 'pass' : 'none') + ' bx-state">' + (b.active === false ? 'Hidden' : b.comingSoon ? 'Coming soon' : 'Live') + '</span></div>' +
           '<div class="bx-body"><h3>' + esc(b.title) + '</h3><p class="bx-price"><b>' + naira(b.price) + '</b>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s>' : '') + '</p>' +
           '<ul class="bx-courses">' + b.courses.map(function (c) { return '<li>' + esc(c.title) + '</li>'; }).join('') + '</ul>' +
-          '<div class="bx-foot"><span>' + b.students + ' students · ' + (b.sold || 0) + ' sold</span><span><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(b.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(b.id) + '">Delete</button></span></div></div></article>';
+          '<div class="bx-foot"><span>' + (b.comingSoon ? (b.waitlistCount || 0) + ' on waiting list' : b.students + ' students · ' + (b.sold || 0) + ' sold') + '</span><span><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(b.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(b.id) + '">Delete</button></span></div></div></article>';
       }).join('') : '<div class="empty-state">No bundles yet. Create your first package.</div>') + '</div>');
     document.getElementById('bd-new').addEventListener('click', function () { form(null); });
     view.querySelectorAll('.bx-card').forEach(function (card) {
@@ -1495,20 +1513,20 @@
     crumb.textContent = 'Course waiting list';
     var d = await api('/api/staff/waitlist');
     var max = d.courses.reduce(function (m, c) { return Math.max(m, c.count); }, 0) || 1;
-    setView(head('Demand', 'Course waiting list', 'See how many people want each coming-soon course, who they are, and launch the class when demand is high enough.') +
-      '<div class="bx-stats wl-stats"><div><b data-count="' + d.total + '">0</b><span>Total sign-ups</span></div><div><b data-count="' + d.courses.filter(function (c) { return c.comingSoon; }).length + '">0</b><span>Coming-soon courses</span></div>' +
+    setView(head('Demand', 'Course waiting list', 'See how many people want each coming-soon course or bundle, who they are, and launch the class when demand is high enough.') +
+      '<div class="bx-stats wl-stats"><div><b data-count="' + d.total + '">0</b><span>Total sign-ups</span></div><div><b data-count="' + d.courses.filter(function (c) { return c.comingSoon; }).length + '">0</b><span>Coming-soon items</span></div>' +
       '<div><b data-count="' + d.courses.reduce(function (m, c) { return Math.max(m, c.count); }, 0) + '">0</b><span>Most wanted course</span></div></div>' +
       (d.courses.length ? d.courses.map(function (c, i) {
         var pct = c.minStudents ? Math.min(100, Math.round(c.count / c.minStudents * 100)) : Math.round(c.count / max * 100);
-        return '<section class="box wl-card" style="--i:' + i + '"><div class="wl-top"><div><h2>' + esc(c.title) + '</h2><p class="muted">' + (c.comingSoon ? '<span class="gpill none">Coming soon</span>' : '<span class="gpill pass">Launched</span>') + ' ' + (c.price ? naira(c.price) : 'Free') + '</p></div>' +
+        return '<section class="box wl-card" style="--i:' + i + '"><div class="wl-top"><div><h2>' + esc(c.title) + (c.kind === 'bundle' ? ' <span class="gpill none">Bundle</span>' : '') + '</h2><p class="muted">' + (c.comingSoon ? '<span class="gpill none">Coming soon</span>' : '<span class="gpill pass">Launched</span>') + ' ' + (c.price ? naira(c.price) : 'Free') + '</p></div>' +
           '<div class="wl-num"><b>' + c.count + '</b><span>' + (c.count === 1 ? 'person waiting' : 'people waiting') + '</span></div></div>' +
           '<div class="wl-meter"><i style="--w:' + pct + '%"></i></div>' +
           '<p class="muted wl-note">' + (c.minStudents ? (c.count >= c.minStudents ? 'Minimum of ' + c.minStudents + ' reached. You can launch this class.' : (c.minStudents - c.count) + ' more needed to reach the minimum of ' + c.minStudents + '.') : 'No minimum set. Add one in the course editor to track readiness.') + '</p>' +
           (c.people.length ? '<div class="dt-wrap"><table class="dt"><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th></th></tr></thead><tbody>' +
             c.people.map(function (p, n) { return '<tr><td>' + (n + 1) + '</td><td><b>' + esc(p.name) + '</b></td><td>' + esc(p.email) + '</td><td>' + esc(p.phone || '—') + '</td><td>' + fmt(p.createdAt) + '</td><td>' + (p.notified ? '<span class="gpill pass">Told</span>' : '') + '</td></tr>'; }).join('') +
           '</tbody></table></div>' : '<p class="muted">Nobody has joined yet.</p>') +
-          '<div class="row-actions" style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="#courses/' + esc(c.id) + '">Edit course</a>' +
-          (c.comingSoon ? '<button class="btn btn-solid btn-sm" type="button" data-launch="' + esc(c.id) + '">Launch and notify ' + c.count + '</button>' : '') + '</div></section>';
+          '<div class="row-actions" style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="' + (c.kind === 'bundle' ? '#bundles' : '#courses/' + esc(c.id)) + '">' + (c.kind === 'bundle' ? 'Edit bundle' : 'Edit course') + '</a>' +
+          (c.comingSoon ? '<button class="btn btn-solid btn-sm" type="button" data-launch="' + esc(c.id) + '"' + (c.kind === 'bundle' ? ' data-kind="bundle"' : '') + '>Launch and notify ' + c.count + '</button>' : '') + '</div></section>';
       }).join('') : '<div class="empty-state">No coming-soon courses yet. Choose “Coming soon” when you create or edit a course.</div>'));
     view.querySelectorAll('[data-count]').forEach(function (el) {
       var to = Number(el.getAttribute('data-count')), t0 = performance.now();
@@ -1516,8 +1534,9 @@
     });
     view.querySelectorAll('[data-launch]').forEach(function (b) {
       b.addEventListener('click', async function () {
-        if (!window.confirm('Launch this course now? Students can enrol straight away and everyone on the list is notified.')) return;
-        try { var r = await api('/api/staff/courses/' + encodeURIComponent(b.getAttribute('data-launch')) + '/launch', { method: 'POST', body: {} }); toast('Launched. ' + r.notified + ' notified.'); renderWaitlist(); }
+        var isB = b.getAttribute('data-kind') === 'bundle';
+        if (!window.confirm('Launch this ' + (isB ? 'bundle' : 'course') + ' now? Students can buy straight away and everyone on the list is notified.')) return;
+        try { var r = await api('/api/staff/' + (isB ? 'bundles/' : 'courses/') + encodeURIComponent(b.getAttribute('data-launch')) + '/launch', { method: 'POST', body: {} }); toast('Launched. ' + r.notified + ' notified.'); renderWaitlist(); }
         catch (e) { toast(e.message, 'err'); }
       });
     });

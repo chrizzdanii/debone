@@ -39,20 +39,75 @@
     }).catch(function () { $('st-grid').innerHTML = '<div class="empty-state">The store could not load. Please refresh.</div>'; });
   }
 
-  /* Bundles */
-  if (page === 'bundles') {
+  /* Bundles: one card per bundle (price offer, countdown, Buy or Join waiting list) */
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  var bwTimer = null;
+  function bundleTick() {
+    function paint() {
+      var els = document.querySelectorAll('[data-bw-cd]');
+      if (!els.length) { clearInterval(bwTimer); bwTimer = null; return; }
+      els.forEach(function (el) {
+        var ms = new Date(el.getAttribute('data-bw-cd')).getTime() - Date.now(), out = el.querySelector('em');
+        if (isNaN(ms) || !out) return;
+        if (ms <= 0) { out.textContent = 'Offer ended'; el.classList.add('ended'); return; }
+        var s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+        el.classList.toggle('urgent', ms < 86400000);
+        out.textContent = 'Ends in ' + (d ? d + 'd ' : '') + pad2(h) + 'h ' + pad2(m) + 'm ' + pad2(s % 60) + 's';
+      });
+    }
+    paint(); if (!bwTimer) bwTimer = setInterval(paint, 1000);
+  }
+  function bundleCard(b, i) {
+    var hasOffer = b.value > b.price;
+    var img = b.hasImage ? '<img loading="lazy" src="/api/bundles/' + esc(b.id) + '/image?v=' + b.imageV + '" alt="' + esc(b.title) + '">' : '<div class="bw-bg" style="background-image:url(\'' + window.ACAD.img(i + 1) + '\')"></div>';
+    var badge = b.comingSoon ? '<span class="bw-ribbon soon">Coming soon</span>' : (b.savingsPercent ? '<span class="bw-ribbon">Save ' + b.savingsPercent + '%</span>' : '');
+    var offer = '<div class="bw-offer' + (b.comingSoon ? ' soon' : '') + '">' +
+      '<div class="bw-offer-top">' + (b.comingSoon ? '<span class="bw-tag">Launch price</span>' : (hasOffer ? '<span class="bw-pct">' + b.savingsPercent + '% OFF</span>' : '<span class="bw-tag">Bundle price</span>')) +
+        (b.offerEndsAt ? '<span class="bw-cd" data-bw-cd="' + esc(b.offerEndsAt) + '"><i></i><em>…</em></span>' : '') + '</div>' +
+      '<div class="bw-prices"><b>' + naira(b.price) + '</b>' + (hasOffer ? '<s>' + naira(b.value) + '</s>' : '') + '</div>' +
+      (hasOffer ? '<p class="bw-saveline">You save <strong>' + naira(b.savings) + '</strong> on the full ' + b.courses.length + '-course package</p>' : '<p class="bw-saveline muted">One payment unlocks all ' + b.courses.length + ' courses</p>') + '</div>';
+    var cta;
+    if (b.owned) cta = '<a class="btn btn-ghost bw-cta" href="dashboard.html#courses">✓ You own this bundle · Open my courses</a>';
+    else if (b.comingSoon) cta = b.onWaitlist
+      ? '<div class="bw-wl-in"><span class="bw-wl-ok">✓ You are on the waiting list</span><button class="btn btn-ghost btn-sm" type="button" data-bw-leave="' + esc(b.id) + '">Leave</button></div>'
+      : '<button class="btn btn-solid bw-cta" type="button" data-bw-join="' + esc(b.id) + '">Join the waiting list</button>';
+    else cta = '<button class="btn btn-solid bw-cta" type="button" data-bundle="' + esc(b.id) + '">Buy the bundle · ' + naira(b.price) + '</button>';
+    return '<article class="bw-card' + (b.comingSoon ? ' is-soon' : '') + '" style="--i:' + (i % 6) + '"><div class="bw-img">' + img + badge + '<span class="bw-count">' + b.courses.length + ' courses</span></div>' +
+      '<div class="bw-body"><p class="eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3>' + (b.description ? '<p>' + esc(b.description) + '</p>' : '') +
+      '<ul class="bw-courses">' + b.courses.map(function (c, j) { return '<li style="--j:' + j + '"><b>' + esc(c.title) + '</b><span>' + (c.comingSoon ? 'Coming soon' : esc(c.startDate ? 'Starts ' + c.startDate : 'Start date to be announced')) + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</span></li>'; }).join('') + '</ul>' +
+      offer + cta + (b.comingSoon && b.waitlistCount ? '<p class="bw-wl-count">' + b.waitlistCount + (b.waitlistCount === 1 ? ' person is' : ' people are') + ' already on the waiting list</p>' : '') + '</div></article>';
+  }
+  function bundleBind(root) {
+    root.querySelectorAll('[data-bundle]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var label = btn.textContent; btn.disabled = true; btn.textContent = 'Opening…';
+        req('/api/bundles/' + encodeURIComponent(btn.getAttribute('data-bundle')) + '/buy', { method: 'POST', body: {} }).then(function (res) {
+          if (res.order) { location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); return; }
+          toast('You already have these courses.'); location.href = 'dashboard.html#courses';
+        }).catch(function (e) { if (e.status === 401) return goLogin('bundles.html'); toast(e.message, 'err'); btn.disabled = false; btn.textContent = label; });
+      });
+    });
+    root.querySelectorAll('[data-bw-join],[data-bw-leave]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var join = btn.hasAttribute('data-bw-join'), id = btn.getAttribute(join ? 'data-bw-join' : 'data-bw-leave'), label = btn.textContent;
+        btn.disabled = true; btn.textContent = join ? 'Joining…' : 'Leaving…';
+        req('/api/bundles/' + encodeURIComponent(id) + '/waitlist', { method: join ? 'POST' : 'DELETE', body: {} }).then(function () {
+          toast(join ? 'You are on the waiting list. We will tell you the moment this bundle opens.' : 'You left the waiting list.');
+          loadBundles();
+        }).catch(function (e) { if (e.status === 401) return goLogin('bundles.html'); toast(e.message, 'err'); btn.disabled = false; btn.textContent = label; });
+      });
+    });
+  }
+  function loadBundles() {
     req('/api/bundles').then(function (d) {
       var list = d.bundles || [];
-      var totalSave = list.reduce(function (t, b) { return t + (b.savings || 0); }, 0), totalCourses = list.reduce(function (t, b) { return t + b.courses.length; }, 0);
-      var stats = list.length ? '<div class="bw-stats"><div><b>' + list.length + '</b><span>Bundles to choose from</span></div><div><b>' + totalCourses + '</b><span>Courses inside</span></div><div><b>' + naira(Math.max.apply(null, list.map(function (b) { return b.savings || 0; }))) + '</b><span>Biggest saving on one bundle</span></div></div>' : '';
+      var open = list.filter(function (b) { return !b.comingSoon; }), soon = list.length - open.length;
+      var totalCourses = list.reduce(function (t, b) { return t + b.courses.length; }, 0);
+      var topSave = list.reduce(function (m, b) { return Math.max(m, b.savings || 0); }, 0);
+      var stats = list.length ? '<div class="bw-stats"><div><b>' + list.length + '</b><span>Bundles to choose from</span></div><div><b>' + totalCourses + '</b><span>Courses inside</span></div>' +
+        (topSave ? '<div><b>' + naira(topSave) + '</b><span>Biggest saving on one bundle</span></div>' : '<div><b>' + soon + '</b><span>Coming soon</span></div>') + '</div>' : '';
       $('bd-list').className = '';
-      $('bd-list').innerHTML = stats + '<div class="bw-grid">' + (list.map(function (b, i) {
-        var img = b.hasImage ? '<img loading="lazy" src="/api/bundles/' + esc(b.id) + '/image?v=' + b.imageV + '" alt="' + esc(b.title) + '">' : '<div class="bw-bg" style="background-image:url(\'' + window.ACAD.img(i + 1) + '\')"></div>';
-        return '<article class="bw-card" style="--i:' + (i % 6) + '"><div class="bw-img">' + img + (b.savingsPercent ? '<span class="bw-ribbon">Save ' + b.savingsPercent + '%</span>' : '') + '<span class="bw-count">' + b.courses.length + ' courses</span></div>' +
-          '<div class="bw-body"><p class="eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3>' + (b.description ? '<p>' + esc(b.description) + '</p>' : '') +
-          '<ul class="bw-courses">' + b.courses.map(function (c, j) { return '<li style="--j:' + j + '"><b>' + esc(c.title) + '</b><span>' + esc(c.startDate ? 'Starts ' + c.startDate : 'Start date to be announced') + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</span></li>'; }).join('') + '</ul>' +
-          '<div class="bw-foot"><div class="bw-price"><b>' + naira(b.price) + '</b>' + (b.value > b.price ? '<s>' + naira(b.value) + '</s><em>Save ' + naira(b.savings) + '</em>' : '') + '</div><button class="btn btn-solid" type="button" data-bundle="' + esc(b.id) + '">Buy the bundle</button></div></div></article>';
-      }).join('') || '<div class="empty-state">No bundles are open yet. Individual courses are on the Digital Academy page.</div>') + '</div>';
+      $('bd-list').innerHTML = stats + '<div class="bw-grid">' + (list.map(function (b, i) { return bundleCard(b, i); }).join('') || '<div class="empty-state">No bundles are open yet. Individual courses are on the Digital Academy page.</div>') + '</div>';
       var cards = $('bd-list').querySelectorAll('.bw-card');
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { threshold: .12 });
@@ -64,17 +119,11 @@
         function f(ts) { if (!t0) t0 = ts; var p = Math.min(1, (ts - t0) / 1100); el.textContent = pre + Math.round(num * (1 - Math.pow(1 - p, 3))).toLocaleString('en-US'); if (p < 1) requestAnimationFrame(f); }
         requestAnimationFrame(f);
       });
-      $('bd-list').querySelectorAll('[data-bundle]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          btn.disabled = true; btn.textContent = 'Opening…';
-          req('/api/bundles/' + encodeURIComponent(btn.getAttribute('data-bundle')) + '/buy', { method: 'POST', body: {} }).then(function (res) {
-            if (res.order) { location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); return; }
-            toast('You already have these courses.'); location.href = 'dashboard.html#courses';
-          }).catch(function (e) { if (e.status === 401) return goLogin('bundles.html'); toast(e.message, 'err'); btn.disabled = false; btn.textContent = 'Buy the bundle'; });
-        });
-      });
-    });
+      bundleBind($('bd-list'));
+      bundleTick();
+    }).catch(function () { $('bd-list').innerHTML = '<div class="empty-state">Bundles could not load. Please refresh.</div>'; });
   }
+  if (page === 'bundles') loadBundles();
 
   /* Talent directory */
   if (page === 'talent') {
