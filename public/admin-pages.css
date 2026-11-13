@@ -1,0 +1,32 @@
+/* Admin: Page content (photos and text on the Studio, About and Services pages) */
+.pc-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 18px}
+.pc-tab{appearance:none;border:1px solid var(--line);background:transparent;color:var(--bone);font:600 .88rem/1 Inter,sans-serif;padding:12px 18px;border-radius:999px;cursor:pointer;transition:background .25s,border-color .25s,color .25s}
+.pc-tab:hover{border-color:var(--orange)}
+.pc-tab.on{background:var(--orange);border-color:var(--orange);color:#0B0B0B}
+.pc-tab i{font-style:normal;display:inline-grid;place-items:center;min-width:20px;height:20px;margin-left:6px;border-radius:99px;background:rgba(0,0,0,.22);font-size:.72rem}
+.pc-tab.on i{background:rgba(0,0,0,.18)}
+.pc-note{padding:16px 20px;margin-bottom:18px}
+.pc-note p{margin-top:4px}
+.pc-note a{color:var(--orange)}
+.pc-group{margin-top:34px}
+.pc-gh{font:400 1.5rem/1 Anton,Impact,sans-serif;text-transform:uppercase;letter-spacing:.01em;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.pc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:16px}
+.pc-card{background:var(--graphite);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .3s,opacity .3s}
+.pc-card.busy{opacity:.55;pointer-events:none}
+.pc-card:hover{border-color:rgba(224,168,0,.4)}
+.pc-prev{aspect-ratio:16/9;background:#0b0b0b;overflow:hidden}
+.pc-prev img{width:100%;height:100%;object-fit:cover}
+.pc-body{padding:16px;display:grid;gap:10px}
+.pc-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pc-top b{font-size:.95rem}
+.pc-actions{display:flex;gap:8px;flex-wrap:wrap}
+.pc-file{cursor:pointer;display:inline-flex;align-items:center}
+.pc-link{display:flex;gap:8px}
+.pc-link[hidden]{display:none}
+.pc-link .input{min-height:42px}
+.pc-row{display:flex;gap:8px;align-items:flex-start}
+.pc-row .input{flex:1;min-height:42px;min-width:0}
+.pc-row textarea.input{min-height:84px;resize:vertical}
+.pc-stack{display:grid;gap:8px}
+.pc-card .field label{font-size:.78rem}
+@media (max-width:560px){.pc-row{flex-direction:column}.pc-row .btn,.pc-stack{width:100%}.pc-stack{grid-template-columns:1fr 1fr}.pc-link{flex-direction:column}}

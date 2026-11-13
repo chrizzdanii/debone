@@ -44,7 +44,7 @@
   var filter = 'all';
   async function renderAssignments() {
     crumb.textContent = 'Assignments';
-    setView(head('Practice &amp; marks', 'Assignments', 'Submit your work, track due dates, and see your marks and feedback.') + '<div class="skeleton" style="min-height:260px"></div>');
+    setView(head('Practice & marks', 'Assignments', 'Submit your work, track due dates, and see your marks and feedback.') + '<div class="skeleton" style="min-height:260px"></div>');
     var dash = await api('/api/dashboard');
     var enrolled = dash.courses.filter(function (c) { return c.enrolled; });
     var rows = [];
@@ -67,7 +67,7 @@
           : '<button type="button" class="btn btn-solid btn-sm" data-open="' + esc(x.a.id) + '">' + (s ? 'Update' : 'Submit') + '</button>';
         return '<tr style="--i:' + n + '"><td><b>' + esc(x.a.title) + '</b></td><td class="muted">' + esc(x.course) + '</td><td>' + (x.a.dueAt ? fmt(x.a.dueAt) : 'No due date') + '</td><td>' + marks + '</td><td>' + status + '</td><td>' + pill(s ? s.grade : null) + '</td><td class="dt-act">' + btn + '</td></tr>';
       }).join('') + '</tbody></table></div>' : '<div class="empty-state">No assignments in this filter yet.</div>';
-    setView(head('Practice &amp; marks', 'Assignments', 'Submit your work, track due dates, and see your marks and feedback.') +
+    setView(head('Practice & marks', 'Assignments', 'Submit your work, track due dates, and see your marks and feedback.') +
       '<div class="dt-tools"><div class="chips">' + chips + '</div><a class="btn btn-ghost btn-sm" href="#performance">View my performance</a></div>' + body);
     view.querySelectorAll('[data-f]').forEach(function (b) { b.addEventListener('click', function () { filter = b.getAttribute('data-f'); renderAssignments(); }); });
     view.querySelectorAll('[data-open]').forEach(function (b) {

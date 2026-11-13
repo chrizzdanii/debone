@@ -1087,6 +1087,129 @@
     });
   }
 
+
+  /* ---------- Page content: photos and text on the Studio, About and Services pages (admin) ---------- */
+  var pcTab = 'studio';
+  function readPageImage(file) {
+    /* Bigger than the shop photos (1600 px wide), then squeezed until it is under the 200 KB limit */
+    return new Promise(function (resolve, reject) {
+      if (!file) return reject(new Error('Choose an image first.'));
+      var img = new Image();
+      img.onload = function () {
+        var max = 1600, q = 0.84, url = '';
+        for (var tries = 0; tries < 14; tries++) {
+          var scale = Math.min(1, max / Math.max(img.width, img.height));
+          var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.width * scale)); c.height = Math.max(1, Math.round(img.height * scale));
+          var cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(img, 0, 0, c.width, c.height);
+          url = c.toDataURL('image/jpeg', q);
+          var bytes = (url.length - url.indexOf(',') - 1) * 0.75;
+          if (bytes <= 205 * 1024) return resolve(url);
+          if (q > 0.56) q -= 0.08; else max = Math.round(max * 0.85);
+        }
+        reject(new Error('That photo is too detailed to shrink under 200 KB. Please try a smaller photo.'));
+      };
+      img.onerror = function () { reject(new Error('That file could not be read as an image.')); };
+      var reader = new FileReader();
+      reader.onload = function () { img.src = reader.result; };
+      reader.readAsDataURL(file);
+    });
+  }
+  function pcCard(s) {
+    var k = esc(s.key), badge = s.changed ? '<span class="gpill pass">Changed</span>' : '<span class="gpill none">Original</span>';
+    if (s.type === 'image') {
+      return '<article class="pc-card pc-img" data-key="' + k + '"><div class="pc-prev"><img src="' + esc(s.image) + '" alt="" loading="lazy" onerror="this.style.opacity=.15"></div>' +
+        '<div class="pc-body"><div class="pc-top"><b>' + esc(s.label) + '</b>' + badge + '</div>' +
+        (s.hint ? '<p class="muted small">' + esc(s.hint) + ' JPG, PNG or WebP.</p>' : '') +
+        '<div class="pc-actions"><label class="btn btn-solid btn-sm pc-file">Change photo<input type="file" accept="image/jpeg,image/png,image/webp" data-pc-file hidden></label>' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-pc-link>Use image link</button>' +
+        (s.changed ? '<button type="button" class="btn btn-ghost btn-sm" data-pc-reset>Back to original</button>' : '') + '</div>' +
+        '<div class="pc-link" hidden><input class="input" type="url" data-pc-url placeholder="https://…" maxlength="600" aria-label="Image link"><button type="button" class="btn btn-solid btn-sm" data-pc-url-save>Use this link</button></div>' +
+        '<div class="field"><label>Description for screen readers and Google</label><div class="pc-row"><input class="input" data-pc-alt maxlength="160" value="' + esc(s.alt) + '"><button type="button" class="btn btn-ghost btn-sm" data-pc-alt-save>Save</button></div></div></div></article>';
+    }
+    var long = s.type === 'textarea';
+    return '<article class="pc-card pc-txt" data-key="' + k + '"><div class="pc-body"><div class="pc-top"><b>' + esc(s.label) + '</b>' + badge + '</div>' +
+      (s.hint ? '<p class="muted small">' + esc(s.hint) + '</p>' : '') +
+      '<div class="pc-row">' + (long ? '<textarea class="input" rows="3" maxlength="480" data-pc-text>' + esc(s.value) + '</textarea>' : '<input class="input" maxlength="140" data-pc-text value="' + esc(s.value) + '">') +
+      '<div class="pc-stack"><button type="button" class="btn btn-solid btn-sm" data-pc-save>Save</button>' + (s.changed ? '<button type="button" class="btn btn-ghost btn-sm" data-pc-reset>Reset</button>' : '') + '</div></div></div></article>';
+  }
+  async function renderPageContent() {
+    crumb.textContent = 'Page content';
+    var d = await api('/api/staff/page-content');
+    var slots = d.slots;
+    if (!d.pages.some(function (p) { return p.id === pcTab; })) pcTab = d.pages[0].id;
+    function draw() {
+      var page = d.pages.find(function (p) { return p.id === pcTab; });
+      var mine = slots.filter(function (s) { return s.page === pcTab; });
+      var groups = [];
+      mine.forEach(function (s) { var g = groups.find(function (x) { return x.name === s.group; }); if (!g) groups.push(g = { name: s.group, items: [] }); g.items.push(s); });
+      var changedCount = function (id) { return slots.filter(function (s) { return s.page === id && s.changed; }).length; };
+      setView(head('Website', 'Page content', 'Change the photos and wording on the Studio, About and Services pages. Anything you do not touch keeps its original look. Changes show on the website straight away.') +
+        '<div class="pc-tabs" role="tablist">' + d.pages.map(function (p) {
+          var n = changedCount(p.id);
+          return '<button type="button" role="tab" class="pc-tab' + (p.id === pcTab ? ' on' : '') + '" data-tab="' + esc(p.id) + '" aria-selected="' + (p.id === pcTab) + '">' + esc(p.label) + (n ? ' <i>' + n + '</i>' : '') + '</button>';
+        }).join('') + '</div>' +
+        '<div class="dt-tools"><span class="muted">' + mine.length + ' items on this page. Photos are shrunk by itself to fit.</span>' + (page.url ? '<a class="btn btn-ghost btn-sm" href="/' + esc(page.url) + '" target="_blank" rel="noopener">Open this page</a>' : '') + '</div>' +
+        (pcTab === 'services' ? '<section class="box pc-note"><b>Looking for the service photos?</b><p class="muted">The photo and text of each service (Photography, Video, Drone and the rest) are changed in <a href="#services">Services</a>. The photos in the Studio gallery are changed in <a href="#works">Selected work</a>.</p></section>' : '') +
+        (pcTab === 'studio' ? '<section class="box pc-note"><b>Looking for the studio gallery?</b><p class="muted">The “Recent work” photos on the Studio page come from <a href="#works">Selected work</a>. The five service cards use the photos set in <a href="#services">Services</a>.</p></section>' : '') +
+        groups.map(function (g) {
+          return '<section class="pc-group"><h2 class="pc-gh">' + esc(g.name) + '</h2><div class="pc-grid">' + g.items.map(pcCard).join('') + '</div></section>';
+        }).join(''));
+      bind();
+    }
+    function update(slot) {
+      var i = slots.findIndex(function (x) { return x.key === slot.key; });
+      slots[i] = slot;
+      draw();
+    }
+    function bind() {
+      view.querySelectorAll('.pc-tab').forEach(function (b) { b.addEventListener('click', function () { pcTab = b.getAttribute('data-tab'); draw(); window.scrollTo(0, 0); }); });
+      view.querySelectorAll('.pc-card').forEach(function (card) {
+        var key = card.getAttribute('data-key'), enc = encodeURIComponent(key);
+        var slot = slots.find(function (x) { return x.key === key; });
+        function busy(on) { card.classList.toggle('busy', on); }
+        async function run(fn, ok) {
+          busy(true);
+          try { var r = await fn(); toast(ok); update(r.slot); }
+          catch (e) { toast(e.message, 'err'); busy(false); }
+        }
+        var file = card.querySelector('[data-pc-file]');
+        if (file) file.addEventListener('change', async function () {
+          if (!file.files[0]) return;
+          busy(true);
+          try {
+            var data = await readPageImage(file.files[0]);
+            var r = await api('/api/staff/page-content/' + enc + '/image', { method: 'POST', body: { data: data }, timeout: 40000 });
+            toast('Photo changed. It is live on the website.'); update(r.slot);
+          } catch (e) { toast(e.message, 'err'); busy(false); file.value = ''; }
+        });
+        var linkBtn = card.querySelector('[data-pc-link]');
+        if (linkBtn) linkBtn.addEventListener('click', function () { var box = card.querySelector('.pc-link'); box.hidden = !box.hidden; if (!box.hidden) box.querySelector('input').focus(); });
+        var urlSave = card.querySelector('[data-pc-url-save]');
+        if (urlSave) urlSave.addEventListener('click', function () {
+          var u = card.querySelector('[data-pc-url]').value.trim();
+          if (!u) { toast('Paste the image link first.', 'err'); return; }
+          run(function () { return api('/api/staff/page-content/' + enc, { method: 'PUT', body: { url: u } }); }, 'Photo changed. It is live on the website.');
+        });
+        var altSave = card.querySelector('[data-pc-alt-save]');
+        if (altSave) altSave.addEventListener('click', function () {
+          run(function () { return api('/api/staff/page-content/' + enc, { method: 'PUT', body: { alt: card.querySelector('[data-pc-alt]').value } }); }, 'Description saved.');
+        });
+        var save = card.querySelector('[data-pc-save]');
+        if (save) {
+          var field = card.querySelector('[data-pc-text]');
+          save.addEventListener('click', function () { run(function () { return api('/api/staff/page-content/' + enc, { method: 'PUT', body: { text: field.value } }); }, 'Saved. It is live on the website.'); });
+          if (field.tagName === 'INPUT') field.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); save.click(); } });
+        }
+        var reset = card.querySelector('[data-pc-reset]');
+        if (reset) reset.addEventListener('click', function () {
+          if (!window.confirm('Go back to the original ' + (slot.type === 'image' ? 'photo' : 'wording') + ' for “' + slot.label + '”?')) return;
+          run(function () { return api('/api/staff/page-content/' + enc, { method: 'DELETE' }); }, 'Back to the original.');
+        });
+      });
+    }
+    draw();
+  }
+
   /* ---------- Services: what we do (admin) ---------- */
   function serviceForm(item) {
     var isNew = !item, it = item || {};
@@ -2087,7 +2210,7 @@
     silent = silent === true;
     var parts = (location.hash || '#overview').replace(/^#/, '').split('/');
     var name = parts[0] || 'overview', arg = parts[1] ? decodeURIComponent(parts[1]) : null;
-    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'waitlist', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification'].includes(name)) name = 'overview';
+    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'waitlist', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification', 'pages'].includes(name)) name = 'overview';
     document.querySelectorAll('.side-nav a[data-view]').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('data-view') === name);
     });
@@ -2107,6 +2230,7 @@
       if (name === 'settings') return await renderSettings();
       if (name === 'setup') return await renderSetup();
       if (name === 'services') return await renderServices();
+      if (name === 'pages') return await renderPageContent();
       if (name === 'feedback') return await renderFeedback();
       if (name === 'applications') return await renderApplications();
       if (name === 'webinars') return await renderWebinars();

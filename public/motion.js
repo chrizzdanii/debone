@@ -93,7 +93,7 @@
   /* A. Word-by-word headline reveal for plain headings */
   var heads = document.querySelectorAll('main h1, main h2');
   heads.forEach(function (h) {
-    if (h.closest('.services, #services')) return;
+    if (h.closest('.services, #services, [data-nofx]')) return;
     if (h.children.length || h.closest('.hero, .auth-quote, .rvs-stage, .tst-card, .dcourse, .view-head h1') && h.closest('.hero')) return;
     var words = h.textContent.trim().split(/\s+/);
     if (words.length < 2 || words.length > 14) return;
@@ -118,7 +118,7 @@
     var sio = new IntersectionObserver(function (es) {
       es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); sio.unobserve(en.target); } });
     }, { threshold: 0.12 });
-    document.querySelectorAll('main > section:not(.hero):not(.page-hero):not(.services)').forEach(function (s) {
+    document.querySelectorAll('main:not([data-nofx]) > section:not(.hero):not(.page-hero):not(.services)').forEach(function (s) {
       s.classList.add('sec-fx'); sio.observe(s);
     });
   }

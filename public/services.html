@@ -15,6 +15,9 @@
 <link rel="stylesheet" href="pages.css?v=51">
 <link rel="stylesheet" href="theme-brand.css?v=52">
 <link rel="stylesheet" href="responsive.css?v=51">
+<link rel="stylesheet" href="mobile.css?v=54">
+<link rel="stylesheet" href="dx.css?v=1">
+<script>document.documentElement.classList.add("dx-js");setTimeout(function(){document.documentElement.classList.add("dx-ready")},3200);</script>
 </head>
 <body class="theme-brand" data-page="services">
 <a class="skip" href="#main">Skip to content</a>
@@ -36,38 +39,105 @@
   </div>
 </header>
 
-<main id="main">
-  <section class="page-hero sv-hero">
-    <div class="container">
-      <h1>Everything creative, under one roof.</h1>
-      <p class="lead">From the first photo of the day to the last edit of the campaign, and a team that teaches what it does. <span class="sv-count-wrap"><b id="sv-count">0</b> services</span></p>
+<main id="main" data-nofx>
+
+  <!-- HERO -->
+  <section class="dx-hero dx-hero-services" id="top" aria-labelledby="dx-h1">
+    <div class="dx-hero-bg dx-hero-plain" aria-hidden="true"></div>
+    <div class="dx-hero-shade" aria-hidden="true"></div>
+    <div class="dx-timecode" aria-hidden="true"><i></i><span data-tc>00:00:00:00</span></div>
+    <div class="container dx-hero-grid">
+      <div class="dx-hero-copy">
+        <p class="dx-kicker">Services · Port Harcourt</p>
+        <h1 class="dx-h1" id="dx-h1" data-pc="services-hero-title" data-pc-split>Everything creative, under one roof.</h1>
+        <p class="dx-lead"><span data-pc="services-hero-lead">From the first photo of the day to the last edit of the campaign, and a team that teaches what it does.</span> <span class="sv-count-wrap"><b id="sv-count">0</b> services</span></p>
+        <div class="dx-cta">
+          <a class="btn btn-solid" href="#all-services">Browse services <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+          <a class="btn btn-ghost" href="https://wa.me/2348035988889?text=Hi%20DEBONE%2C%20I%27d%20like%20to%20make%20an%20enquiry" data-setting-href="wa" target="_blank" rel="noopener">Ask on WhatsApp</a>
+        </div>
+        <ul class="dx-hero-facts">
+          <li><b data-years class="dx-num">29</b><span>years in business</span></li>
+          <li><b class="dx-num" data-pc="stat-students">500+</b><span>students trained</span></li>
+          <li><b class="dx-num" data-services-count>9</b><span>services</span></li>
+        </ul>
+      </div>
+      <div class="dx-hero-stack dx-hero-quad">
+        <figure class="dx-float q1" data-par="-0.07"><div class="dx-frame"><img data-pc-img="services-hero-a" src="https://assets.mixkit.co/videos/50641/50641-thumb-720-0.jpg" alt="Photographer working with a model" decoding="async"></div></figure>
+        <figure class="dx-float q2" data-par="0.05"><div class="dx-frame"><img data-pc-img="services-hero-b" src="https://assets.mixkit.co/videos/44074/44074-thumb-720-0.jpg" alt="Hands editing video on a computer" decoding="async"></div></figure>
+        <figure class="dx-float q3" data-par="-0.1"><div class="dx-frame"><img data-pc-img="services-hero-c" src="https://assets.mixkit.co/videos/44069/44069-thumb-720-0.jpg" alt="Setting up a camera on a shoot" decoding="async"></div></figure>
+        <figure class="dx-float q4" data-par="0.09"><div class="dx-frame"><img data-pc-img="services-hero-d" src="https://assets.mixkit.co/videos/50635/50635-thumb-720-0.jpg" alt="Photographer holding a camera lens" decoding="async"></div></figure>
+        <div class="dx-seal" aria-hidden="true">
+          <svg viewBox="0 0 120 120"><defs><path id="dx-seal-a" d="M60 60m-46 0a46 46 0 1 1 92 0a46 46 0 1 1-92 0"/></defs><text><textPath href="#dx-seal-a" startOffset="0">ONE STUDIO · EVERY SERVICE · ONE STUDIO · </textPath></text></svg>
+          <b>DB</b>
+        </div>
+      </div>
     </div>
+    <a class="dx-scrollcue" href="#all-services" aria-label="Scroll to the services"><span>Scroll</span><i></i></a>
   </section>
 
-  <section class="sv-list-wrap" aria-live="polite">
+  <!-- MARQUEE -->
+  <div class="dx-marquee" aria-hidden="true"><div class="dx-marquee-track"><span>Photography</span><span>Videography</span><span>Music videos</span><span>Drone &amp; aerial</span><span>Editing</span><span>Printing</span><span>Repair</span><span>Training</span><span>Gear</span></div></div>
+
+  <!-- JUMP BAR (filled by script from the services list) -->
+  <nav class="dx-jump" id="dx-jump" aria-label="Jump to a service" hidden>
+    <div class="container"><div class="dx-jump-in" id="dx-jump-in"></div></div>
+  </nav>
+
+  <!-- SERVICES LIST: loaded from the dashboard by services.js -->
+  <section class="sv-list-wrap" id="all-services" aria-live="polite">
     <div class="container">
       <div class="sv-list" id="sv-list"><p class="muted">Loading our services…</p></div>
     </div>
   </section>
 
-  <section class="section">
-    <div class="container">
-      <p class="eyebrow reveal">How it works</p>
-      <h2 class="section-title reveal">Four steps from enquiry to delivery.</h2>
-      <div class="steps" style="margin-top:40px">
-        <div class="step reveal"><b><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4V5z"/></svg></span></b><h3>Talk to us</h3><p>Tell us what you need on WhatsApp, with the date and location if it is an event.</p></div>
-        <div class="step reveal"><b><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span></b><h3>Plan</h3><p>We agree the plan, timing and price, so there are no surprises.</p></div>
-        <div class="step reveal"><b><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span></b><h3>Create</h3><p>We shoot, edit, print, repair or teach, with regular updates along the way.</p></div>
-        <div class="step reveal"><b><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9"/></svg></span></b><h3>Deliver</h3><p>You receive the finished work, the repaired device or the course access.</p></div>
+  <!-- WHY DEBONE -->
+  <section class="dx-sec dx-why" id="why">
+    <div class="container dx-split">
+      <div class="dx-split-copy">
+        <p class="dx-eyebrow" data-dx>Why DEBONE</p>
+        <h2 class="dx-h2" data-dx>One team from idea to finished work.</h2>
+        <ul class="dx-why-list" data-dx-stagger>
+          <li data-dx><span class="dx-why-n">01</span><div><b>Clear price before we start</b><p>We agree the plan, timing and cost up front, so there are no surprises when it is done.</p></div></li>
+          <li data-dx><span class="dx-why-n">02</span><div><b>The whole chain in one place</b><p>Shoot, edit, print, repair and equip without passing your work between different people.</p></div></li>
+          <li data-dx><span class="dx-why-n">03</span><div><b>Fast replies on WhatsApp</b><p>Message us what you need and we answer with availability and a price.</p></div></li>
+          <li data-dx><span class="dx-why-n">04</span><div><b>People who teach it</b><p>We train students in the same skills we use every day, so we explain things plainly.</p></div></li>
+        </ul>
+      </div>
+      <div class="dx-tall" data-dx="mask">
+        <div class="dx-frame"><img data-pc-img="services-why-img" src="https://assets.mixkit.co/videos/44062/44062-thumb-720-0.jpg" alt="DEBONE crew on a shoot" loading="lazy" decoding="async" data-par-img></div>
+        <div class="dx-since dx-since-b" aria-hidden="true"><small>Since</small><b data-pc="stat-since">1997</b></div>
       </div>
     </div>
   </section>
 
-  <section class="section" style="padding-top:0">
+  <!-- PROCESS -->
+  <section class="dx-sec dx-proc-services" id="how">
     <div class="container">
-      <p class="eyebrow reveal">Questions</p>
-      <h2 class="section-title reveal">Good to know.</h2>
-      <div class="faq reveal" style="margin-top:36px">
+      <header class="dx-head">
+        <p class="dx-eyebrow" data-dx>How it works</p>
+        <h2 class="dx-h2" data-dx>Four steps from enquiry to delivery.</h2>
+      </header>
+      <div class="dx-how">
+        <ol class="dx-how-list" data-dx-stagger>
+          <li data-dx><span class="dx-how-ico"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/></svg></span><small>Step 01</small><h3>Talk to us</h3><p>Tell us what you need on WhatsApp, with the date and location if it is an event.</p></li>
+          <li data-dx><span class="dx-how-ico"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><small>Step 02</small><h3>Plan</h3><p>We agree the plan, timing and price, so there are no surprises.</p></li>
+          <li data-dx><span class="dx-how-ico"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><small>Step 03</small><h3>Create</h3><p>We shoot, edit, print, repair or teach, with regular updates along the way.</p></li>
+          <li data-dx><span class="dx-how-ico"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9"/></svg></span><small>Step 04</small><h3>Deliver</h3><p>You receive the finished work, the repaired device or the course access.</p></li>
+        </ol>
+        <div class="dx-frame dx-how-img" data-dx="mask"><img data-pc-img="services-process-img" src="https://assets.mixkit.co/videos/44073/44073-thumb-720-0.jpg" alt="Planning work with a client in the studio" loading="lazy" decoding="async" data-par-img></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="dx-sec dx-faq-sec" id="faq">
+    <div class="container dx-faq-grid">
+      <header class="dx-head">
+        <p class="dx-eyebrow" data-dx>Questions</p>
+        <h2 class="dx-h2" data-dx>Good to know.</h2>
+        <p class="dx-p" data-dx>Can&rsquo;t see your question? Ask us on WhatsApp.</p>
+      </header>
+      <div class="dx-faq" data-dx>
         <details>
           <summary>How do I book a service?</summary>
           <p>Message us on WhatsApp with what you need, the date and the location. We will reply with availability and a price.</p>
@@ -88,17 +158,21 @@
     </div>
   </section>
 
-  <section class="cta-band">
+  <!-- CTA -->
+  <section class="dx-cta-band">
+    <div class="dx-cta-bg" aria-hidden="true"><img data-pc-img="services-cta-bg" src="https://assets.mixkit.co/videos/44068/44068-thumb-720-0.jpg" alt="" loading="lazy" decoding="async"></div>
     <div class="container">
-      <h2>Tell us what you need.</h2>
-      <p>Message us on WhatsApp and we will reply with availability and a price.</p>
-      <div class="btn-row" style="justify-content:center">
-        <a class="btn btn-solid" href="https://wa.me/2348035988889?text=Hi%20DEBONE%2C%20I%27d%20like%20to%20make%20an%20enquiry" target="_blank" rel="noopener">Chat on WhatsApp</a>
-        <a class="btn btn-ghost" href="tel:+2348035988889">Call 0803 598 8889</a>
+      <h2 class="dx-h2" data-dx>Tell us what you need.</h2>
+      <p class="dx-p" data-dx>Message us on WhatsApp and we will reply with availability and a price.</p>
+      <div class="dx-cta" data-dx style="justify-content:center">
+        <a class="btn btn-solid" href="https://wa.me/2348035988889?text=Hi%20DEBONE%2C%20I%27d%20like%20to%20make%20an%20enquiry" data-setting-href="wa" target="_blank" rel="noopener">Chat on WhatsApp</a>
+        <a class="btn btn-ghost" href="tel:+2348035988889" data-setting-href="phone1">Call 0803 598 8889</a>
       </div>
     </div>
   </section>
+
 </main>
+
 
 <footer class="site-footer">
   <div class="container">
@@ -154,5 +228,7 @@
 <script src="settings.js?v=51"></script>
 <script src="nav.js?v=53"></script>
 <script src="/sw-register.js" defer></script>
+<script src="mobile.js?v=54" defer></script>
+<script src="dx.js?v=1" defer></script>
 </body>
 </html>
