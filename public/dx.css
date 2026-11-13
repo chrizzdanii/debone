@@ -8,7 +8,7 @@
 .dx-head{max-width:760px;margin-bottom:clamp(34px,5vw,64px)}
 .dx-head-row{max-width:none;display:flex;justify-content:space-between;align-items:flex-end;gap:28px;flex-wrap:wrap}
 .dx-eyebrow,.dx-kicker{display:inline-flex;align-items:center;gap:12px;margin:0 0 18px;font:600 .72rem/1 Inter,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--dx-gold)}
-.dx-eyebrow::before,.dx-kicker::before{content:"";width:34px;height:1px;background:currentColor;display:inline-block}
+.dx-eyebrow::before,.dx-kicker::before{content:none;display:none}
 .dx-h2{font-size:clamp(2.3rem,5.6vw,5rem);line-height:.96;margin:0 0 20px}
 .dx-h3{font-size:clamp(1.7rem,3vw,2.5rem);line-height:1;margin:0 0 16px}
 .dx-p{color:#a9a9a2;font-size:clamp(1rem,1.15vw,1.12rem);line-height:1.7;max-width:58ch}
