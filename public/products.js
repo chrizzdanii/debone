@@ -31,7 +31,7 @@
     return catOk && textOk;
   }
 
-  var CAT_ICON = { 'printers-scanners-and-office-machines': 'printer', 'photography-cameras-and-equipment': 'camera', 'videography-and-filmmaking-equipment': 'video' };
+  var CAT_ICON = { cameras: 'camera', photo: 'camera', laptops: 'box', printing: 'printer', accessories: 'keyboard', creator: 'video' };
   function placeholder(p) {
     var name = CAT_ICON[p.cat] || 'box';
     return '<div class="pc-ph" aria-hidden="true">' + (window.DIcons ? DIcons.get(name) : '') + '</div>';
