@@ -1,0 +1,1 @@
+465 original, product-labelled SVG illustrations are included under public/assets/catalogue/. Each depicts the named item with a matching product-type pictogram and exact name. These are illustrations, NOT verified photographs of specific brands/models. Admin-uploaded photos are preserved. Replace illustrations with supplier photos once actual stock models are known.

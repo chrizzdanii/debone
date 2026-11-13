@@ -1,197 +1,4251 @@
 {
   "categories": [
     {
-      "id": "cameras",
-      "label": "Cameras & video"
+      "id": "cat-01",
+      "label": "Computer Accessories & Peripherals"
     },
     {
-      "id": "photo",
-      "label": "Photography"
+      "id": "cat-02",
+      "label": "Computer Spare Parts & Components"
     },
     {
-      "id": "laptops",
-      "label": "Laptops"
+      "id": "cat-03",
+      "label": "Storage Devices & Memory"
     },
     {
-      "id": "printing",
-      "label": "Printing equipment"
+      "id": "cat-04",
+      "label": "Printers, Scanners & Office Machines"
     },
     {
-      "id": "accessories",
-      "label": "Computer accessories"
+      "id": "cat-05",
+      "label": "Printer Ink, Toner & Spare Parts"
+    },
+    {
+      "id": "cat-06",
+      "label": "Printing Papers & Materials"
+    },
+    {
+      "id": "cat-07",
+      "label": "Finished Printing & Branding Products"
+    },
+    {
+      "id": "cat-08",
+      "label": "Photography Cameras & Equipment"
+    },
+    {
+      "id": "cat-09",
+      "label": "Photography Studio Accessories"
+    },
+    {
+      "id": "cat-10",
+      "label": "Photo Frames, Albums & Gift Products"
+    },
+    {
+      "id": "cat-11",
+      "label": "Videography & Filmmaking Equipment"
+    },
+    {
+      "id": "cat-12",
+      "label": "Audio Recording & Livestream Equipment"
+    },
+    {
+      "id": "cat-13",
+      "label": "Drone Products & Accessories"
+    },
+    {
+      "id": "cat-14",
+      "label": "Networking, Power & Security Products"
+    },
+    {
+      "id": "cat-15",
+      "label": "Computers & Digital Devices"
     }
   ],
   "products": [
     {
-      "id": "dslr-mirrorless",
-      "cat": "cameras",
-      "name": "DSLR & mirrorless cameras",
-      "summary": "Cameras for photography and video.",
-      "description": "Choose a body for photos and video. Ask us about the lens kit, memory cards and what suits your work.",
+      "id": "dbn-001",
+      "cat": "cat-01",
+      "name": "USB keyboards",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB keyboards — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1496598894108-068941485c21?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/catalogue/dbn-001.svg"
     },
     {
-      "id": "camcorders",
-      "cat": "cameras",
+      "id": "dbn-002",
+      "cat": "cat-01",
+      "name": "Wireless keyboards",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Wireless keyboards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-002.svg"
+    },
+    {
+      "id": "dbn-003",
+      "cat": "cat-01",
+      "name": "Gaming keyboards",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Gaming keyboards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-003.svg"
+    },
+    {
+      "id": "dbn-004",
+      "cat": "cat-01",
+      "name": "USB mouse",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB mouse — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-004.svg"
+    },
+    {
+      "id": "dbn-005",
+      "cat": "cat-01",
+      "name": "Wireless mouse",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Wireless mouse — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-005.svg"
+    },
+    {
+      "id": "dbn-006",
+      "cat": "cat-01",
+      "name": "Gaming mouse",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Gaming mouse — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-006.svg"
+    },
+    {
+      "id": "dbn-007",
+      "cat": "cat-01",
+      "name": "Mouse pads",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Mouse pads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-007.svg"
+    },
+    {
+      "id": "dbn-008",
+      "cat": "cat-01",
+      "name": "Keyboard and mouse combos",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Keyboard and mouse combos — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-008.svg"
+    },
+    {
+      "id": "dbn-009",
+      "cat": "cat-01",
+      "name": "USB hubs",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB hubs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-009.svg"
+    },
+    {
+      "id": "dbn-010",
+      "cat": "cat-01",
+      "name": "USB extension cables",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB extension cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-010.svg"
+    },
+    {
+      "id": "dbn-011",
+      "cat": "cat-01",
+      "name": "USB Type-C cables",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB Type-C cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-011.svg"
+    },
+    {
+      "id": "dbn-012",
+      "cat": "cat-01",
+      "name": "HDMI cables",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "HDMI cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-012.svg"
+    },
+    {
+      "id": "dbn-013",
+      "cat": "cat-01",
+      "name": "VGA cables",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "VGA cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-013.svg"
+    },
+    {
+      "id": "dbn-014",
+      "cat": "cat-01",
+      "name": "DisplayPort cables",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "DisplayPort cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-014.svg"
+    },
+    {
+      "id": "dbn-015",
+      "cat": "cat-01",
+      "name": "Ethernet cables",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Ethernet cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-015.svg"
+    },
+    {
+      "id": "dbn-016",
+      "cat": "cat-01",
+      "name": "HDMI-to-VGA adapters",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "HDMI-to-VGA adapters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-016.svg"
+    },
+    {
+      "id": "dbn-017",
+      "cat": "cat-01",
+      "name": "USB-to-Ethernet adapters",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB-to-Ethernet adapters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-017.svg"
+    },
+    {
+      "id": "dbn-018",
+      "cat": "cat-01",
+      "name": "Type-C multiport adapters",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Type-C multiport adapters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-018.svg"
+    },
+    {
+      "id": "dbn-019",
+      "cat": "cat-01",
+      "name": "Card readers",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Card readers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-019.svg"
+    },
+    {
+      "id": "dbn-020",
+      "cat": "cat-01",
+      "name": "USB Bluetooth adapters",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB Bluetooth adapters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-020.svg"
+    },
+    {
+      "id": "dbn-021",
+      "cat": "cat-01",
+      "name": "Wi-Fi adapters",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Wi-Fi adapters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-021.svg"
+    },
+    {
+      "id": "dbn-022",
+      "cat": "cat-01",
+      "name": "Webcams",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Webcams — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-022.svg"
+    },
+    {
+      "id": "dbn-023",
+      "cat": "cat-01",
+      "name": "Computer microphones",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Computer microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-023.svg"
+    },
+    {
+      "id": "dbn-024",
+      "cat": "cat-01",
+      "name": "Computer speakers",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Computer speakers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-024.svg"
+    },
+    {
+      "id": "dbn-025",
+      "cat": "cat-01",
+      "name": "Headsets",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Headsets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-025.svg"
+    },
+    {
+      "id": "dbn-026",
+      "cat": "cat-01",
+      "name": "Headphones",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Headphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-026.svg"
+    },
+    {
+      "id": "dbn-027",
+      "cat": "cat-01",
+      "name": "Laptop cooling pads",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Laptop cooling pads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-027.svg"
+    },
+    {
+      "id": "dbn-028",
+      "cat": "cat-01",
+      "name": "Laptop stands",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Laptop stands — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-028.svg"
+    },
+    {
+      "id": "dbn-029",
+      "cat": "cat-01",
+      "name": "Laptop bags",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Laptop bags — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-029.svg"
+    },
+    {
+      "id": "dbn-030",
+      "cat": "cat-01",
+      "name": "Laptop sleeves",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Laptop sleeves — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-030.svg"
+    },
+    {
+      "id": "dbn-031",
+      "cat": "cat-01",
+      "name": "Laptop screen protectors",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Laptop screen protectors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-031.svg"
+    },
+    {
+      "id": "dbn-032",
+      "cat": "cat-01",
+      "name": "Laptop privacy filters",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Laptop privacy filters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-032.svg"
+    },
+    {
+      "id": "dbn-033",
+      "cat": "cat-01",
+      "name": "Laptop locks",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "Laptop locks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-033.svg"
+    },
+    {
+      "id": "dbn-034",
+      "cat": "cat-01",
+      "name": "USB desk fans",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB desk fans — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-034.svg"
+    },
+    {
+      "id": "dbn-035",
+      "cat": "cat-01",
+      "name": "USB LED lights",
+      "summary": "Computer Accessories & Peripherals",
+      "description": "USB LED lights — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-035.svg"
+    },
+    {
+      "id": "dbn-036",
+      "cat": "cat-02",
+      "name": "Laptop batteries",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop batteries — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-036.svg"
+    },
+    {
+      "id": "dbn-037",
+      "cat": "cat-02",
+      "name": "Laptop chargers",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop chargers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-037.svg"
+    },
+    {
+      "id": "dbn-038",
+      "cat": "cat-02",
+      "name": "Universal laptop chargers",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Universal laptop chargers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-038.svg"
+    },
+    {
+      "id": "dbn-039",
+      "cat": "cat-02",
+      "name": "Laptop LCD screens",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop LCD screens — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-039.svg"
+    },
+    {
+      "id": "dbn-040",
+      "cat": "cat-02",
+      "name": "Laptop LED screens",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop LED screens — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-040.svg"
+    },
+    {
+      "id": "dbn-041",
+      "cat": "cat-02",
+      "name": "Laptop keyboards",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop keyboards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-041.svg"
+    },
+    {
+      "id": "dbn-042",
+      "cat": "cat-02",
+      "name": "Laptop touchpads",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop touchpads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-042.svg"
+    },
+    {
+      "id": "dbn-043",
+      "cat": "cat-02",
+      "name": "Laptop hinges",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop hinges — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-043.svg"
+    },
+    {
+      "id": "dbn-044",
+      "cat": "cat-02",
+      "name": "Laptop cooling fans",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop cooling fans — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-044.svg"
+    },
+    {
+      "id": "dbn-045",
+      "cat": "cat-02",
+      "name": "Laptop charging ports",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop charging ports — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-045.svg"
+    },
+    {
+      "id": "dbn-046",
+      "cat": "cat-02",
+      "name": "Laptop motherboards",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop motherboards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-046.svg"
+    },
+    {
+      "id": "dbn-047",
+      "cat": "cat-02",
+      "name": "Desktop motherboards",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Desktop motherboards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-047.svg"
+    },
+    {
+      "id": "dbn-048",
+      "cat": "cat-02",
+      "name": "Processors (CPU)",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Processors (CPU) — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-048.svg"
+    },
+    {
+      "id": "dbn-049",
+      "cat": "cat-02",
+      "name": "RAM DDR3",
+      "summary": "Computer Spare Parts & Components",
+      "description": "RAM DDR3 — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-049.svg"
+    },
+    {
+      "id": "dbn-050",
+      "cat": "cat-02",
+      "name": "RAM DDR4",
+      "summary": "Computer Spare Parts & Components",
+      "description": "RAM DDR4 — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-050.svg"
+    },
+    {
+      "id": "dbn-051",
+      "cat": "cat-02",
+      "name": "RAM DDR5",
+      "summary": "Computer Spare Parts & Components",
+      "description": "RAM DDR5 — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-051.svg"
+    },
+    {
+      "id": "dbn-052",
+      "cat": "cat-02",
+      "name": "SATA SSDs",
+      "summary": "Computer Spare Parts & Components",
+      "description": "SATA SSDs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-052.svg"
+    },
+    {
+      "id": "dbn-053",
+      "cat": "cat-02",
+      "name": "NVMe SSDs",
+      "summary": "Computer Spare Parts & Components",
+      "description": "NVMe SSDs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-053.svg"
+    },
+    {
+      "id": "dbn-054",
+      "cat": "cat-02",
+      "name": "Internal hard drives",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Internal hard drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-054.svg"
+    },
+    {
+      "id": "dbn-055",
+      "cat": "cat-02",
+      "name": "External hard drives",
+      "summary": "Computer Spare Parts & Components",
+      "description": "External hard drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-055.svg"
+    },
+    {
+      "id": "dbn-056",
+      "cat": "cat-02",
+      "name": "Graphics cards",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Graphics cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-056.svg"
+    },
+    {
+      "id": "dbn-057",
+      "cat": "cat-02",
+      "name": "Desktop power supplies",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Desktop power supplies — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-057.svg"
+    },
+    {
+      "id": "dbn-058",
+      "cat": "cat-02",
+      "name": "CMOS batteries",
+      "summary": "Computer Spare Parts & Components",
+      "description": "CMOS batteries — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-058.svg"
+    },
+    {
+      "id": "dbn-059",
+      "cat": "cat-02",
+      "name": "Thermal paste",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Thermal paste — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-059.svg"
+    },
+    {
+      "id": "dbn-060",
+      "cat": "cat-02",
+      "name": "CPU cooling fans",
+      "summary": "Computer Spare Parts & Components",
+      "description": "CPU cooling fans — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-060.svg"
+    },
+    {
+      "id": "dbn-061",
+      "cat": "cat-02",
+      "name": "Computer cases",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Computer cases — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-061.svg"
+    },
+    {
+      "id": "dbn-062",
+      "cat": "cat-02",
+      "name": "SATA cables",
+      "summary": "Computer Spare Parts & Components",
+      "description": "SATA cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-062.svg"
+    },
+    {
+      "id": "dbn-063",
+      "cat": "cat-02",
+      "name": "Power cables",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Power cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-063.svg"
+    },
+    {
+      "id": "dbn-064",
+      "cat": "cat-02",
+      "name": "Laptop speakers",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop speakers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-064.svg"
+    },
+    {
+      "id": "dbn-065",
+      "cat": "cat-02",
+      "name": "Laptop replacement casings",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop replacement casings — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-065.svg"
+    },
+    {
+      "id": "dbn-066",
+      "cat": "cat-02",
+      "name": "Laptop flex cables",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Laptop flex cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-066.svg"
+    },
+    {
+      "id": "dbn-067",
+      "cat": "cat-02",
+      "name": "SSD enclosures",
+      "summary": "Computer Spare Parts & Components",
+      "description": "SSD enclosures — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-067.svg"
+    },
+    {
+      "id": "dbn-068",
+      "cat": "cat-02",
+      "name": "HDD enclosures",
+      "summary": "Computer Spare Parts & Components",
+      "description": "HDD enclosures — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-068.svg"
+    },
+    {
+      "id": "dbn-069",
+      "cat": "cat-02",
+      "name": "PCIe expansion cards",
+      "summary": "Computer Spare Parts & Components",
+      "description": "PCIe expansion cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-069.svg"
+    },
+    {
+      "id": "dbn-070",
+      "cat": "cat-02",
+      "name": "Desktop replacement fans",
+      "summary": "Computer Spare Parts & Components",
+      "description": "Desktop replacement fans — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-070.svg"
+    },
+    {
+      "id": "dbn-071",
+      "cat": "cat-03",
+      "name": "8GB flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "8GB flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-071.svg"
+    },
+    {
+      "id": "dbn-072",
+      "cat": "cat-03",
+      "name": "16GB flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "16GB flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-072.svg"
+    },
+    {
+      "id": "dbn-073",
+      "cat": "cat-03",
+      "name": "32GB flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "32GB flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-073.svg"
+    },
+    {
+      "id": "dbn-074",
+      "cat": "cat-03",
+      "name": "64GB flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "64GB flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-074.svg"
+    },
+    {
+      "id": "dbn-075",
+      "cat": "cat-03",
+      "name": "128GB flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "128GB flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-075.svg"
+    },
+    {
+      "id": "dbn-076",
+      "cat": "cat-03",
+      "name": "256GB flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "256GB flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-076.svg"
+    },
+    {
+      "id": "dbn-077",
+      "cat": "cat-03",
+      "name": "512GB flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "512GB flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-077.svg"
+    },
+    {
+      "id": "dbn-078",
+      "cat": "cat-03",
+      "name": "Type-C flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "Type-C flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-078.svg"
+    },
+    {
+      "id": "dbn-079",
+      "cat": "cat-03",
+      "name": "OTG flash drives",
+      "summary": "Storage Devices & Memory",
+      "description": "OTG flash drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-079.svg"
+    },
+    {
+      "id": "dbn-080",
+      "cat": "cat-03",
+      "name": "MicroSD cards",
+      "summary": "Storage Devices & Memory",
+      "description": "MicroSD cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-080.svg"
+    },
+    {
+      "id": "dbn-081",
+      "cat": "cat-03",
+      "name": "SDHC cards",
+      "summary": "Storage Devices & Memory",
+      "description": "SDHC cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-081.svg"
+    },
+    {
+      "id": "dbn-082",
+      "cat": "cat-03",
+      "name": "SDXC cards",
+      "summary": "Storage Devices & Memory",
+      "description": "SDXC cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-082.svg"
+    },
+    {
+      "id": "dbn-083",
+      "cat": "cat-03",
+      "name": "CFexpress cards",
+      "summary": "Storage Devices & Memory",
+      "description": "CFexpress cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-083.svg"
+    },
+    {
+      "id": "dbn-084",
+      "cat": "cat-03",
+      "name": "CompactFlash cards",
+      "summary": "Storage Devices & Memory",
+      "description": "CompactFlash cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-084.svg"
+    },
+    {
+      "id": "dbn-085",
+      "cat": "cat-03",
+      "name": "Portable SSDs",
+      "summary": "Storage Devices & Memory",
+      "description": "Portable SSDs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-085.svg"
+    },
+    {
+      "id": "dbn-086",
+      "cat": "cat-03",
+      "name": "External HDDs",
+      "summary": "Storage Devices & Memory",
+      "description": "External HDDs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-086.svg"
+    },
+    {
+      "id": "dbn-087",
+      "cat": "cat-03",
+      "name": "Blank CDs",
+      "summary": "Storage Devices & Memory",
+      "description": "Blank CDs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-087.svg"
+    },
+    {
+      "id": "dbn-088",
+      "cat": "cat-03",
+      "name": "Blank DVDs",
+      "summary": "Storage Devices & Memory",
+      "description": "Blank DVDs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-088.svg"
+    },
+    {
+      "id": "dbn-089",
+      "cat": "cat-03",
+      "name": "Blu-ray discs",
+      "summary": "Storage Devices & Memory",
+      "description": "Blu-ray discs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-089.svg"
+    },
+    {
+      "id": "dbn-090",
+      "cat": "cat-03",
+      "name": "CD/DVD storage cases",
+      "summary": "Storage Devices & Memory",
+      "description": "CD/DVD storage cases — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-090.svg"
+    },
+    {
+      "id": "dbn-091",
+      "cat": "cat-04",
+      "name": "Inkjet printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Inkjet printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-091.svg"
+    },
+    {
+      "id": "dbn-092",
+      "cat": "cat-04",
+      "name": "Laser printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Laser printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-092.svg"
+    },
+    {
+      "id": "dbn-093",
+      "cat": "cat-04",
+      "name": "All-in-one printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "All-in-one printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-093.svg"
+    },
+    {
+      "id": "dbn-094",
+      "cat": "cat-04",
+      "name": "Photo printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Photo printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-094.svg"
+    },
+    {
+      "id": "dbn-095",
+      "cat": "cat-04",
+      "name": "Thermal receipt printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Thermal receipt printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-095.svg"
+    },
+    {
+      "id": "dbn-096",
+      "cat": "cat-04",
+      "name": "Label printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Label printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-096.svg"
+    },
+    {
+      "id": "dbn-097",
+      "cat": "cat-04",
+      "name": "Barcode printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Barcode printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-097.svg"
+    },
+    {
+      "id": "dbn-098",
+      "cat": "cat-04",
+      "name": "Portable printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Portable printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-098.svg"
+    },
+    {
+      "id": "dbn-099",
+      "cat": "cat-04",
+      "name": "A3 printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "A3 printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-099.svg"
+    },
+    {
+      "id": "dbn-100",
+      "cat": "cat-04",
+      "name": "Large-format printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Large-format printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-100.svg"
+    },
+    {
+      "id": "dbn-101",
+      "cat": "cat-04",
+      "name": "Sublimation printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Sublimation printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-101.svg"
+    },
+    {
+      "id": "dbn-102",
+      "cat": "cat-04",
+      "name": "DTF printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "DTF printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-102.svg"
+    },
+    {
+      "id": "dbn-103",
+      "cat": "cat-04",
+      "name": "DTG printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "DTG printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-103.svg"
+    },
+    {
+      "id": "dbn-104",
+      "cat": "cat-04",
+      "name": "UV printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "UV printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-104.svg"
+    },
+    {
+      "id": "dbn-105",
+      "cat": "cat-04",
+      "name": "Eco-solvent printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Eco-solvent printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-105.svg"
+    },
+    {
+      "id": "dbn-106",
+      "cat": "cat-04",
+      "name": "Photocopiers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Photocopiers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-106.svg"
+    },
+    {
+      "id": "dbn-107",
+      "cat": "cat-04",
+      "name": "Flatbed scanners",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Flatbed scanners — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-107.svg"
+    },
+    {
+      "id": "dbn-108",
+      "cat": "cat-04",
+      "name": "Document scanners",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Document scanners — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-108.svg"
+    },
+    {
+      "id": "dbn-109",
+      "cat": "cat-04",
+      "name": "Laminating machines",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Laminating machines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-109.svg"
+    },
+    {
+      "id": "dbn-110",
+      "cat": "cat-04",
+      "name": "Spiral binding machines",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Spiral binding machines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-110.svg"
+    },
+    {
+      "id": "dbn-111",
+      "cat": "cat-04",
+      "name": "Comb binding machines",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Comb binding machines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-111.svg"
+    },
+    {
+      "id": "dbn-112",
+      "cat": "cat-04",
+      "name": "Paper cutting machines",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Paper cutting machines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-112.svg"
+    },
+    {
+      "id": "dbn-113",
+      "cat": "cat-04",
+      "name": "Guillotine cutters",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Guillotine cutters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-113.svg"
+    },
+    {
+      "id": "dbn-114",
+      "cat": "cat-04",
+      "name": "Paper shredders",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Paper shredders — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-114.svg"
+    },
+    {
+      "id": "dbn-115",
+      "cat": "cat-04",
+      "name": "ID card printers",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "ID card printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-115.svg"
+    },
+    {
+      "id": "dbn-116",
+      "cat": "cat-04",
+      "name": "Heat press machines",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Heat press machines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-116.svg"
+    },
+    {
+      "id": "dbn-117",
+      "cat": "cat-04",
+      "name": "Mug printing machines",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Mug printing machines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-117.svg"
+    },
+    {
+      "id": "dbn-118",
+      "cat": "cat-04",
+      "name": "Vinyl cutting plotters",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Vinyl cutting plotters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-118.svg"
+    },
+    {
+      "id": "dbn-119",
+      "cat": "cat-04",
+      "name": "Paper creasing machines",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Paper creasing machines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-119.svg"
+    },
+    {
+      "id": "dbn-120",
+      "cat": "cat-04",
+      "name": "Corner rounding machines",
+      "summary": "Printers, Scanners & Office Machines",
+      "description": "Corner rounding machines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-120.svg"
+    },
+    {
+      "id": "dbn-121",
+      "cat": "cat-05",
+      "name": "Epson ink bottles",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Epson ink bottles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-121.svg"
+    },
+    {
+      "id": "dbn-122",
+      "cat": "cat-05",
+      "name": "Canon ink bottles",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Canon ink bottles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-122.svg"
+    },
+    {
+      "id": "dbn-123",
+      "cat": "cat-05",
+      "name": "HP ink bottles",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "HP ink bottles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-123.svg"
+    },
+    {
+      "id": "dbn-124",
+      "cat": "cat-05",
+      "name": "Brother ink bottles",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Brother ink bottles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-124.svg"
+    },
+    {
+      "id": "dbn-125",
+      "cat": "cat-05",
+      "name": "Black printer ink",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Black printer ink — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-125.svg"
+    },
+    {
+      "id": "dbn-126",
+      "cat": "cat-05",
+      "name": "Cyan printer ink",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Cyan printer ink — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-126.svg"
+    },
+    {
+      "id": "dbn-127",
+      "cat": "cat-05",
+      "name": "Magenta printer ink",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Magenta printer ink — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-127.svg"
+    },
+    {
+      "id": "dbn-128",
+      "cat": "cat-05",
+      "name": "Yellow printer ink",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Yellow printer ink — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-128.svg"
+    },
+    {
+      "id": "dbn-129",
+      "cat": "cat-05",
+      "name": "Ink cartridges",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Ink cartridges — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-129.svg"
+    },
+    {
+      "id": "dbn-130",
+      "cat": "cat-05",
+      "name": "Toner cartridges",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Toner cartridges — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-130.svg"
+    },
+    {
+      "id": "dbn-131",
+      "cat": "cat-05",
+      "name": "Toner powder",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Toner powder — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-131.svg"
+    },
+    {
+      "id": "dbn-132",
+      "cat": "cat-05",
+      "name": "Sublimation ink",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Sublimation ink — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-132.svg"
+    },
+    {
+      "id": "dbn-133",
+      "cat": "cat-05",
+      "name": "DTF ink",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "DTF ink — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-133.svg"
+    },
+    {
+      "id": "dbn-134",
+      "cat": "cat-05",
+      "name": "UV printing ink",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "UV printing ink — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-134.svg"
+    },
+    {
+      "id": "dbn-135",
+      "cat": "cat-05",
+      "name": "Eco-solvent ink",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Eco-solvent ink — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-135.svg"
+    },
+    {
+      "id": "dbn-136",
+      "cat": "cat-05",
+      "name": "Printer printheads",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Printer printheads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-136.svg"
+    },
+    {
+      "id": "dbn-137",
+      "cat": "cat-05",
+      "name": "Printer rollers",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Printer rollers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-137.svg"
+    },
+    {
+      "id": "dbn-138",
+      "cat": "cat-05",
+      "name": "Printer maintenance boxes",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Printer maintenance boxes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-138.svg"
+    },
+    {
+      "id": "dbn-139",
+      "cat": "cat-05",
+      "name": "Waste ink pads",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Waste ink pads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-139.svg"
+    },
+    {
+      "id": "dbn-140",
+      "cat": "cat-05",
+      "name": "Printer cleaning solutions",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Printer cleaning solutions — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-140.svg"
+    },
+    {
+      "id": "dbn-141",
+      "cat": "cat-05",
+      "name": "Ink refill syringes",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Ink refill syringes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-141.svg"
+    },
+    {
+      "id": "dbn-142",
+      "cat": "cat-05",
+      "name": "Cartridge chips",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Cartridge chips — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-142.svg"
+    },
+    {
+      "id": "dbn-143",
+      "cat": "cat-05",
+      "name": "Fuser units",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Fuser units — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-143.svg"
+    },
+    {
+      "id": "dbn-144",
+      "cat": "cat-05",
+      "name": "Drum units",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Drum units — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-144.svg"
+    },
+    {
+      "id": "dbn-145",
+      "cat": "cat-05",
+      "name": "Printer pickup rollers",
+      "summary": "Printer Ink, Toner & Spare Parts",
+      "description": "Printer pickup rollers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-145.svg"
+    },
+    {
+      "id": "dbn-146",
+      "cat": "cat-06",
+      "name": "A4 photocopy paper",
+      "summary": "Printing Papers & Materials",
+      "description": "A4 photocopy paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-146.svg"
+    },
+    {
+      "id": "dbn-147",
+      "cat": "cat-06",
+      "name": "A3 photocopy paper",
+      "summary": "Printing Papers & Materials",
+      "description": "A3 photocopy paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-147.svg"
+    },
+    {
+      "id": "dbn-148",
+      "cat": "cat-06",
+      "name": "A5 paper",
+      "summary": "Printing Papers & Materials",
+      "description": "A5 paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-148.svg"
+    },
+    {
+      "id": "dbn-149",
+      "cat": "cat-06",
+      "name": "Glossy photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Glossy photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-149.svg"
+    },
+    {
+      "id": "dbn-150",
+      "cat": "cat-06",
+      "name": "Matte photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Matte photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-150.svg"
+    },
+    {
+      "id": "dbn-151",
+      "cat": "cat-06",
+      "name": "Satin photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Satin photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-151.svg"
+    },
+    {
+      "id": "dbn-152",
+      "cat": "cat-06",
+      "name": "4×6 photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "4×6 photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-152.svg"
+    },
+    {
+      "id": "dbn-153",
+      "cat": "cat-06",
+      "name": "5×7 photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "5×7 photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-153.svg"
+    },
+    {
+      "id": "dbn-154",
+      "cat": "cat-06",
+      "name": "6×8 photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "6×8 photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-154.svg"
+    },
+    {
+      "id": "dbn-155",
+      "cat": "cat-06",
+      "name": "8×10 photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "8×10 photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-155.svg"
+    },
+    {
+      "id": "dbn-156",
+      "cat": "cat-06",
+      "name": "A4 photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "A4 photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-156.svg"
+    },
+    {
+      "id": "dbn-157",
+      "cat": "cat-06",
+      "name": "A3 photo paper",
+      "summary": "Printing Papers & Materials",
+      "description": "A3 photo paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-157.svg"
+    },
+    {
+      "id": "dbn-158",
+      "cat": "cat-06",
+      "name": "Sticker paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Sticker paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-158.svg"
+    },
+    {
+      "id": "dbn-159",
+      "cat": "cat-06",
+      "name": "Transparent sticker paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Transparent sticker paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-159.svg"
+    },
+    {
+      "id": "dbn-160",
+      "cat": "cat-06",
+      "name": "Vinyl sticker rolls",
+      "summary": "Printing Papers & Materials",
+      "description": "Vinyl sticker rolls — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-160.svg"
+    },
+    {
+      "id": "dbn-161",
+      "cat": "cat-06",
+      "name": "Cardstock paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Cardstock paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-161.svg"
+    },
+    {
+      "id": "dbn-162",
+      "cat": "cat-06",
+      "name": "Art card",
+      "summary": "Printing Papers & Materials",
+      "description": "Art card — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-162.svg"
+    },
+    {
+      "id": "dbn-163",
+      "cat": "cat-06",
+      "name": "Art paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Art paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-163.svg"
+    },
+    {
+      "id": "dbn-164",
+      "cat": "cat-06",
+      "name": "Bond paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Bond paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-164.svg"
+    },
+    {
+      "id": "dbn-165",
+      "cat": "cat-06",
+      "name": "Textured paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Textured paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-165.svg"
+    },
+    {
+      "id": "dbn-166",
+      "cat": "cat-06",
+      "name": "Certificate paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Certificate paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-166.svg"
+    },
+    {
+      "id": "dbn-167",
+      "cat": "cat-06",
+      "name": "Sublimation paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Sublimation paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-167.svg"
+    },
+    {
+      "id": "dbn-168",
+      "cat": "cat-06",
+      "name": "Heat transfer paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Heat transfer paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-168.svg"
+    },
+    {
+      "id": "dbn-169",
+      "cat": "cat-06",
+      "name": "Carbonless NCR paper",
+      "summary": "Printing Papers & Materials",
+      "description": "Carbonless NCR paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-169.svg"
+    },
+    {
+      "id": "dbn-170",
+      "cat": "cat-06",
+      "name": "Thermal paper rolls",
+      "summary": "Printing Papers & Materials",
+      "description": "Thermal paper rolls — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-170.svg"
+    },
+    {
+      "id": "dbn-171",
+      "cat": "cat-06",
+      "name": "Lamination pouches",
+      "summary": "Printing Papers & Materials",
+      "description": "Lamination pouches — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-171.svg"
+    },
+    {
+      "id": "dbn-172",
+      "cat": "cat-06",
+      "name": "Binding covers",
+      "summary": "Printing Papers & Materials",
+      "description": "Binding covers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-172.svg"
+    },
+    {
+      "id": "dbn-173",
+      "cat": "cat-06",
+      "name": "Binding spirals",
+      "summary": "Printing Papers & Materials",
+      "description": "Binding spirals — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-173.svg"
+    },
+    {
+      "id": "dbn-174",
+      "cat": "cat-06",
+      "name": "Binding combs",
+      "summary": "Printing Papers & Materials",
+      "description": "Binding combs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-174.svg"
+    },
+    {
+      "id": "dbn-175",
+      "cat": "cat-06",
+      "name": "Brown envelopes",
+      "summary": "Printing Papers & Materials",
+      "description": "Brown envelopes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-175.svg"
+    },
+    {
+      "id": "dbn-176",
+      "cat": "cat-06",
+      "name": "White envelopes",
+      "summary": "Printing Papers & Materials",
+      "description": "White envelopes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-176.svg"
+    },
+    {
+      "id": "dbn-177",
+      "cat": "cat-06",
+      "name": "Coloured envelopes",
+      "summary": "Printing Papers & Materials",
+      "description": "Coloured envelopes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-177.svg"
+    },
+    {
+      "id": "dbn-178",
+      "cat": "cat-06",
+      "name": "Manila cards",
+      "summary": "Printing Papers & Materials",
+      "description": "Manila cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-178.svg"
+    },
+    {
+      "id": "dbn-179",
+      "cat": "cat-06",
+      "name": "PVC ID card blanks",
+      "summary": "Printing Papers & Materials",
+      "description": "PVC ID card blanks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-179.svg"
+    },
+    {
+      "id": "dbn-180",
+      "cat": "cat-06",
+      "name": "ID card laminating sheets",
+      "summary": "Printing Papers & Materials",
+      "description": "ID card laminating sheets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-180.svg"
+    },
+    {
+      "id": "dbn-181",
+      "cat": "cat-06",
+      "name": "Flex banner material",
+      "summary": "Printing Papers & Materials",
+      "description": "Flex banner material — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-181.svg"
+    },
+    {
+      "id": "dbn-182",
+      "cat": "cat-06",
+      "name": "SAV sticker vinyl",
+      "summary": "Printing Papers & Materials",
+      "description": "SAV sticker vinyl — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-182.svg"
+    },
+    {
+      "id": "dbn-183",
+      "cat": "cat-06",
+      "name": "One-way vision vinyl",
+      "summary": "Printing Papers & Materials",
+      "description": "One-way vision vinyl — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-183.svg"
+    },
+    {
+      "id": "dbn-184",
+      "cat": "cat-06",
+      "name": "Roll-up banner material",
+      "summary": "Printing Papers & Materials",
+      "description": "Roll-up banner material — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-184.svg"
+    },
+    {
+      "id": "dbn-185",
+      "cat": "cat-06",
+      "name": "Canvas printing rolls",
+      "summary": "Printing Papers & Materials",
+      "description": "Canvas printing rolls — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-185.svg"
+    },
+    {
+      "id": "dbn-186",
+      "cat": "cat-06",
+      "name": "Foam board sheets",
+      "summary": "Printing Papers & Materials",
+      "description": "Foam board sheets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-186.svg"
+    },
+    {
+      "id": "dbn-187",
+      "cat": "cat-06",
+      "name": "Acrylic sheets",
+      "summary": "Printing Papers & Materials",
+      "description": "Acrylic sheets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-187.svg"
+    },
+    {
+      "id": "dbn-188",
+      "cat": "cat-06",
+      "name": "Mounting boards",
+      "summary": "Printing Papers & Materials",
+      "description": "Mounting boards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-188.svg"
+    },
+    {
+      "id": "dbn-189",
+      "cat": "cat-06",
+      "name": "DTF transfer film",
+      "summary": "Printing Papers & Materials",
+      "description": "DTF transfer film — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-189.svg"
+    },
+    {
+      "id": "dbn-190",
+      "cat": "cat-06",
+      "name": "DTF adhesive powder",
+      "summary": "Printing Papers & Materials",
+      "description": "DTF adhesive powder — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-190.svg"
+    },
+    {
+      "id": "dbn-191",
+      "cat": "cat-07",
+      "name": "Business cards",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Business cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-191.svg"
+    },
+    {
+      "id": "dbn-192",
+      "cat": "cat-07",
+      "name": "Flyers",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Flyers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-192.svg"
+    },
+    {
+      "id": "dbn-193",
+      "cat": "cat-07",
+      "name": "Posters",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Posters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-193.svg"
+    },
+    {
+      "id": "dbn-194",
+      "cat": "cat-07",
+      "name": "Banners",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Banners — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-194.svg"
+    },
+    {
+      "id": "dbn-195",
+      "cat": "cat-07",
+      "name": "Roll-up banners",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Roll-up banners — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-195.svg"
+    },
+    {
+      "id": "dbn-196",
+      "cat": "cat-07",
+      "name": "Flex banners",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Flex banners — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-196.svg"
+    },
+    {
+      "id": "dbn-197",
+      "cat": "cat-07",
+      "name": "Wedding invitations",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Wedding invitations — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-197.svg"
+    },
+    {
+      "id": "dbn-198",
+      "cat": "cat-07",
+      "name": "Birthday invitations",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Birthday invitations — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-198.svg"
+    },
+    {
+      "id": "dbn-199",
+      "cat": "cat-07",
+      "name": "Burial programmes",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Burial programmes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-199.svg"
+    },
+    {
+      "id": "dbn-200",
+      "cat": "cat-07",
+      "name": "Church programmes",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Church programmes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-200.svg"
+    },
+    {
+      "id": "dbn-201",
+      "cat": "cat-07",
+      "name": "Event brochures",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Event brochures — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-201.svg"
+    },
+    {
+      "id": "dbn-202",
+      "cat": "cat-07",
+      "name": "School magazines",
+      "summary": "Finished Printing & Branding Products",
+      "description": "School magazines — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-202.svg"
+    },
+    {
+      "id": "dbn-203",
+      "cat": "cat-07",
+      "name": "Company profiles",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Company profiles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-203.svg"
+    },
+    {
+      "id": "dbn-204",
+      "cat": "cat-07",
+      "name": "Letterheads",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Letterheads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-204.svg"
+    },
+    {
+      "id": "dbn-205",
+      "cat": "cat-07",
+      "name": "Branded envelopes",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Branded envelopes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-205.svg"
+    },
+    {
+      "id": "dbn-206",
+      "cat": "cat-07",
+      "name": "Receipt booklets",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Receipt booklets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-206.svg"
+    },
+    {
+      "id": "dbn-207",
+      "cat": "cat-07",
+      "name": "Invoice booklets",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Invoice booklets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-207.svg"
+    },
+    {
+      "id": "dbn-208",
+      "cat": "cat-07",
+      "name": "Custom notebooks",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Custom notebooks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-208.svg"
+    },
+    {
+      "id": "dbn-209",
+      "cat": "cat-07",
+      "name": "Custom calendars",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Custom calendars — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-209.svg"
+    },
+    {
+      "id": "dbn-210",
+      "cat": "cat-07",
+      "name": "Certificates",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Certificates — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-210.svg"
+    },
+    {
+      "id": "dbn-211",
+      "cat": "cat-07",
+      "name": "ID cards",
+      "summary": "Finished Printing & Branding Products",
+      "description": "ID cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-211.svg"
+    },
+    {
+      "id": "dbn-212",
+      "cat": "cat-07",
+      "name": "Staff identity cards",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Staff identity cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-212.svg"
+    },
+    {
+      "id": "dbn-213",
+      "cat": "cat-07",
+      "name": "Student identity cards",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Student identity cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-213.svg"
+    },
+    {
+      "id": "dbn-214",
+      "cat": "cat-07",
+      "name": "Membership cards",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Membership cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-214.svg"
+    },
+    {
+      "id": "dbn-215",
+      "cat": "cat-07",
+      "name": "PVC business cards",
+      "summary": "Finished Printing & Branding Products",
+      "description": "PVC business cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-215.svg"
+    },
+    {
+      "id": "dbn-216",
+      "cat": "cat-07",
+      "name": "Branded T-shirts",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Branded T-shirts — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-216.svg"
+    },
+    {
+      "id": "dbn-217",
+      "cat": "cat-07",
+      "name": "Branded polo shirts",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Branded polo shirts — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-217.svg"
+    },
+    {
+      "id": "dbn-218",
+      "cat": "cat-07",
+      "name": "Branded caps",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Branded caps — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-218.svg"
+    },
+    {
+      "id": "dbn-219",
+      "cat": "cat-07",
+      "name": "Custom mugs",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Custom mugs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-219.svg"
+    },
+    {
+      "id": "dbn-220",
+      "cat": "cat-07",
+      "name": "Custom plates",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Custom plates — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-220.svg"
+    },
+    {
+      "id": "dbn-221",
+      "cat": "cat-07",
+      "name": "Branded pens",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Branded pens — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-221.svg"
+    },
+    {
+      "id": "dbn-222",
+      "cat": "cat-07",
+      "name": "Branded keyholders",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Branded keyholders — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-222.svg"
+    },
+    {
+      "id": "dbn-223",
+      "cat": "cat-07",
+      "name": "Branded water bottles",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Branded water bottles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-223.svg"
+    },
+    {
+      "id": "dbn-224",
+      "cat": "cat-07",
+      "name": "Branded gift bags",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Branded gift bags — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-224.svg"
+    },
+    {
+      "id": "dbn-225",
+      "cat": "cat-07",
+      "name": "Product labels",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Product labels — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-225.svg"
+    },
+    {
+      "id": "dbn-226",
+      "cat": "cat-07",
+      "name": "Packaging stickers",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Packaging stickers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-226.svg"
+    },
+    {
+      "id": "dbn-227",
+      "cat": "cat-07",
+      "name": "Vehicle stickers",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Vehicle stickers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-227.svg"
+    },
+    {
+      "id": "dbn-228",
+      "cat": "cat-07",
+      "name": "Wall stickers",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Wall stickers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-228.svg"
+    },
+    {
+      "id": "dbn-229",
+      "cat": "cat-07",
+      "name": "Signboards",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Signboards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-229.svg"
+    },
+    {
+      "id": "dbn-230",
+      "cat": "cat-07",
+      "name": "Acrylic signage",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Acrylic signage — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-230.svg"
+    },
+    {
+      "id": "dbn-231",
+      "cat": "cat-07",
+      "name": "Directional signs",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Directional signs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-231.svg"
+    },
+    {
+      "id": "dbn-232",
+      "cat": "cat-07",
+      "name": "Rubber stamps",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Rubber stamps — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-232.svg"
+    },
+    {
+      "id": "dbn-233",
+      "cat": "cat-07",
+      "name": "Self-inking stamps",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Self-inking stamps — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-233.svg"
+    },
+    {
+      "id": "dbn-234",
+      "cat": "cat-07",
+      "name": "Wedding souvenirs",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Wedding souvenirs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-234.svg"
+    },
+    {
+      "id": "dbn-235",
+      "cat": "cat-07",
+      "name": "Custom gift boxes",
+      "summary": "Finished Printing & Branding Products",
+      "description": "Custom gift boxes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-235.svg"
+    },
+    {
+      "id": "dbn-236",
+      "cat": "cat-08",
+      "name": "DSLR cameras",
+      "summary": "Photography Cameras & Equipment",
+      "description": "DSLR cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-236.svg"
+    },
+    {
+      "id": "dbn-237",
+      "cat": "cat-08",
+      "name": "Mirrorless cameras",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Mirrorless cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-237.svg"
+    },
+    {
+      "id": "dbn-238",
+      "cat": "cat-08",
+      "name": "Compact digital cameras",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Compact digital cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-238.svg"
+    },
+    {
+      "id": "dbn-239",
+      "cat": "cat-08",
+      "name": "Instant cameras",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Instant cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-239.svg"
+    },
+    {
+      "id": "dbn-240",
+      "cat": "cat-08",
+      "name": "Film cameras",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Film cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-240.svg"
+    },
+    {
+      "id": "dbn-241",
+      "cat": "cat-08",
+      "name": "Camera lenses",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera lenses — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-241.svg"
+    },
+    {
+      "id": "dbn-242",
+      "cat": "cat-08",
+      "name": "Portrait lenses",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Portrait lenses — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-242.svg"
+    },
+    {
+      "id": "dbn-243",
+      "cat": "cat-08",
+      "name": "Zoom lenses",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Zoom lenses — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-243.svg"
+    },
+    {
+      "id": "dbn-244",
+      "cat": "cat-08",
+      "name": "Wide-angle lenses",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Wide-angle lenses — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-244.svg"
+    },
+    {
+      "id": "dbn-245",
+      "cat": "cat-08",
+      "name": "Macro lenses",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Macro lenses — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-245.svg"
+    },
+    {
+      "id": "dbn-246",
+      "cat": "cat-08",
+      "name": "Telephoto lenses",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Telephoto lenses — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-246.svg"
+    },
+    {
+      "id": "dbn-247",
+      "cat": "cat-08",
+      "name": "Lens filters",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Lens filters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-247.svg"
+    },
+    {
+      "id": "dbn-248",
+      "cat": "cat-08",
+      "name": "UV filters",
+      "summary": "Photography Cameras & Equipment",
+      "description": "UV filters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-248.svg"
+    },
+    {
+      "id": "dbn-249",
+      "cat": "cat-08",
+      "name": "Polarizing filters",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Polarizing filters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-249.svg"
+    },
+    {
+      "id": "dbn-250",
+      "cat": "cat-08",
+      "name": "ND filters",
+      "summary": "Photography Cameras & Equipment",
+      "description": "ND filters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-250.svg"
+    },
+    {
+      "id": "dbn-251",
+      "cat": "cat-08",
+      "name": "Lens hoods",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Lens hoods — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-251.svg"
+    },
+    {
+      "id": "dbn-252",
+      "cat": "cat-08",
+      "name": "Lens caps",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Lens caps — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-252.svg"
+    },
+    {
+      "id": "dbn-253",
+      "cat": "cat-08",
+      "name": "Camera body caps",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera body caps — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-253.svg"
+    },
+    {
+      "id": "dbn-254",
+      "cat": "cat-08",
+      "name": "Camera batteries",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera batteries — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-254.svg"
+    },
+    {
+      "id": "dbn-255",
+      "cat": "cat-08",
+      "name": "Camera battery chargers",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera battery chargers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-255.svg"
+    },
+    {
+      "id": "dbn-256",
+      "cat": "cat-08",
+      "name": "Camera battery grips",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera battery grips — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-256.svg"
+    },
+    {
+      "id": "dbn-257",
+      "cat": "cat-08",
+      "name": "Camera straps",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera straps — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-257.svg"
+    },
+    {
+      "id": "dbn-258",
+      "cat": "cat-08",
+      "name": "Camera bags",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera bags — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-258.svg"
+    },
+    {
+      "id": "dbn-259",
+      "cat": "cat-08",
+      "name": "Camera backpacks",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera backpacks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-259.svg"
+    },
+    {
+      "id": "dbn-260",
+      "cat": "cat-08",
+      "name": "Camera tripods",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera tripods — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-260.svg"
+    },
+    {
+      "id": "dbn-261",
+      "cat": "cat-08",
+      "name": "Monopods",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Monopods — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-261.svg"
+    },
+    {
+      "id": "dbn-262",
+      "cat": "cat-08",
+      "name": "Tripod heads",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Tripod heads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-262.svg"
+    },
+    {
+      "id": "dbn-263",
+      "cat": "cat-08",
+      "name": "Camera remote triggers",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera remote triggers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-263.svg"
+    },
+    {
+      "id": "dbn-264",
+      "cat": "cat-08",
+      "name": "Wireless shutter remotes",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Wireless shutter remotes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-264.svg"
+    },
+    {
+      "id": "dbn-265",
+      "cat": "cat-08",
+      "name": "Camera cleaning kits",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera cleaning kits — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-265.svg"
+    },
+    {
+      "id": "dbn-266",
+      "cat": "cat-08",
+      "name": "Lens cleaning cloths",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Lens cleaning cloths — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-266.svg"
+    },
+    {
+      "id": "dbn-267",
+      "cat": "cat-08",
+      "name": "Lens cleaning solutions",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Lens cleaning solutions — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-267.svg"
+    },
+    {
+      "id": "dbn-268",
+      "cat": "cat-08",
+      "name": "Memory card cases",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Memory card cases — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-268.svg"
+    },
+    {
+      "id": "dbn-269",
+      "cat": "cat-08",
+      "name": "Camera rain covers",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera rain covers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-269.svg"
+    },
+    {
+      "id": "dbn-270",
+      "cat": "cat-08",
+      "name": "Camera cages",
+      "summary": "Photography Cameras & Equipment",
+      "description": "Camera cages — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-270.svg"
+    },
+    {
+      "id": "dbn-271",
+      "cat": "cat-09",
+      "name": "Studio flashlights/strobes",
+      "summary": "Photography Studio Accessories",
+      "description": "Studio flashlights/strobes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-271.svg"
+    },
+    {
+      "id": "dbn-272",
+      "cat": "cat-09",
+      "name": "Speedlight flashes",
+      "summary": "Photography Studio Accessories",
+      "description": "Speedlight flashes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-272.svg"
+    },
+    {
+      "id": "dbn-273",
+      "cat": "cat-09",
+      "name": "LED studio lights",
+      "summary": "Photography Studio Accessories",
+      "description": "LED studio lights — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-273.svg"
+    },
+    {
+      "id": "dbn-274",
+      "cat": "cat-09",
+      "name": "Continuous video lights",
+      "summary": "Photography Studio Accessories",
+      "description": "Continuous video lights — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-274.svg"
+    },
+    {
+      "id": "dbn-275",
+      "cat": "cat-09",
+      "name": "Softboxes",
+      "summary": "Photography Studio Accessories",
+      "description": "Softboxes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-275.svg"
+    },
+    {
+      "id": "dbn-276",
+      "cat": "cat-09",
+      "name": "Octagonal softboxes",
+      "summary": "Photography Studio Accessories",
+      "description": "Octagonal softboxes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-276.svg"
+    },
+    {
+      "id": "dbn-277",
+      "cat": "cat-09",
+      "name": "Beauty dishes",
+      "summary": "Photography Studio Accessories",
+      "description": "Beauty dishes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-277.svg"
+    },
+    {
+      "id": "dbn-278",
+      "cat": "cat-09",
+      "name": "Photography umbrellas",
+      "summary": "Photography Studio Accessories",
+      "description": "Photography umbrellas — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-278.svg"
+    },
+    {
+      "id": "dbn-279",
+      "cat": "cat-09",
+      "name": "Reflector umbrellas",
+      "summary": "Photography Studio Accessories",
+      "description": "Reflector umbrellas — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-279.svg"
+    },
+    {
+      "id": "dbn-280",
+      "cat": "cat-09",
+      "name": "5-in-1 reflectors",
+      "summary": "Photography Studio Accessories",
+      "description": "5-in-1 reflectors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-280.svg"
+    },
+    {
+      "id": "dbn-281",
+      "cat": "cat-09",
+      "name": "Light stands",
+      "summary": "Photography Studio Accessories",
+      "description": "Light stands — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-281.svg"
+    },
+    {
+      "id": "dbn-282",
+      "cat": "cat-09",
+      "name": "C-stands",
+      "summary": "Photography Studio Accessories",
+      "description": "C-stands — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-282.svg"
+    },
+    {
+      "id": "dbn-283",
+      "cat": "cat-09",
+      "name": "Background stands",
+      "summary": "Photography Studio Accessories",
+      "description": "Background stands — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-283.svg"
+    },
+    {
+      "id": "dbn-284",
+      "cat": "cat-09",
+      "name": "White backdrops",
+      "summary": "Photography Studio Accessories",
+      "description": "White backdrops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-284.svg"
+    },
+    {
+      "id": "dbn-285",
+      "cat": "cat-09",
+      "name": "Red backdrops",
+      "summary": "Photography Studio Accessories",
+      "description": "Red backdrops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-285.svg"
+    },
+    {
+      "id": "dbn-286",
+      "cat": "cat-09",
+      "name": "Blue backdrops",
+      "summary": "Photography Studio Accessories",
+      "description": "Blue backdrops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-286.svg"
+    },
+    {
+      "id": "dbn-287",
+      "cat": "cat-09",
+      "name": "Green-screen backdrops",
+      "summary": "Photography Studio Accessories",
+      "description": "Green-screen backdrops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-287.svg"
+    },
+    {
+      "id": "dbn-288",
+      "cat": "cat-09",
+      "name": "Black backdrops",
+      "summary": "Photography Studio Accessories",
+      "description": "Black backdrops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-288.svg"
+    },
+    {
+      "id": "dbn-289",
+      "cat": "cat-09",
+      "name": "Printed studio backdrops",
+      "summary": "Photography Studio Accessories",
+      "description": "Printed studio backdrops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-289.svg"
+    },
+    {
+      "id": "dbn-290",
+      "cat": "cat-09",
+      "name": "Muslin backdrops",
+      "summary": "Photography Studio Accessories",
+      "description": "Muslin backdrops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-290.svg"
+    },
+    {
+      "id": "dbn-291",
+      "cat": "cat-09",
+      "name": "Seamless background paper",
+      "summary": "Photography Studio Accessories",
+      "description": "Seamless background paper — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-291.svg"
+    },
+    {
+      "id": "dbn-292",
+      "cat": "cat-09",
+      "name": "Background clamps",
+      "summary": "Photography Studio Accessories",
+      "description": "Background clamps — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-292.svg"
+    },
+    {
+      "id": "dbn-293",
+      "cat": "cat-09",
+      "name": "Sandbags",
+      "summary": "Photography Studio Accessories",
+      "description": "Sandbags — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-293.svg"
+    },
+    {
+      "id": "dbn-294",
+      "cat": "cat-09",
+      "name": "Flash triggers",
+      "summary": "Photography Studio Accessories",
+      "description": "Flash triggers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-294.svg"
+    },
+    {
+      "id": "dbn-295",
+      "cat": "cat-09",
+      "name": "Flash receivers",
+      "summary": "Photography Studio Accessories",
+      "description": "Flash receivers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-295.svg"
+    },
+    {
+      "id": "dbn-296",
+      "cat": "cat-09",
+      "name": "Flash diffusers",
+      "summary": "Photography Studio Accessories",
+      "description": "Flash diffusers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-296.svg"
+    },
+    {
+      "id": "dbn-297",
+      "cat": "cat-09",
+      "name": "Light modifiers",
+      "summary": "Photography Studio Accessories",
+      "description": "Light modifiers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-297.svg"
+    },
+    {
+      "id": "dbn-298",
+      "cat": "cat-09",
+      "name": "Snoots",
+      "summary": "Photography Studio Accessories",
+      "description": "Snoots — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-298.svg"
+    },
+    {
+      "id": "dbn-299",
+      "cat": "cat-09",
+      "name": "Honeycomb grids",
+      "summary": "Photography Studio Accessories",
+      "description": "Honeycomb grids — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-299.svg"
+    },
+    {
+      "id": "dbn-300",
+      "cat": "cat-09",
+      "name": "Colour gels",
+      "summary": "Photography Studio Accessories",
+      "description": "Colour gels — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-300.svg"
+    },
+    {
+      "id": "dbn-301",
+      "cat": "cat-09",
+      "name": "Studio posing stools",
+      "summary": "Photography Studio Accessories",
+      "description": "Studio posing stools — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-301.svg"
+    },
+    {
+      "id": "dbn-302",
+      "cat": "cat-09",
+      "name": "Studio posing chairs",
+      "summary": "Photography Studio Accessories",
+      "description": "Studio posing chairs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-302.svg"
+    },
+    {
+      "id": "dbn-303",
+      "cat": "cat-09",
+      "name": "Studio benches",
+      "summary": "Photography Studio Accessories",
+      "description": "Studio benches — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-303.svg"
+    },
+    {
+      "id": "dbn-304",
+      "cat": "cat-09",
+      "name": "Product photography lightboxes",
+      "summary": "Photography Studio Accessories",
+      "description": "Product photography lightboxes — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-304.svg"
+    },
+    {
+      "id": "dbn-305",
+      "cat": "cat-09",
+      "name": "Photography turntables",
+      "summary": "Photography Studio Accessories",
+      "description": "Photography turntables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-305.svg"
+    },
+    {
+      "id": "dbn-306",
+      "cat": "cat-10",
+      "name": "4×6 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "4×6 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-306.svg"
+    },
+    {
+      "id": "dbn-307",
+      "cat": "cat-10",
+      "name": "5×7 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "5×7 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-307.svg"
+    },
+    {
+      "id": "dbn-308",
+      "cat": "cat-10",
+      "name": "6×8 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "6×8 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-308.svg"
+    },
+    {
+      "id": "dbn-309",
+      "cat": "cat-10",
+      "name": "8×10 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "8×10 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-309.svg"
+    },
+    {
+      "id": "dbn-310",
+      "cat": "cat-10",
+      "name": "8×12 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "8×12 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-310.svg"
+    },
+    {
+      "id": "dbn-311",
+      "cat": "cat-10",
+      "name": "12×16 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "12×16 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-311.svg"
+    },
+    {
+      "id": "dbn-312",
+      "cat": "cat-10",
+      "name": "16×20 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "16×20 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-312.svg"
+    },
+    {
+      "id": "dbn-313",
+      "cat": "cat-10",
+      "name": "20×24 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "20×24 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-313.svg"
+    },
+    {
+      "id": "dbn-314",
+      "cat": "cat-10",
+      "name": "24×36 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "24×36 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-314.svg"
+    },
+    {
+      "id": "dbn-315",
+      "cat": "cat-10",
+      "name": "A4 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "A4 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-315.svg"
+    },
+    {
+      "id": "dbn-316",
+      "cat": "cat-10",
+      "name": "A3 photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "A3 photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-316.svg"
+    },
+    {
+      "id": "dbn-317",
+      "cat": "cat-10",
+      "name": "Wooden photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Wooden photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-317.svg"
+    },
+    {
+      "id": "dbn-318",
+      "cat": "cat-10",
+      "name": "Glass photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Glass photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-318.svg"
+    },
+    {
+      "id": "dbn-319",
+      "cat": "cat-10",
+      "name": "Acrylic photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Acrylic photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-319.svg"
+    },
+    {
+      "id": "dbn-320",
+      "cat": "cat-10",
+      "name": "Metal photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Metal photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-320.svg"
+    },
+    {
+      "id": "dbn-321",
+      "cat": "cat-10",
+      "name": "Digital photo frames",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Digital photo frames — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-321.svg"
+    },
+    {
+      "id": "dbn-322",
+      "cat": "cat-10",
+      "name": "Wedding photo albums",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Wedding photo albums — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-322.svg"
+    },
+    {
+      "id": "dbn-323",
+      "cat": "cat-10",
+      "name": "Birthday photo albums",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Birthday photo albums — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-323.svg"
+    },
+    {
+      "id": "dbn-324",
+      "cat": "cat-10",
+      "name": "Baby photo albums",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Baby photo albums — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-324.svg"
+    },
+    {
+      "id": "dbn-325",
+      "cat": "cat-10",
+      "name": "Burial photo albums",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Burial photo albums — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-325.svg"
+    },
+    {
+      "id": "dbn-326",
+      "cat": "cat-10",
+      "name": "Hardcover photobooks",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Hardcover photobooks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-326.svg"
+    },
+    {
+      "id": "dbn-327",
+      "cat": "cat-10",
+      "name": "Lay-flat photobooks",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Lay-flat photobooks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-327.svg"
+    },
+    {
+      "id": "dbn-328",
+      "cat": "cat-10",
+      "name": "Photo canvas prints",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Photo canvas prints — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-328.svg"
+    },
+    {
+      "id": "dbn-329",
+      "cat": "cat-10",
+      "name": "Acrylic photo blocks",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Acrylic photo blocks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-329.svg"
+    },
+    {
+      "id": "dbn-330",
+      "cat": "cat-10",
+      "name": "Photo keyholders",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Photo keyholders — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-330.svg"
+    },
+    {
+      "id": "dbn-331",
+      "cat": "cat-10",
+      "name": "Photo mugs",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Photo mugs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-331.svg"
+    },
+    {
+      "id": "dbn-332",
+      "cat": "cat-10",
+      "name": "Photo pillows",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Photo pillows — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-332.svg"
+    },
+    {
+      "id": "dbn-333",
+      "cat": "cat-10",
+      "name": "Photo puzzles",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Photo puzzles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-333.svg"
+    },
+    {
+      "id": "dbn-334",
+      "cat": "cat-10",
+      "name": "Photo magnets",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Photo magnets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-334.svg"
+    },
+    {
+      "id": "dbn-335",
+      "cat": "cat-10",
+      "name": "Custom photo calendars",
+      "summary": "Photo Frames, Albums & Gift Products",
+      "description": "Custom photo calendars — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-335.svg"
+    },
+    {
+      "id": "dbn-336",
+      "cat": "cat-11",
+      "name": "Professional video cameras",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Professional video cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-336.svg"
+    },
+    {
+      "id": "dbn-337",
+      "cat": "cat-11",
       "name": "Camcorders",
-      "summary": "Dedicated video cameras for events and interviews.",
-      "description": "Built for long recordings at events, weddings and interviews. We will help you pick the right model for your shoot.",
-      "price": null
-    },
-    {
-      "id": "gimbals",
-      "cat": "cameras",
-      "name": "Gimbals & stabilisers",
-      "summary": "Smooth, steady handheld footage.",
-      "description": "Stabilisers that keep your footage smooth while you walk, run or move between shots.",
-      "price": null
-    },
-    {
-      "id": "tripods",
-      "cat": "cameras",
-      "name": "Tripods & stands",
-      "summary": "Steady shots for photos, video and live streams.",
-      "description": "Sturdy tripods and stands for cameras, phones and lights.",
-      "price": null
-    },
-    {
-      "id": "microphones",
-      "cat": "cameras",
-      "name": "Microphones",
-      "summary": "Clear audio for interviews, voiceovers and events.",
-      "description": "Microphones for clean sound on interviews, voiceovers and event recording.",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camcorders — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.pexels.com/photos/3710191/pexels-photo-3710191.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/catalogue/dbn-337.svg"
     },
     {
-      "id": "drones",
-      "cat": "cameras",
-      "name": "Drones",
-      "summary": "Aerial cameras for events, property and content.",
-      "description": "Drones for aerial photography and video. We also offer drone coverage as a service.",
+      "id": "dbn-338",
+      "cat": "cat-11",
+      "name": "Cinema cameras",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Cinema cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1620926530886-1deabbcbe24d?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/catalogue/dbn-338.svg"
     },
     {
-      "id": "lenses",
-      "cat": "photo",
-      "name": "Lenses",
-      "summary": "Lenses for portraits, events and landscapes.",
-      "description": "Prime and zoom lenses for your camera body. Tell us your camera model and the kind of shots you want.",
+      "id": "dbn-339",
+      "cat": "cat-11",
+      "name": "Action cameras",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Action cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1500646953400-045056a916d7?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/catalogue/dbn-339.svg"
     },
     {
-      "id": "studio-lighting",
-      "cat": "photo",
-      "name": "Studio lighting kits",
-      "summary": "Soft, flattering light for portraits and products.",
-      "description": "Lighting kits and modifiers for studio portraits, product shots and video.",
-      "price": null
-    },
-    {
-      "id": "laptops-new",
-      "cat": "laptops",
-      "name": "New laptops",
-      "summary": "Laptops for study, office and creative work.",
-      "description": "New laptops for everyday, study, office and creative work. Ask us about the model that suits your budget.",
+      "id": "dbn-340",
+      "cat": "cat-11",
+      "name": "360-degree cameras",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "360-degree cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1709721821603-8f0f11ce3e0d?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/catalogue/dbn-340.svg"
     },
     {
-      "id": "laptops-refurb",
-      "cat": "laptops",
+      "id": "dbn-341",
+      "cat": "cat-11",
+      "name": "PTZ cameras",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "PTZ cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-341.svg"
+    },
+    {
+      "id": "dbn-342",
+      "cat": "cat-11",
+      "name": "Camera gimbals",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera gimbals — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-342.svg"
+    },
+    {
+      "id": "dbn-343",
+      "cat": "cat-11",
+      "name": "Smartphone gimbals",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Smartphone gimbals — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-343.svg"
+    },
+    {
+      "id": "dbn-344",
+      "cat": "cat-11",
+      "name": "Video tripods",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Video tripods — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-344.svg"
+    },
+    {
+      "id": "dbn-345",
+      "cat": "cat-11",
+      "name": "Fluid video heads",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Fluid video heads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-345.svg"
+    },
+    {
+      "id": "dbn-346",
+      "cat": "cat-11",
+      "name": "Camera sliders",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera sliders — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-346.svg"
+    },
+    {
+      "id": "dbn-347",
+      "cat": "cat-11",
+      "name": "Camera dollies",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera dollies — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-347.svg"
+    },
+    {
+      "id": "dbn-348",
+      "cat": "cat-11",
+      "name": "Camera shoulder rigs",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera shoulder rigs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-348.svg"
+    },
+    {
+      "id": "dbn-349",
+      "cat": "cat-11",
+      "name": "Camera stabilizers",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera stabilizers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-349.svg"
+    },
+    {
+      "id": "dbn-350",
+      "cat": "cat-11",
+      "name": "Camera cages",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera cages — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-350.svg"
+    },
+    {
+      "id": "dbn-351",
+      "cat": "cat-11",
+      "name": "Camera top handles",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera top handles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-351.svg"
+    },
+    {
+      "id": "dbn-352",
+      "cat": "cat-11",
+      "name": "Camera follow-focus systems",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera follow-focus systems — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-352.svg"
+    },
+    {
+      "id": "dbn-353",
+      "cat": "cat-11",
+      "name": "External video monitors",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "External video monitors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-353.svg"
+    },
+    {
+      "id": "dbn-354",
+      "cat": "cat-11",
+      "name": "Video recorders",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Video recorders — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-354.svg"
+    },
+    {
+      "id": "dbn-355",
+      "cat": "cat-11",
+      "name": "HDMI capture cards",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "HDMI capture cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-355.svg"
+    },
+    {
+      "id": "dbn-356",
+      "cat": "cat-11",
+      "name": "Video switchers",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Video switchers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-356.svg"
+    },
+    {
+      "id": "dbn-357",
+      "cat": "cat-11",
+      "name": "Wireless video transmitters",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Wireless video transmitters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-357.svg"
+    },
+    {
+      "id": "dbn-358",
+      "cat": "cat-11",
+      "name": "Wireless video receivers",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Wireless video receivers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-358.svg"
+    },
+    {
+      "id": "dbn-359",
+      "cat": "cat-11",
+      "name": "Teleprompters",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Teleprompters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-359.svg"
+    },
+    {
+      "id": "dbn-360",
+      "cat": "cat-11",
+      "name": "Video LED panel lights",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Video LED panel lights — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-360.svg"
+    },
+    {
+      "id": "dbn-361",
+      "cat": "cat-11",
+      "name": "RGB video lights",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "RGB video lights — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-361.svg"
+    },
+    {
+      "id": "dbn-362",
+      "cat": "cat-11",
+      "name": "Ring lights",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Ring lights — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-362.svg"
+    },
+    {
+      "id": "dbn-363",
+      "cat": "cat-11",
+      "name": "Tube lights",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Tube lights — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-363.svg"
+    },
+    {
+      "id": "dbn-364",
+      "cat": "cat-11",
+      "name": "Fresnel lights",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Fresnel lights — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-364.svg"
+    },
+    {
+      "id": "dbn-365",
+      "cat": "cat-11",
+      "name": "Light diffusers",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Light diffusers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-365.svg"
+    },
+    {
+      "id": "dbn-366",
+      "cat": "cat-11",
+      "name": "Video light stands",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Video light stands — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-366.svg"
+    },
+    {
+      "id": "dbn-367",
+      "cat": "cat-11",
+      "name": "Camera field batteries",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Camera field batteries — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-367.svg"
+    },
+    {
+      "id": "dbn-368",
+      "cat": "cat-11",
+      "name": "V-mount batteries",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "V-mount batteries — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-368.svg"
+    },
+    {
+      "id": "dbn-369",
+      "cat": "cat-11",
+      "name": "NP-F batteries",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "NP-F batteries — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-369.svg"
+    },
+    {
+      "id": "dbn-370",
+      "cat": "cat-11",
+      "name": "Battery charging stations",
+      "summary": "Videography & Filmmaking Equipment",
+      "description": "Battery charging stations — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-370.svg"
+    },
+    {
+      "id": "dbn-371",
+      "cat": "cat-12",
+      "name": "Wireless lapel microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Wireless lapel microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-371.svg"
+    },
+    {
+      "id": "dbn-372",
+      "cat": "cat-12",
+      "name": "Wired lapel microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Wired lapel microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-372.svg"
+    },
+    {
+      "id": "dbn-373",
+      "cat": "cat-12",
+      "name": "Shotgun microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Shotgun microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-373.svg"
+    },
+    {
+      "id": "dbn-374",
+      "cat": "cat-12",
+      "name": "Boom microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Boom microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-374.svg"
+    },
+    {
+      "id": "dbn-375",
+      "cat": "cat-12",
+      "name": "Handheld microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Handheld microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-375.svg"
+    },
+    {
+      "id": "dbn-376",
+      "cat": "cat-12",
+      "name": "USB microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "USB microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-376.svg"
+    },
+    {
+      "id": "dbn-377",
+      "cat": "cat-12",
+      "name": "Podcast microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Podcast microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-377.svg"
+    },
+    {
+      "id": "dbn-378",
+      "cat": "cat-12",
+      "name": "Condenser microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Condenser microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-378.svg"
+    },
+    {
+      "id": "dbn-379",
+      "cat": "cat-12",
+      "name": "Dynamic microphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Dynamic microphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-379.svg"
+    },
+    {
+      "id": "dbn-380",
+      "cat": "cat-12",
+      "name": "Microphone stands",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Microphone stands — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-380.svg"
+    },
+    {
+      "id": "dbn-381",
+      "cat": "cat-12",
+      "name": "Boom poles",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Boom poles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-381.svg"
+    },
+    {
+      "id": "dbn-382",
+      "cat": "cat-12",
+      "name": "Microphone shock mounts",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Microphone shock mounts — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-382.svg"
+    },
+    {
+      "id": "dbn-383",
+      "cat": "cat-12",
+      "name": "Microphone windscreens",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Microphone windscreens — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-383.svg"
+    },
+    {
+      "id": "dbn-384",
+      "cat": "cat-12",
+      "name": "Pop filters",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Pop filters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-384.svg"
+    },
+    {
+      "id": "dbn-385",
+      "cat": "cat-12",
+      "name": "Audio recorders",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Audio recorders — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-385.svg"
+    },
+    {
+      "id": "dbn-386",
+      "cat": "cat-12",
+      "name": "Audio mixers",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Audio mixers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-386.svg"
+    },
+    {
+      "id": "dbn-387",
+      "cat": "cat-12",
+      "name": "Audio interfaces",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Audio interfaces — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-387.svg"
+    },
+    {
+      "id": "dbn-388",
+      "cat": "cat-12",
+      "name": "XLR cables",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "XLR cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-388.svg"
+    },
+    {
+      "id": "dbn-389",
+      "cat": "cat-12",
+      "name": "Audio extension cables",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Audio extension cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-389.svg"
+    },
+    {
+      "id": "dbn-390",
+      "cat": "cat-12",
+      "name": "Headphone amplifiers",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Headphone amplifiers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-390.svg"
+    },
+    {
+      "id": "dbn-391",
+      "cat": "cat-12",
+      "name": "Studio monitoring headphones",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Studio monitoring headphones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-391.svg"
+    },
+    {
+      "id": "dbn-392",
+      "cat": "cat-12",
+      "name": "Studio monitor speakers",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Studio monitor speakers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-392.svg"
+    },
+    {
+      "id": "dbn-393",
+      "cat": "cat-12",
+      "name": "Livestream encoders",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Livestream encoders — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-393.svg"
+    },
+    {
+      "id": "dbn-394",
+      "cat": "cat-12",
+      "name": "USB capture devices",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "USB capture devices — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-394.svg"
+    },
+    {
+      "id": "dbn-395",
+      "cat": "cat-12",
+      "name": "HDMI splitters",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "HDMI splitters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-395.svg"
+    },
+    {
+      "id": "dbn-396",
+      "cat": "cat-12",
+      "name": "HDMI switchers",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "HDMI switchers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-396.svg"
+    },
+    {
+      "id": "dbn-397",
+      "cat": "cat-12",
+      "name": "Video conferencing cameras",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Video conferencing cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-397.svg"
+    },
+    {
+      "id": "dbn-398",
+      "cat": "cat-12",
+      "name": "Streaming control decks",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Streaming control decks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-398.svg"
+    },
+    {
+      "id": "dbn-399",
+      "cat": "cat-12",
+      "name": "Green-screen kits",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Green-screen kits — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-399.svg"
+    },
+    {
+      "id": "dbn-400",
+      "cat": "cat-12",
+      "name": "Podcast equipment bundles",
+      "summary": "Audio Recording & Livestream Equipment",
+      "description": "Podcast equipment bundles — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-400.svg"
+    },
+    {
+      "id": "dbn-401",
+      "cat": "cat-13",
+      "name": "Camera drones",
+      "summary": "Drone Products & Accessories",
+      "description": "Camera drones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-401.svg"
+    },
+    {
+      "id": "dbn-402",
+      "cat": "cat-13",
+      "name": "Mini drones",
+      "summary": "Drone Products & Accessories",
+      "description": "Mini drones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-402.svg"
+    },
+    {
+      "id": "dbn-403",
+      "cat": "cat-13",
+      "name": "Professional filmmaking drones",
+      "summary": "Drone Products & Accessories",
+      "description": "Professional filmmaking drones — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-403.svg"
+    },
+    {
+      "id": "dbn-404",
+      "cat": "cat-13",
+      "name": "Drone batteries",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone batteries — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-404.svg"
+    },
+    {
+      "id": "dbn-405",
+      "cat": "cat-13",
+      "name": "Drone propellers",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone propellers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-405.svg"
+    },
+    {
+      "id": "dbn-406",
+      "cat": "cat-13",
+      "name": "Drone propeller guards",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone propeller guards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-406.svg"
+    },
+    {
+      "id": "dbn-407",
+      "cat": "cat-13",
+      "name": "Drone controllers",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone controllers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-407.svg"
+    },
+    {
+      "id": "dbn-408",
+      "cat": "cat-13",
+      "name": "Drone charging hubs",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone charging hubs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-408.svg"
+    },
+    {
+      "id": "dbn-409",
+      "cat": "cat-13",
+      "name": "Drone carrying cases",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone carrying cases — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-409.svg"
+    },
+    {
+      "id": "dbn-410",
+      "cat": "cat-13",
+      "name": "Drone landing pads",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone landing pads — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-410.svg"
+    },
+    {
+      "id": "dbn-411",
+      "cat": "cat-13",
+      "name": "Drone ND filters",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone ND filters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-411.svg"
+    },
+    {
+      "id": "dbn-412",
+      "cat": "cat-13",
+      "name": "Drone gimbal protectors",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone gimbal protectors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-412.svg"
+    },
+    {
+      "id": "dbn-413",
+      "cat": "cat-13",
+      "name": "Drone memory cards",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone memory cards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-413.svg"
+    },
+    {
+      "id": "dbn-414",
+      "cat": "cat-13",
+      "name": "Drone battery bags",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone battery bags — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-414.svg"
+    },
+    {
+      "id": "dbn-415",
+      "cat": "cat-13",
+      "name": "Drone replacement motors",
+      "summary": "Drone Products & Accessories",
+      "description": "Drone replacement motors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-415.svg"
+    },
+    {
+      "id": "dbn-416",
+      "cat": "cat-14",
+      "name": "Wi-Fi routers",
+      "summary": "Networking, Power & Security Products",
+      "description": "Wi-Fi routers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-416.svg"
+    },
+    {
+      "id": "dbn-417",
+      "cat": "cat-14",
+      "name": "4G routers",
+      "summary": "Networking, Power & Security Products",
+      "description": "4G routers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-417.svg"
+    },
+    {
+      "id": "dbn-418",
+      "cat": "cat-14",
+      "name": "5G routers",
+      "summary": "Networking, Power & Security Products",
+      "description": "5G routers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-418.svg"
+    },
+    {
+      "id": "dbn-419",
+      "cat": "cat-14",
+      "name": "MiFi devices",
+      "summary": "Networking, Power & Security Products",
+      "description": "MiFi devices — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-419.svg"
+    },
+    {
+      "id": "dbn-420",
+      "cat": "cat-14",
+      "name": "Network switches",
+      "summary": "Networking, Power & Security Products",
+      "description": "Network switches — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-420.svg"
+    },
+    {
+      "id": "dbn-421",
+      "cat": "cat-14",
+      "name": "Wi-Fi extenders",
+      "summary": "Networking, Power & Security Products",
+      "description": "Wi-Fi extenders — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-421.svg"
+    },
+    {
+      "id": "dbn-422",
+      "cat": "cat-14",
+      "name": "Wireless access points",
+      "summary": "Networking, Power & Security Products",
+      "description": "Wireless access points — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-422.svg"
+    },
+    {
+      "id": "dbn-423",
+      "cat": "cat-14",
+      "name": "Ethernet cables",
+      "summary": "Networking, Power & Security Products",
+      "description": "Ethernet cables — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-423.svg"
+    },
+    {
+      "id": "dbn-424",
+      "cat": "cat-14",
+      "name": "RJ45 connectors",
+      "summary": "Networking, Power & Security Products",
+      "description": "RJ45 connectors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-424.svg"
+    },
+    {
+      "id": "dbn-425",
+      "cat": "cat-14",
+      "name": "Network crimping tools",
+      "summary": "Networking, Power & Security Products",
+      "description": "Network crimping tools — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-425.svg"
+    },
+    {
+      "id": "dbn-426",
+      "cat": "cat-14",
+      "name": "LAN cable testers",
+      "summary": "Networking, Power & Security Products",
+      "description": "LAN cable testers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-426.svg"
+    },
+    {
+      "id": "dbn-427",
+      "cat": "cat-14",
+      "name": "Network patch panels",
+      "summary": "Networking, Power & Security Products",
+      "description": "Network patch panels — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-427.svg"
+    },
+    {
+      "id": "dbn-428",
+      "cat": "cat-14",
+      "name": "UPS systems",
+      "summary": "Networking, Power & Security Products",
+      "description": "UPS systems — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-428.svg"
+    },
+    {
+      "id": "dbn-429",
+      "cat": "cat-14",
+      "name": "Mini UPS for routers",
+      "summary": "Networking, Power & Security Products",
+      "description": "Mini UPS for routers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-429.svg"
+    },
+    {
+      "id": "dbn-430",
+      "cat": "cat-14",
+      "name": "Surge protectors",
+      "summary": "Networking, Power & Security Products",
+      "description": "Surge protectors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-430.svg"
+    },
+    {
+      "id": "dbn-431",
+      "cat": "cat-14",
+      "name": "Extension sockets",
+      "summary": "Networking, Power & Security Products",
+      "description": "Extension sockets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-431.svg"
+    },
+    {
+      "id": "dbn-432",
+      "cat": "cat-14",
+      "name": "Power strips",
+      "summary": "Networking, Power & Security Products",
+      "description": "Power strips — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-432.svg"
+    },
+    {
+      "id": "dbn-433",
+      "cat": "cat-14",
+      "name": "Voltage stabilizers",
+      "summary": "Networking, Power & Security Products",
+      "description": "Voltage stabilizers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-433.svg"
+    },
+    {
+      "id": "dbn-434",
+      "cat": "cat-14",
+      "name": "Inverters",
+      "summary": "Networking, Power & Security Products",
+      "description": "Inverters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-434.svg"
+    },
+    {
+      "id": "dbn-435",
+      "cat": "cat-14",
+      "name": "Inverter batteries",
+      "summary": "Networking, Power & Security Products",
+      "description": "Inverter batteries — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-435.svg"
+    },
+    {
+      "id": "dbn-436",
+      "cat": "cat-14",
+      "name": "Solar power banks",
+      "summary": "Networking, Power & Security Products",
+      "description": "Solar power banks — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-436.svg"
+    },
+    {
+      "id": "dbn-437",
+      "cat": "cat-14",
+      "name": "Portable power stations",
+      "summary": "Networking, Power & Security Products",
+      "description": "Portable power stations — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-437.svg"
+    },
+    {
+      "id": "dbn-438",
+      "cat": "cat-14",
+      "name": "CCTV cameras",
+      "summary": "Networking, Power & Security Products",
+      "description": "CCTV cameras — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-438.svg"
+    },
+    {
+      "id": "dbn-439",
+      "cat": "cat-14",
+      "name": "CCTV DVRs",
+      "summary": "Networking, Power & Security Products",
+      "description": "CCTV DVRs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-439.svg"
+    },
+    {
+      "id": "dbn-440",
+      "cat": "cat-14",
+      "name": "CCTV NVRs",
+      "summary": "Networking, Power & Security Products",
+      "description": "CCTV NVRs — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-440.svg"
+    },
+    {
+      "id": "dbn-441",
+      "cat": "cat-14",
+      "name": "CCTV hard drives",
+      "summary": "Networking, Power & Security Products",
+      "description": "CCTV hard drives — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-441.svg"
+    },
+    {
+      "id": "dbn-442",
+      "cat": "cat-14",
+      "name": "CCTV power adapters",
+      "summary": "Networking, Power & Security Products",
+      "description": "CCTV power adapters — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-442.svg"
+    },
+    {
+      "id": "dbn-443",
+      "cat": "cat-14",
+      "name": "Biometric fingerprint scanners",
+      "summary": "Networking, Power & Security Products",
+      "description": "Biometric fingerprint scanners — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-443.svg"
+    },
+    {
+      "id": "dbn-444",
+      "cat": "cat-14",
+      "name": "Barcode scanners",
+      "summary": "Networking, Power & Security Products",
+      "description": "Barcode scanners — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-444.svg"
+    },
+    {
+      "id": "dbn-445",
+      "cat": "cat-14",
+      "name": "POS receipt printers",
+      "summary": "Networking, Power & Security Products",
+      "description": "POS receipt printers — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-445.svg"
+    },
+    {
+      "id": "dbn-446",
+      "cat": "cat-15",
+      "name": "Brand-new laptops",
+      "summary": "Computers & Digital Devices",
+      "description": "Brand-new laptops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-446.svg"
+    },
+    {
+      "id": "dbn-447",
+      "cat": "cat-15",
+      "name": "UK-used laptops",
+      "summary": "Computers & Digital Devices",
+      "description": "UK-used laptops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-447.svg"
+    },
+    {
+      "id": "dbn-448",
+      "cat": "cat-15",
       "name": "Refurbished laptops",
-      "summary": "Used laptops in ready-to-use condition.",
-      "description": "Ask us about the condition, specifications and what is covered before you buy.",
+      "summary": "Computers & Digital Devices",
+      "description": "Refurbished laptops — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1709721821603-8f0f11ce3e0d?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/catalogue/dbn-448.svg"
     },
     {
-      "id": "inkjet-laser",
-      "cat": "printing",
-      "name": "Inkjet & laser printers",
-      "summary": "Printers for home, office and small business.",
-      "description": "Printers for home, office and small business printing. Ask about running costs before you buy.",
+      "id": "dbn-449",
+      "cat": "cat-15",
+      "name": "Gaming laptops",
+      "summary": "Computers & Digital Devices",
+      "description": "Gaming laptops — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.pexels.com/photos/23534017/pexels-photo-23534017/free-photo-of-printer.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/catalogue/dbn-449.svg"
     },
     {
-      "id": "di-machine",
-      "cat": "printing",
-      "name": "DI printing machine",
-      "summary": "Direct printing equipment for items and garments.",
-      "description": "Direct printing machine for items and garments. Ask us for specifications and a demonstration.",
+      "id": "dbn-450",
+      "cat": "cat-15",
+      "name": "Business laptops",
+      "summary": "Computers & Digital Devices",
+      "description": "Business laptops — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.pexels.com/photos/5727002/pexels-photo-5727002.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/catalogue/dbn-450.svg"
     },
     {
-      "id": "flex-machine",
-      "cat": "printing",
-      "name": "Flex printing machine",
-      "summary": "Large-format printing for banners and signage.",
-      "description": "Flex printing machine for banners, signage and displays.",
+      "id": "dbn-451",
+      "cat": "cat-15",
+      "name": "Desktop computers",
+      "summary": "Computers & Digital Devices",
+      "description": "Desktop computers — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.pexels.com/photos/1440504/pexels-photo-1440504.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/catalogue/dbn-451.svg"
     },
     {
-      "id": "ink-spares",
-      "cat": "printing",
-      "name": "Ink, toner & spares",
-      "summary": "Ink, toner and printer spare parts.",
-      "description": "Ink, toner and spare parts. Tell us your printer model when you order.",
+      "id": "dbn-452",
+      "cat": "cat-15",
+      "name": "All-in-one computers",
+      "summary": "Computers & Digital Devices",
+      "description": "All-in-one computers — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.pexels.com/photos/23534017/pexels-photo-23534017/free-photo-of-printer.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/catalogue/dbn-452.svg"
     },
     {
-      "id": "usb-hubs",
-      "cat": "accessories",
-      "name": "USB hubs & adapters",
-      "summary": "Add ports to your laptop.",
-      "description": "USB-C and USB hubs and adapters, including HDMI options.",
-      "price": null
-    },
-    {
-      "id": "cables-chargers",
-      "cat": "accessories",
-      "name": "Cables & chargers",
-      "summary": "Everyday cables and charging accessories.",
-      "description": "Cables and chargers for laptops, phones and tablets.",
-      "price": null
-    },
-    {
-      "id": "bags-sleeves",
-      "cat": "accessories",
-      "name": "Laptop bags & sleeves",
-      "summary": "Protective bags and sleeves.",
-      "description": "Protective bags and sleeves for common laptop sizes.",
-      "price": null
-    },
-    {
-      "id": "power-banks",
-      "cat": "accessories",
-      "name": "Power banks",
-      "summary": "Portable charging for long days out.",
-      "description": "Portable power banks for phones, tablets and laptops.",
-      "price": null
-    },
-    {
-      "id": "storage",
-      "cat": "accessories",
-      "name": "Flash drives & SSDs",
-      "summary": "Fast storage for files and backups.",
-      "description": "Flash drives and SSDs for files, projects and backups.",
-      "price": null
-    },
-    {
-      "id": "mice-keyboards",
-      "cat": "accessories",
-      "name": "Mice & keyboards",
-      "summary": "Wired and wireless options.",
-      "description": "Wired and wireless mice and keyboards for work, study and home.",
+      "id": "dbn-453",
+      "cat": "cat-15",
+      "name": "Mini PCs",
+      "summary": "Computers & Digital Devices",
+      "description": "Mini PCs — contact DEBONE to confirm brand, model, specifications, price and availability.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1683701251422-912fe98f2b5e?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/catalogue/dbn-453.svg"
+    },
+    {
+      "id": "dbn-454",
+      "cat": "cat-15",
+      "name": "Gaming desktops",
+      "summary": "Computers & Digital Devices",
+      "description": "Gaming desktops — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-454.svg"
+    },
+    {
+      "id": "dbn-455",
+      "cat": "cat-15",
+      "name": "Computer monitors",
+      "summary": "Computers & Digital Devices",
+      "description": "Computer monitors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-455.svg"
+    },
+    {
+      "id": "dbn-456",
+      "cat": "cat-15",
+      "name": "Curved monitors",
+      "summary": "Computers & Digital Devices",
+      "description": "Curved monitors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-456.svg"
+    },
+    {
+      "id": "dbn-457",
+      "cat": "cat-15",
+      "name": "Portable monitors",
+      "summary": "Computers & Digital Devices",
+      "description": "Portable monitors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-457.svg"
+    },
+    {
+      "id": "dbn-458",
+      "cat": "cat-15",
+      "name": "Touchscreen monitors",
+      "summary": "Computers & Digital Devices",
+      "description": "Touchscreen monitors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-458.svg"
+    },
+    {
+      "id": "dbn-459",
+      "cat": "cat-15",
+      "name": "Tablets",
+      "summary": "Computers & Digital Devices",
+      "description": "Tablets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-459.svg"
+    },
+    {
+      "id": "dbn-460",
+      "cat": "cat-15",
+      "name": "Graphics drawing tablets",
+      "summary": "Computers & Digital Devices",
+      "description": "Graphics drawing tablets — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-460.svg"
+    },
+    {
+      "id": "dbn-461",
+      "cat": "cat-15",
+      "name": "Pen displays",
+      "summary": "Computers & Digital Devices",
+      "description": "Pen displays — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-461.svg"
+    },
+    {
+      "id": "dbn-462",
+      "cat": "cat-15",
+      "name": "Mini projectors",
+      "summary": "Computers & Digital Devices",
+      "description": "Mini projectors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-462.svg"
+    },
+    {
+      "id": "dbn-463",
+      "cat": "cat-15",
+      "name": "Office projectors",
+      "summary": "Computers & Digital Devices",
+      "description": "Office projectors — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-463.svg"
+    },
+    {
+      "id": "dbn-464",
+      "cat": "cat-15",
+      "name": "Projector screens",
+      "summary": "Computers & Digital Devices",
+      "description": "Projector screens — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-464.svg"
+    },
+    {
+      "id": "dbn-465",
+      "cat": "cat-15",
+      "name": "Interactive whiteboards",
+      "summary": "Computers & Digital Devices",
+      "description": "Interactive whiteboards — contact DEBONE to confirm brand, model, specifications, price and availability.",
+      "price": null,
+      "image": "/assets/catalogue/dbn-465.svg"
     }
   ]
 }

@@ -134,6 +134,26 @@ function bootstrap() {
     save();
   }
   if (!db.products) db.products = productSeed.products.map(p => ({ id: p.id, name: p.name, cat: p.cat, summary: p.summary || '', description: p.description || '', price: p.price, imageUrl: p.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime }));
+  // Catalogue v465: replace legacy shop items once, preserving subsequent staff edits.
+  if (!db.catalogueVersion || db.catalogueVersion < 465) {
+    const existing = new Map((db.products || []).map(p => [p.id, p]));
+    db.products = productSeed.products.map(p => {
+      const old = existing.get(p.id);
+      return old || { id: p.id, name: p.name, cat: p.cat, summary: p.summary || '', description: p.description || '', price: p.price,
+        imageUrl: p.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime };
+    });
+    db.catalogueVersion = 465;
+    save();
+  }
+  // Install generated, product-labelled catalogue illustrations without replacing staff-uploaded photos.
+  if (!db.catalogueImageVersion || db.catalogueImageVersion < 1) {
+    const illustrations = new Map(productSeed.products.map(p => [p.id, p.image]));
+    (db.products || []).forEach(p => {
+      if (illustrations.has(p.id) && !p.imageData && (!p.imageUrl || p.imageUrl.startsWith('/assets/catalogue/'))) p.imageUrl = illustrations.get(p.id);
+    });
+    db.catalogueImageVersion = 1;
+    save();
+  }
   if (!db.settings) db.settings = Object.assign({}, SETTINGS_DEFAULTS);
   if (!db.services) db.services = servicesSeed.services.map((sv, i) => Object.assign({ order: i + 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, sv));
   (function normaliseServiceOrder() {
