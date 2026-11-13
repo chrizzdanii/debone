@@ -631,7 +631,7 @@ function orderItem(o) {
 function orderView(o) {
   return { id: o.id, reference: o.reference, kind: o.kind || 'course', item: orderItem(o), amount: o.amountNaira, status: o.status,
     rejectReason: o.rejectReason || '', proofName: o.proof ? o.proof.name : '', createdAt: o.createdAt, updatedAt: o.updatedAt,
-    student: o.contactName || '', email: o.contactEmail || '', bankAccounts: bankAccounts(), courseId: o.courseId || null };
+    student: o.contactName || '', email: o.contactEmail || '', bankAccounts: bankAccounts(), courseId: o.courseId || null, productId: o.productId || null, bundleId: o.bundleId || null };
 }
 // The admin approves a proof of transfer: the payment is recorded and access is granted, exactly like a confirmed payment
 function approveOrder(o) {
@@ -1743,7 +1743,7 @@ route('PATCH', '/api/staff/orders/:id', async ctx => {
   if (o.status !== 'proof_uploaded') throw httpError(400, 'This order is not waiting for approval.');
   if (ctx.body.status === 'approved') {
     approveOrder(o); save();
-    if (o.userId) notify(o.userId, 'Payment confirmed', 'Your transfer has been confirmed. Your course, product or bundle is now open.', '#courses', { kind: 'payment' });
+    if (o.userId) notify(o.userId, 'Payment confirmed', o.kind === 'product' ? 'Your transfer has been confirmed. Your file is ready in Downloads.' : 'Your transfer has been confirmed. Your course, product or bundle is now open.', o.kind === 'product' ? '#downloads' : '#courses', { kind: 'payment' });
     return json(ctx.res, 200, { ok: true, status: 'approved' });
   }
   if (ctx.body.status === 'rejected') {

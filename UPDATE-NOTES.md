@@ -33,3 +33,9 @@ Before deployment: back up the database and test with a student and admin accoun
 - New overview for admin, instructor and student (public/overview.js and overview.css). Live pill with "updated Xs ago", counting numbers, sparklines, trend chart with touch readout, top courses, revenue mix, activity feed, quick actions. Admin polls /api/staff/live-stats every 6 seconds and updates in place. Student view updates in place on the existing live refresh.
 - Dashes removed from the Studio, About and Services pages (text, hidden defaults in server/page-slots.js, server/services.json). public/nodash.js also cleans text added later in the admin Page content panel and the shared menu strings on other pages.
 - Run `node tests/page-slots.test.js` after editing page text.
+
+## Chat button, Downloads page, purchase popup (v55)
+- Mobile: the floating Help (chatbot) button is hidden on the Community page so it can no longer cover the Send button (public/chat.js, public/mobile.css). It also hides while the keyboard is open.
+- Downloads page redesigned: hero with animated counters, file cards with download meter, expiry warning, "New" highlight for a fresh purchase, responsive grid for phone and desktop (public/dashboard-extra3.js, new public/downloads.css, linked in server/private/dashboard.html).
+- Digital store purchase: once the transfer is approved, the buyer sees an animated "Payment confirmed" popup on pay.html and is sent to dashboard.html#downloads (public/pay.js, new public/pay-success.css). Course and bundle payments behave as before.
+- Server: order view now includes productId/bundleId; the approval notification for a product links to #downloads (server/server.js).
