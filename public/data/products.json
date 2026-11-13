@@ -23,175 +23,454 @@
   ],
   "products": [
     {
-      "id": "dslr-mirrorless",
+      "id": "dslr-camera-canon-eos-90d",
       "cat": "cameras",
-      "name": "DSLR & mirrorless cameras",
-      "summary": "Cameras for photography and video.",
-      "description": "Choose a body for photos and video. Ask us about the lens kit, memory cards and what suits your work.",
+      "name": "DSLR Camera — Canon EOS 90D",
+      "summary": "DSLR Camera — Canon EOS 90D for DEBONE customers.",
+      "description": "DSLR Camera — Canon EOS 90D. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1496598894108-068941485c21?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/debone-products/001-dslr-camera-canon-eos-90d.webp"
     },
     {
-      "id": "camcorders",
-      "cat": "cameras",
-      "name": "Camcorders",
-      "summary": "Dedicated video cameras for events and interviews.",
-      "description": "Built for long recordings at events, weddings and interviews. We will help you pick the right model for your shoot.",
-      "price": null
-    },
-    {
-      "id": "gimbals",
-      "cat": "cameras",
-      "name": "Gimbals & stabilisers",
-      "summary": "Smooth, steady handheld footage.",
-      "description": "Stabilisers that keep your footage smooth while you walk, run or move between shots.",
-      "price": null
-    },
-    {
-      "id": "tripods",
-      "cat": "cameras",
-      "name": "Tripods & stands",
-      "summary": "Steady shots for photos, video and live streams.",
-      "description": "Sturdy tripods and stands for cameras, phones and lights.",
-      "price": null
-    },
-    {
-      "id": "microphones",
-      "cat": "cameras",
-      "name": "Microphones",
-      "summary": "Clear audio for interviews, voiceovers and events.",
-      "description": "Microphones for clean sound on interviews, voiceovers and event recording.",
+      "id": "wireless-mouse",
+      "cat": "accessories",
+      "name": "Wireless Mouse",
+      "summary": "Wireless Mouse for DEBONE customers.",
+      "description": "Wireless Mouse. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.pexels.com/photos/3710191/pexels-photo-3710191.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/debone-products/002-wireless-mouse.webp"
     },
     {
-      "id": "drones",
-      "cat": "cameras",
-      "name": "Drones",
-      "summary": "Aerial cameras for events, property and content.",
-      "description": "Drones for aerial photography and video. We also offer drone coverage as a service.",
+      "id": "usb-keyboard",
+      "cat": "accessories",
+      "name": "USB Keyboard",
+      "summary": "USB Keyboard for DEBONE customers.",
+      "description": "USB Keyboard. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1620926530886-1deabbcbe24d?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/debone-products/003-usb-keyboard.webp"
     },
     {
-      "id": "lenses",
-      "cat": "photo",
-      "name": "Lenses",
-      "summary": "Lenses for portraits, events and landscapes.",
-      "description": "Prime and zoom lenses for your camera body. Tell us your camera model and the kind of shots you want.",
+      "id": "photo-printer",
+      "cat": "printing",
+      "name": "Photo Printer",
+      "summary": "Photo Printer for DEBONE customers.",
+      "description": "Photo Printer. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1500646953400-045056a916d7?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/debone-products/004-photo-printer.webp"
     },
     {
-      "id": "studio-lighting",
-      "cat": "photo",
-      "name": "Studio lighting kits",
-      "summary": "Soft, flattering light for portraits and products.",
-      "description": "Lighting kits and modifiers for studio portraits, product shots and video.",
-      "price": null
+      "id": "32gb-usb-flash-drive",
+      "cat": "accessories",
+      "name": "32GB USB Flash Drive",
+      "summary": "32GB USB Flash Drive for DEBONE customers.",
+      "description": "32GB USB Flash Drive. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/005-32gb-usb-flash-drive.webp"
     },
     {
-      "id": "laptops-new",
+      "id": "brand-new-laptop",
       "cat": "laptops",
-      "name": "New laptops",
-      "summary": "Laptops for study, office and creative work.",
-      "description": "New laptops for everyday, study, office and creative work. Ask us about the model that suits your budget.",
+      "name": "Brand-New Laptop",
+      "summary": "Brand-New Laptop for DEBONE customers.",
+      "description": "Brand-New Laptop. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1709721821603-8f0f11ce3e0d?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/debone-products/006-brand-new-laptop.webp"
     },
     {
-      "id": "laptops-refurb",
+      "id": "64gb-usb-flash-drive",
+      "cat": "accessories",
+      "name": "64GB USB Flash Drive",
+      "summary": "64GB USB Flash Drive for DEBONE customers.",
+      "description": "64GB USB Flash Drive. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/007-64gb-usb-flash-drive.webp"
+    },
+    {
+      "id": "microsd-memory-card",
+      "cat": "accessories",
+      "name": "MicroSD Memory Card",
+      "summary": "MicroSD Memory Card for DEBONE customers.",
+      "description": "MicroSD Memory Card. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/008-microsd-memory-card.webp"
+    },
+    {
+      "id": "inkjet-printer",
+      "cat": "printing",
+      "name": "Inkjet Printer",
+      "summary": "Inkjet Printer for DEBONE customers.",
+      "description": "Inkjet Printer. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/009-inkjet-printer.webp"
+    },
+    {
+      "id": "laptop-battery",
+      "cat": "accessories",
+      "name": "Laptop Battery",
+      "summary": "Laptop Battery for DEBONE customers.",
+      "description": "Laptop Battery. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/010-laptop-battery.webp"
+    },
+    {
+      "id": "desktop-computer",
       "cat": "laptops",
-      "name": "Refurbished laptops",
-      "summary": "Used laptops in ready-to-use condition.",
-      "description": "Ask us about the condition, specifications and what is covered before you buy.",
+      "name": "Desktop Computer",
+      "summary": "Desktop Computer for DEBONE customers.",
+      "description": "Desktop Computer. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1709721821603-8f0f11ce3e0d?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/debone-products/011-desktop-computer.webp"
     },
     {
-      "id": "inkjet-laser",
+      "id": "laser-printer",
       "cat": "printing",
-      "name": "Inkjet & laser printers",
-      "summary": "Printers for home, office and small business.",
-      "description": "Printers for home, office and small business printing. Ask about running costs before you buy.",
+      "name": "Laser Printer",
+      "summary": "Laser Printer for DEBONE customers.",
+      "description": "Laser Printer. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.pexels.com/photos/23534017/pexels-photo-23534017/free-photo-of-printer.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/debone-products/012-laser-printer.webp"
     },
     {
-      "id": "di-machine",
+      "id": "nvme-ssd",
+      "cat": "accessories",
+      "name": "NVMe SSD",
+      "summary": "NVMe SSD for DEBONE customers.",
+      "description": "NVMe SSD. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/013-nvme-ssd.webp"
+    },
+    {
+      "id": "ddr4-ram",
+      "cat": "accessories",
+      "name": "DDR4 RAM",
+      "summary": "DDR4 RAM for DEBONE customers.",
+      "description": "DDR4 RAM. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/014-ddr4-ram.webp"
+    },
+    {
+      "id": "hdmi-cable",
+      "cat": "accessories",
+      "name": "HDMI Cable",
+      "summary": "HDMI Cable for DEBONE customers.",
+      "description": "HDMI Cable. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/015-hdmi-cable.webp"
+    },
+    {
+      "id": "external-hard-drive",
+      "cat": "accessories",
+      "name": "External Hard Drive",
+      "summary": "External Hard Drive for DEBONE customers.",
+      "description": "External Hard Drive. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/016-external-hard-drive.webp"
+    },
+    {
+      "id": "laptop-charger",
+      "cat": "accessories",
+      "name": "Laptop Charger",
+      "summary": "Laptop Charger for DEBONE customers.",
+      "description": "Laptop Charger. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/017-laptop-charger.webp"
+    },
+    {
+      "id": "usb-hub",
+      "cat": "accessories",
+      "name": "USB Hub",
+      "summary": "USB Hub for DEBONE customers.",
+      "description": "USB Hub. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/018-usb-hub.webp"
+    },
+    {
+      "id": "epson-printer-ink-bottles",
       "cat": "printing",
-      "name": "DI printing machine",
-      "summary": "Direct printing equipment for items and garments.",
-      "description": "Direct printing machine for items and garments. Ask us for specifications and a demonstration.",
+      "name": "Epson Printer Ink Bottles",
+      "summary": "Epson Printer Ink Bottles for DEBONE customers.",
+      "description": "Epson Printer Ink Bottles. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.pexels.com/photos/5727002/pexels-photo-5727002.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/debone-products/019-epson-printer-ink-bottles.webp"
     },
     {
-      "id": "flex-machine",
+      "id": "glossy-photo-paper",
       "cat": "printing",
-      "name": "Flex printing machine",
-      "summary": "Large-format printing for banners and signage.",
-      "description": "Flex printing machine for banners, signage and displays.",
+      "name": "Glossy Photo Paper",
+      "summary": "Glossy Photo Paper for DEBONE customers.",
+      "description": "Glossy Photo Paper. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.pexels.com/photos/1440504/pexels-photo-1440504.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/debone-products/020-glossy-photo-paper.webp"
     },
     {
-      "id": "ink-spares",
+      "id": "ink-cartridge",
       "cat": "printing",
-      "name": "Ink, toner & spares",
-      "summary": "Ink, toner and printer spare parts.",
-      "description": "Ink, toner and spare parts. Tell us your printer model when you order.",
+      "name": "Ink Cartridge",
+      "summary": "Ink Cartridge for DEBONE customers.",
+      "description": "Ink Cartridge. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.pexels.com/photos/23534017/pexels-photo-23534017/free-photo-of-printer.jpeg?auto=compress&cs=tinysrgb&w=1200"
+      "image": "/assets/debone-products/021-ink-cartridge.webp"
     },
     {
-      "id": "usb-hubs",
-      "cat": "accessories",
-      "name": "USB hubs & adapters",
-      "summary": "Add ports to your laptop.",
-      "description": "USB-C and USB hubs and adapters, including HDMI options.",
-      "price": null
-    },
-    {
-      "id": "cables-chargers",
-      "cat": "accessories",
-      "name": "Cables & chargers",
-      "summary": "Everyday cables and charging accessories.",
-      "description": "Cables and chargers for laptops, phones and tablets.",
-      "price": null
-    },
-    {
-      "id": "bags-sleeves",
-      "cat": "accessories",
-      "name": "Laptop bags & sleeves",
-      "summary": "Protective bags and sleeves.",
-      "description": "Protective bags and sleeves for common laptop sizes.",
-      "price": null
-    },
-    {
-      "id": "power-banks",
-      "cat": "accessories",
-      "name": "Power banks",
-      "summary": "Portable charging for long days out.",
-      "description": "Portable power banks for phones, tablets and laptops.",
-      "price": null
-    },
-    {
-      "id": "storage",
-      "cat": "accessories",
-      "name": "Flash drives & SSDs",
-      "summary": "Fast storage for files and backups.",
-      "description": "Flash drives and SSDs for files, projects and backups.",
-      "price": null
-    },
-    {
-      "id": "mice-keyboards",
-      "cat": "accessories",
-      "name": "Mice & keyboards",
-      "summary": "Wired and wireless options.",
-      "description": "Wired and wireless mice and keyboards for work, study and home.",
+      "id": "heat-press-machine",
+      "cat": "printing",
+      "name": "Heat Press Machine",
+      "summary": "Heat Press Machine for DEBONE customers.",
+      "description": "Heat Press Machine. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
       "price": null,
-      "image": "https://images.unsplash.com/photo-1683701251422-912fe98f2b5e?w=1200&q=80&auto=format&fit=crop"
+      "image": "/assets/debone-products/022-heat-press-machine.webp"
+    },
+    {
+      "id": "toner-cartridge",
+      "cat": "printing",
+      "name": "Toner Cartridge",
+      "summary": "Toner Cartridge for DEBONE customers.",
+      "description": "Toner Cartridge. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/023-toner-cartridge.webp"
+    },
+    {
+      "id": "id-card-printer",
+      "cat": "printing",
+      "name": "ID Card Printer",
+      "summary": "ID Card Printer for DEBONE customers.",
+      "description": "ID Card Printer. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/024-id-card-printer.webp"
+    },
+    {
+      "id": "a3-photo-paper",
+      "cat": "printing",
+      "name": "A3 Photo Paper",
+      "summary": "A3 Photo Paper for DEBONE customers.",
+      "description": "A3 Photo Paper. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/025-a3-photo-paper.webp"
+    },
+    {
+      "id": "mirrorless-camera",
+      "cat": "cameras",
+      "name": "Mirrorless Camera",
+      "summary": "Mirrorless Camera for DEBONE customers.",
+      "description": "Mirrorless Camera. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/026-mirrorless-camera.webp"
+    },
+    {
+      "id": "hp-printer-ink-bottles",
+      "cat": "printing",
+      "name": "HP Printer Ink Bottles",
+      "summary": "HP Printer Ink Bottles for DEBONE customers.",
+      "description": "HP Printer Ink Bottles. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/027-hp-printer-ink-bottles.webp"
+    },
+    {
+      "id": "laminating-machine",
+      "cat": "printing",
+      "name": "Laminating Machine",
+      "summary": "Laminating Machine for DEBONE customers.",
+      "description": "Laminating Machine. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/028-laminating-machine.webp"
+    },
+    {
+      "id": "canon-printer-ink-bottles",
+      "cat": "printing",
+      "name": "Canon Printer Ink Bottles",
+      "summary": "Canon Printer Ink Bottles for DEBONE customers.",
+      "description": "Canon Printer Ink Bottles. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/029-canon-printer-ink-bottles.webp"
+    },
+    {
+      "id": "portrait-camera-lens",
+      "cat": "photo",
+      "name": "Portrait Camera Lens",
+      "summary": "Portrait Camera Lens for DEBONE customers.",
+      "description": "Portrait Camera Lens. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/030-portrait-camera-lens.webp"
+    },
+    {
+      "id": "a3-printer",
+      "cat": "printing",
+      "name": "A3 Printer",
+      "summary": "A3 Printer for DEBONE customers.",
+      "description": "A3 Printer. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/031-a3-printer.webp"
+    },
+    {
+      "id": "camera-battery",
+      "cat": "photo",
+      "name": "Camera Battery",
+      "summary": "Camera Battery for DEBONE customers.",
+      "description": "Camera Battery. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/032-camera-battery.webp"
+    },
+    {
+      "id": "a4-photocopy-paper",
+      "cat": "printing",
+      "name": "A4 Photocopy Paper",
+      "summary": "A4 Photocopy Paper for DEBONE customers.",
+      "description": "A4 Photocopy Paper. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/033-a4-photocopy-paper.webp"
+    },
+    {
+      "id": "4-6-photo-paper",
+      "cat": "printing",
+      "name": "4×6 Photo Paper",
+      "summary": "4×6 Photo Paper for DEBONE customers.",
+      "description": "4×6 Photo Paper. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/034-4-6-photo-paper.webp"
+    },
+    {
+      "id": "camera-battery-charger",
+      "cat": "photo",
+      "name": "Camera Battery Charger",
+      "summary": "Camera Battery Charger for DEBONE customers.",
+      "description": "Camera Battery Charger. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/035-camera-battery-charger.webp"
+    },
+    {
+      "id": "camera-tripod",
+      "cat": "photo",
+      "name": "Camera Tripod",
+      "summary": "Camera Tripod for DEBONE customers.",
+      "description": "Camera Tripod. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/036-camera-tripod.webp"
+    },
+    {
+      "id": "speedlight-flash",
+      "cat": "photo",
+      "name": "Speedlight Flash",
+      "summary": "Speedlight Flash for DEBONE customers.",
+      "description": "Speedlight Flash. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/037-speedlight-flash.webp"
+    },
+    {
+      "id": "photography-softbox",
+      "cat": "photo",
+      "name": "Photography Softbox",
+      "summary": "Photography Softbox for DEBONE customers.",
+      "description": "Photography Softbox. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/038-photography-softbox.webp"
+    },
+    {
+      "id": "portable-audio-recorder",
+      "cat": "cameras",
+      "name": "Portable Audio Recorder",
+      "summary": "Portable Audio Recorder for DEBONE customers.",
+      "description": "Portable Audio Recorder. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/039-portable-audio-recorder.webp"
+    },
+    {
+      "id": "professional-video-camera",
+      "cat": "cameras",
+      "name": "Professional Video Camera",
+      "summary": "Professional Video Camera for DEBONE customers.",
+      "description": "Professional Video Camera. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/040-professional-video-camera.webp"
+    },
+    {
+      "id": "led-ring-light",
+      "cat": "photo",
+      "name": "LED Ring Light",
+      "summary": "LED Ring Light for DEBONE customers.",
+      "description": "LED Ring Light. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/041-led-ring-light.webp"
+    },
+    {
+      "id": "hdmi-capture-card",
+      "cat": "cameras",
+      "name": "HDMI Capture Card",
+      "summary": "HDMI Capture Card for DEBONE customers.",
+      "description": "HDMI Capture Card. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/042-hdmi-capture-card.webp"
+    },
+    {
+      "id": "video-led-panel-light",
+      "cat": "cameras",
+      "name": "Video LED Panel Light",
+      "summary": "Video LED Panel Light for DEBONE customers.",
+      "description": "Video LED Panel Light. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/043-video-led-panel-light.webp"
+    },
+    {
+      "id": "professional-video-tripod",
+      "cat": "cameras",
+      "name": "Professional Video Tripod",
+      "summary": "Professional Video Tripod for DEBONE customers.",
+      "description": "Professional Video Tripod. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/044-professional-video-tripod.webp"
+    },
+    {
+      "id": "photography-light-stand",
+      "cat": "photo",
+      "name": "Photography Light Stand",
+      "summary": "Photography Light Stand for DEBONE customers.",
+      "description": "Photography Light Stand. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/045-photography-light-stand.webp"
+    },
+    {
+      "id": "photography-background-stand",
+      "cat": "photo",
+      "name": "Photography Background Stand",
+      "summary": "Photography Background Stand for DEBONE customers.",
+      "description": "Photography Background Stand. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/046-photography-background-stand.webp"
+    },
+    {
+      "id": "smartphone-gimbal",
+      "cat": "cameras",
+      "name": "Smartphone Gimbal",
+      "summary": "Smartphone Gimbal for DEBONE customers.",
+      "description": "Smartphone Gimbal. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/047-smartphone-gimbal.webp"
+    },
+    {
+      "id": "usb-microphone",
+      "cat": "cameras",
+      "name": "USB Microphone",
+      "summary": "USB Microphone for DEBONE customers.",
+      "description": "USB Microphone. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/048-usb-microphone.webp"
+    },
+    {
+      "id": "camera-gimbal-stabiliser",
+      "cat": "cameras",
+      "name": "Camera Gimbal Stabiliser",
+      "summary": "Camera Gimbal Stabiliser for DEBONE customers.",
+      "description": "Camera Gimbal Stabiliser. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/049-camera-gimbal-stabiliser.webp"
+    },
+    {
+      "id": "led-studio-light",
+      "cat": "photo",
+      "name": "LED Studio Light",
+      "summary": "LED Studio Light for DEBONE customers.",
+      "description": "LED Studio Light. Please confirm the exact brand, model and specifications with DEBONE before ordering. Product image is AI-generated and for illustration.",
+      "price": null,
+      "image": "/assets/debone-products/050-led-studio-light.webp"
     }
   ]
 }
