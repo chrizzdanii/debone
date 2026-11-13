@@ -33,19 +33,27 @@ iframe[src*="youtube"],iframe[src*="youtu.be"],iframe[src*="vimeo"]{aspect-ratio
 
   /* Tables turn into cards. Without this a 760px table pushes amounts and buttons off the screen. */
   .dt-wrap,.table-wrap,.theme-brand .dt-wrap{overflow:visible!important;border:0!important;background:none!important;border-radius:0!important}
-  table.dt,table.table,.theme-brand .dt{min-width:0!important;width:100%!important;display:block}
-  table.dt thead,table.table thead{display:none}
-  table.dt tbody,table.table tbody{display:grid;gap:12px}
-  table.dt tr,table.table tr{display:grid;gap:2px;padding:14px 16px;border:1px solid var(--line,#2a2a2a);border-radius:18px;background:#121212;min-width:0}
-  table.dt td,table.table td{display:flex!important;justify-content:space-between;align-items:center;gap:14px;border:0!important;padding:7px 0!important;text-align:right;min-width:0;overflow-wrap:anywhere}
-  table.dt td::before,table.table td::before{content:attr(data-label);flex:0 0 auto;font:700 .66rem Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ash,#9a9a9a);text-align:left}
-  table.dt td[data-label=""]::before,table.dt td:not([data-label])::before,table.table td[data-label=""]::before,table.table td:not([data-label])::before{display:none}
-  table.dt td:first-child,table.table td:first-child{display:block!important;text-align:left;font-size:1.02rem;padding-top:0!important}
-  table.dt td[colspan],table.table td[colspan]{display:block!important;text-align:left}
-  table.dt .dt-act,table.table .dt-act,table.dt td:last-child:has(.btn),table.table td:last-child:has(.btn){justify-content:stretch;display:flex!important;flex-wrap:wrap;gap:8px}
-  table.dt .dt-act .btn,table.table td:last-child .btn{flex:1 1 auto}
+  table.dt,table.table,table.tbl,.theme-brand .dt{min-width:0!important;width:100%!important;display:block}
+  table.dt thead,table.table thead,table.tbl thead,table.tbl thead{display:none}
+  table.dt tbody,table.table tbody,table.tbl tbody{display:grid;gap:12px}
+  table.dt tr,table.table tr,table.tbl tr{display:grid;gap:2px;padding:14px 16px;border:1px solid var(--line,#2a2a2a);border-radius:18px;background:#121212;min-width:0}
+  table.dt td,table.table td,table.tbl td{display:flex!important;justify-content:space-between;align-items:center;gap:14px;border:0!important;padding:7px 0!important;text-align:right;min-width:0;overflow-wrap:anywhere}
+  table.dt td::before,table.table td::before,table.tbl td::before{content:attr(data-label);flex:0 0 auto;font:700 .66rem Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ash,#9a9a9a);text-align:left}
+  table.dt td[data-label=""]::before,table.dt td:not([data-label])::before,table.table td[data-label=""]::before,table.tbl td[data-label=""]::before,table.table td:not([data-label])::before,table.tbl td:not([data-label])::before{display:none}
+  table.dt td:first-child,table.table td:first-child,table.tbl td:first-child{display:block!important;text-align:left;font-size:1.02rem;padding-top:0!important}
+  table.dt td[colspan],table.table td[colspan],table.tbl td[colspan]{display:block!important;text-align:left}
+  table.dt .dt-act,table.table .dt-act,table.tbl .dt-act,table.dt td:last-child:has(.btn),table.table td:last-child:has(.btn),table.tbl td:last-child:has(.btn){justify-content:stretch;display:flex!important;flex-wrap:wrap;gap:8px}
+  table.dt .dt-act .btn,table.table td:last-child .btn,table.tbl td:last-child .btn{flex:1 1 auto}
   table.dt tbody tr,.sub-row{animation:none}
 
+  table.dt td:first-child::before,table.table td:first-child::before,table.tbl td:first-child::before{display:none!important}
+  table.tbl tr,table.dt tr,table.table tr{transition:border-color .3s,transform .3s}
+  .table-wrap .tbl,.table-wrap table{min-width:0!important}
+  .table-wrap{overflow:visible!important}
+  table.tbl tbody tr{animation:none}
+  table.tbl tr+tr{margin-top:0}
+  .box,.panel,.lv-card{padding:18px 14px}
+  .box>h2,.panel>h2{font-size:1.5rem;margin-bottom:12px}
   /* Admin live classes */
   .lv-compose{position:static}
   .lv-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -91,3 +99,13 @@ iframe[src*="youtube"],iframe[src*="youtu.be"],iframe[src*="vimeo"]{aspect-ratio
   .m-tabs a.on::before{content:"";position:absolute;top:-7px;width:22px;height:3px;border-radius:3px;background:var(--orange,#E0A800)}
 }
 @media (prefers-reduced-motion:reduce){.m-tabs,.m-tabs *{transition:none!important}}
+
+/* Summary cards sit two per row on phones so pages do not become one long column */
+@media (max-width:900px){
+  .theme-brand .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}
+  .theme-brand .kpis .kpi,.theme-brand .kpis .stat-card{padding:16px 14px;border-radius:20px;min-width:0}
+  .theme-brand .kpis .kpi b,.theme-brand .kpis .stat-card b{font-size:clamp(1.5rem,7vw,2.1rem);overflow-wrap:anywhere}
+  .theme-brand .view-head{padding:22px 18px;border-radius:24px}
+  .theme-brand .view-head h1{font-size:clamp(1.9rem,8.5vw,2.6rem)}
+}
+@media (max-width:420px){.theme-brand .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}

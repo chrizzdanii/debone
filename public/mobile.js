@@ -17,7 +17,7 @@
     });
   }
   var queued = false;
-  function labelAll() { queued = false; document.querySelectorAll('table.dt, table.table').forEach(label); }
+  function labelAll() { queued = false; document.querySelectorAll('table.dt, table.table, table.tbl').forEach(label); }
   function schedule() { if (!queued) { queued = true; setTimeout(labelAll, 60); } }
   labelAll();
   if ('MutationObserver' in window) new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });

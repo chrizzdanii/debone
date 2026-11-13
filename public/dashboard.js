@@ -173,6 +173,12 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     var staffNote = (d.user.role === 'admin' || d.user.role === 'instructor')
       ? '<section class="panel"><p class="eyebrow">Staff account</p><p class="muted">You are signed in as ' + esc(d.user.role) + '. Paid courses are locked for staff too, exactly as for students. To test payment, sign in with a separate student account.</p></section>'
       : '';
+    if (window.DOverview) {
+      var h = { thumb: thumb };
+      setView('<div class="stagger">' + profileBanner(d.user) + qrBanner(d.user) + couponBanner(d.user) + staffNote + '</div>' + DOverview.student(d, h));
+      DOverview.afterStudent(view);
+      return;
+    }
     setView(
       '<div class="stagger">' + profileBanner(d.user) + qrBanner(d.user) + couponBanner(d.user) +
         viewHead('Welcome back', 'Hi, ' + first + '.', 'Here is where your learning stands today.') + staffNote +
@@ -1076,6 +1082,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       try {
         var fresh = await api('/api/dashboard');
         state.d = fresh;
+        if (window.DOverview && view.querySelector('#ov-root')) { DOverview.updateStudent(view, fresh, { thumb: thumb }); return; }
         var numbers = [fresh.stats.enrolled, fresh.stats.completedLessons, fresh.stats.avgProgress];
         view.querySelectorAll('.kpis .kpi b[data-count]').forEach(function (el, i) {
           if (i >= numbers.length) return;

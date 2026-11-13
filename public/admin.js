@@ -77,6 +77,10 @@
   /* ---------- Overview ---------- */
   async function renderOverview() {
     crumb.textContent = 'Overview';
+    if (window.DOverview) {
+      view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
+      return DOverview.admin(view, { me: me, isAdmin: isAdmin(), api: api });
+    }
     var o = await api('/api/staff/overview');
     var cards = [
       ['Students', o.students], ['Instructors', o.instructors], ['Courses', o.courses],
@@ -2260,6 +2264,7 @@
     if (!me || (location.hash || '#overview').replace(/^#/, '').split('/')[0] !== 'overview') return;
     if (liveBusy) return;
     if (liveDirty || (window.DLive && DLive.busy())) { livePending = true; return; }
+    if (window.DOverview && view.querySelector('#ov-root')) { DOverview.refreshAdmin(); return; }
     livePending = false; liveBusy = true;
     try {
       var o = await api('/api/staff/overview');
