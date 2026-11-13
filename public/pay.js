@@ -124,11 +124,66 @@
       box.lead.textContent = 'Thank you. Your receipt is with our team. This page updates by itself when we confirm it.';
       a.innerHTML = '<div class="pay-review"><span class="pay-pulse"></span><div><b>Receipt received</b><p class="muted">' + esc(o.proofName || 'Your receipt') + ' is waiting for confirmation.</p></div></div>';
     } else if (o.status === 'approved') {
+      var isProduct = o.kind === 'product';
       box.eyebrow.textContent = 'Step 4 of 4';
-      box.lead.textContent = 'Payment confirmed. Your course is now open.';
-      var go = o.courseId ? 'dashboard.html#course/' + encodeURIComponent(o.courseId) : 'dashboard.html#payments';
-      a.innerHTML = '<div class="pay-done"><span class="pay-tick"></span><h2>You are in</h2><p class="muted">Welcome to DEBONE. Your access is ready.</p><a class="btn btn-solid btn-lg" href="' + go + '">Open my course</a></div>';
-      burst();
+      box.lead.textContent = isProduct ? 'Payment confirmed. Your file is ready to download.' : 'Payment confirmed. Your course is now open.';
+      var go = isProduct ? 'dashboard.html#downloads' : (o.courseId ? 'dashboard.html#course/' + encodeURIComponent(o.courseId) : 'dashboard.html#payments');
+      a.innerHTML = '<div class="pay-done"><span class="pay-tick"></span><h2>' + (isProduct ? 'Payment confirmed' : 'You are in') + '</h2><p class="muted">' + (isProduct ? 'Taking you to your downloads.' : 'Welcome to DEBONE. Your access is ready.') + '</p><a class="btn btn-solid btn-lg" href="' + go + '">' + (isProduct ? 'Go to my downloads' : 'Open my course') + '</a></div>';
+      if (isProduct) productSuccess(o); else burst();
+    }
+  }
+
+  /* Digital product paid: celebrate, then take the buyer straight to Downloads in the student dashboard */
+  var popupShown = false;
+  var DOWNLOADS_URL = 'dashboard.html#downloads';
+  function productSuccess(o) {
+    if (popupShown) return; popupShown = true;
+    try { sessionStorage.setItem('debone-new-download', String(Date.now())); } catch (e) { /* private mode */ }
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var SECONDS = 6, timer = null, leaving = false;
+    var ov = document.createElement('div');
+    ov.className = 'ps-overlay'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'ps-title');
+    ov.innerHTML = '<div class="ps-card"><div class="ps-inner">' +
+      '<div class="ps-badge" aria-hidden="true"><i></i><i></i><i></i><svg viewBox="0 0 100 100"><circle class="ps-circle" cx="50" cy="50" r="46"/><path class="ps-check" d="M29 52l15 15 28-32"/></svg></div>' +
+      '<p class="ps-eyebrow">Payment confirmed</p>' +
+      '<h2 class="ps-title" id="ps-title">Thank you!</h2>' +
+      '<p class="ps-sub">Your purchase is complete and your file is now waiting in your student dashboard.</p>' +
+      '<div class="ps-file"><span class="ps-file-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5M4 20h16"/></svg></span>' +
+        '<span class="ps-file-txt"><b>' + esc(o.item) + '</b><span>Ready to download</span></span><span class="ps-file-amt">' + naira(o.amount) + '</span></div>' +
+      '<div class="ps-go"><a class="btn btn-solid btn-lg" id="ps-open" href="' + DOWNLOADS_URL + '">Go to my downloads</a>' +
+        '<div class="ps-bar" id="ps-bar" style="--ps-t:' + SECONDS + 's" aria-hidden="true"><b></b></div>' +
+        '<p class="ps-note" id="ps-note">Opening your downloads automatically…</p>' +
+        '<button type="button" class="ps-stay" id="ps-stay">Stay on this page</button></div>' +
+    '</div></div>';
+    document.body.appendChild(ov);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('in'); }); });
+    document.getElementById('ps-open').focus({ preventScroll: true });
+    if (!reduce) setTimeout(sparks, 700);
+    if (navigator.vibrate) { try { navigator.vibrate([18, 40, 18]); } catch (e) { /* not supported */ } }
+
+    function leave() {
+      if (leaving) return; leaving = true; clearTimeout(timer);
+      ov.classList.add('out');
+      setTimeout(function () { location.href = DOWNLOADS_URL; }, reduce ? 0 : 260);
+    }
+    document.getElementById('ps-open').addEventListener('click', function (e) { e.preventDefault(); leave(); });
+    document.getElementById('ps-stay').addEventListener('click', function () {
+      clearTimeout(timer); document.getElementById('ps-bar').classList.add('stopped'); document.getElementById('ps-bar').style.opacity = '.25';
+      document.getElementById('ps-note').textContent = 'Your file is always in Downloads in your dashboard.'; this.remove();
+    });
+    timer = setTimeout(leave, (SECONDS + 1.5) * 1000);
+  }
+  function sparks() {
+    var cols = ['#E0A800', '#F7D35C', '#6BCB77', '#F4F4F0', '#FFB84D'];
+    var cx = innerWidth / 2, cy = Math.min(innerHeight * 0.3, 260);
+    for (var i = 0; i < 70; i++) {
+      var p = document.createElement('i'); p.className = 'ps-spark';
+      var ang = Math.random() * Math.PI * 2, force = 120 + Math.random() * 260;
+      p.style.left = cx + 'px'; p.style.top = cy + 'px'; p.style.background = cols[i % cols.length];
+      if (i % 3 === 0) p.style.borderRadius = '50%';
+      p.style.setProperty('--dx', Math.cos(ang) * force + 'px'); p.style.setProperty('--dy', Math.sin(ang) * force * 0.8 - 80 + 'px'); p.style.setProperty('--rot', (Math.random() * 900 - 450) + 'deg');
+      p.style.animationDelay = (Math.random() * 0.25) + 's';
+      document.body.appendChild(p); setTimeout(function (n) { return function () { n.remove(); }; }(p), 2400);
     }
   }
 

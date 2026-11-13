@@ -33,6 +33,9 @@
     log = panel.querySelector('.cw-log'); form = panel.querySelector('.cw-form'); input = panel.querySelector('.cw-input');
     chips = panel.querySelector('.cw-chips'); sendBtn = panel.querySelector('.cw-send');
     fab.addEventListener('click', open);
+    /* Keep the help button out of the way on the Community page: on phones it sat on top of the Send button */
+    function syncView() { document.body.classList.toggle('on-community', /^#community/.test(location.hash)); }
+    window.addEventListener('hashchange', syncView); syncView();
     panel.querySelector('.cw-close').addEventListener('click', close);
     form.addEventListener('submit', function (e) { e.preventDefault(); send(input.value); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });

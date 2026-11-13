@@ -19,17 +19,75 @@
   function setView(html) {
     if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return; view.innerHTML = html; view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter'); }
 
-  /* Downloads */
+  /* Downloads: a clean library of everything the student has bought */
+  var DL_ICON = {
+    file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>'
+  };
+  function dlCountUp(root) {
+    root.querySelectorAll('[data-count]').forEach(function (el) {
+      var to = Number(el.getAttribute('data-count')) || 0, t0 = null;
+      if (!to || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = to; return; }
+      (function f(ts) { if (!t0) t0 = ts; var p = Math.min(1, (ts - t0) / 900); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(f); })(performance.now());
+    });
+  }
   async function renderDownloads() {
     crumb.textContent = 'Downloads';
     var d = await api('/api/me/downloads');
-    setView(head('Your files', 'Downloads', 'Files you have bought. Each product can be downloaded up to ' + d.limit + ' times and stays available for a set period.') +
-      '<div class="dl-grid">' + (d.downloads.length ? d.downloads.map(function (x, i) {
-        var status = x.available ? '<span class="gpill pass">Ready</span>' : '<span class="gpill fail">' + esc({ expired: 'Expired', limit: 'Download limit reached', 'not ready': 'Not ready yet' }[x.reason] || 'Unavailable') + '</span>';
-        return '<article class="dl-card" style="--i:' + i + '"><h3>' + esc(x.title) + '</h3><p class="muted">' + esc(x.author) + (x.formats ? ' · ' + esc(x.formats) : '') + '</p>' +
-          '<p class="small">Downloads used: <b>' + x.downloadsUsed + '</b> of ' + d.limit + ' · Available until ' + esc(fmt(x.expiresAt)) + '</p>' + status +
-          (x.available ? '<a class="btn btn-solid btn-sm" href="/api/downloads/' + encodeURIComponent(x.id) + '">Download</a>' : '') + '</article>';
-      }).join('') : '<div class="empty-state">No purchases yet. Visit the <a href="store.html">digital store</a>.</div>') + '</div>');
+    var list = (d.downloads || []).slice().sort(function (a, b) { return new Date(b.purchasedAt) - new Date(a.purchasedAt); });
+    var fresh = 0;
+    try { fresh = Number(sessionStorage.getItem('debone-new-download')) || 0; sessionStorage.removeItem('debone-new-download'); } catch (e) { /* private mode */ }
+    var freshId = fresh && list.length && (Date.now() - fresh < 10 * 60 * 1000) ? list[0].id : null;
+    var ready = list.filter(function (x) { return x.available; }).length;
+    var left = list.reduce(function (t, x) { return t + (x.available ? x.downloadsLeft : 0); }, 0);
+
+    var hero = '<section class="dl-hero"><div class="dl-hero-txt"><p class="eyebrow">Your files</p><h1>Downloads</h1>' +
+      '<p class="muted">Everything you have bought, ready to save to your device. Each file can be downloaded up to <b>' + d.limit + '</b> times and stays available for a set period.</p></div>' +
+      '<div class="dl-stats"><div class="dl-stat"><span class="dl-stat-ico">' + DL_ICON.box + '</span><b data-count="' + list.length + '">0</b><small>Purchased</small></div>' +
+      '<div class="dl-stat"><span class="dl-stat-ico ok">' + DL_ICON.check + '</span><b data-count="' + ready + '">0</b><small>Ready now</small></div>' +
+      '<div class="dl-stat"><span class="dl-stat-ico">' + DL_ICON.down + '</span><b data-count="' + left + '">0</b><small>Downloads left</small></div></div></section>';
+
+    var cards = list.map(function (x, i) {
+      var daysLeft = Math.ceil((new Date(x.expiresAt).getTime() - Date.now()) / 86400000);
+      var reasonText = { expired: 'Expired', limit: 'Limit reached', 'not ready': 'Not ready yet' }[x.reason] || 'Unavailable';
+      var pill = x.available ? '<span class="dl-pill ok"><i></i>Ready</span>' : '<span class="dl-pill bad">' + esc(reasonText) + '</span>';
+      var fmts = String(x.formats || '').split(/[,/|·]+/).map(function (f) { return f.trim(); }).filter(Boolean).slice(0, 3);
+      var tag = fmts.length ? fmts[0].toUpperCase().slice(0, 5) : 'FILE';
+      var segs = '';
+      for (var k = 0; k < d.limit; k++) segs += '<i class="' + (k < x.downloadsUsed ? 'used' : '') + '" style="--k:' + k + '"></i>';
+      var expTxt = !x.expiresAt ? '' : (daysLeft > 0 ? (daysLeft <= 14 ? '<b class="warn">' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') + ' left</b>' : 'Until ' + esc(fmt(x.expiresAt))) : 'Expired ' + esc(fmt(x.expiresAt)));
+      var action = x.available
+        ? '<a class="dl-btn" href="/api/downloads/' + encodeURIComponent(x.id) + '" data-dl><span class="dl-btn-ico">' + DL_ICON.down + '</span><span class="dl-btn-txt">Download file</span></a>'
+        : '<a class="dl-btn off" href="contact.html">Contact us for help</a>';
+      return '<article class="dl-card' + (x.id === freshId ? ' is-new' : '') + (x.available ? '' : ' is-off') + '" style="--i:' + i + '">' +
+        (x.id === freshId ? '<span class="dl-new">New</span>' : '') +
+        '<div class="dl-top"><div class="dl-file"><span class="dl-file-ico">' + DL_ICON.file + '</span><em>' + esc(tag) + '</em></div>' + pill + '</div>' +
+        '<h3>' + esc(x.title) + '</h3>' +
+        '<p class="dl-by">' + (x.author ? 'By ' + esc(x.author) : 'DEBONE Digital') + '</p>' +
+        (fmts.length ? '<div class="dl-fmts">' + fmts.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</div>' : '') +
+        '<div class="dl-meter"><div class="dl-meter-top"><span>Downloads used</span><b>' + x.downloadsUsed + ' of ' + d.limit + '</b></div><div class="dl-segs" role="img" aria-label="' + x.downloadsUsed + ' of ' + d.limit + ' downloads used">' + segs + '</div></div>' +
+        '<div class="dl-meta"><span>' + DL_ICON.clock + (expTxt || 'No expiry') + '</span><span>Bought ' + esc(fmt(x.purchasedAt)) + '</span></div>' +
+        action + '</article>';
+    }).join('');
+
+    var empty = '<div class="dl-empty"><span class="dl-empty-ico">' + DL_ICON.bag + '</span><h3>Your library is empty</h3><p>When you buy an eBook, template pack or guide from the store, it appears here ready to download.</p><a class="dl-btn" href="store.html"><span class="dl-btn-txt">Browse the digital store</span></a></div>';
+
+    setView(hero + (list.length ? '<div class="dl-grid">' + cards + '</div>' : empty) +
+      '<p class="dl-help">Trouble with a file? <a href="contact.html">Contact support</a> or message us on <a href="https://wa.me/2348035988889" target="_blank" rel="noopener">WhatsApp</a>.</p>');
+    dlCountUp(view);
+    var newCard = view.querySelector('.dl-card.is-new');
+    if (newCard) setTimeout(function () { try { newCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { /* old browser */ } }, 650);
+    view.querySelectorAll('[data-dl]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        if (a.classList.contains('busy')) return;
+        a.classList.add('busy'); a.querySelector('.dl-btn-txt').textContent = 'Starting your download…';
+        setTimeout(function () { if (/^#downloads/.test(location.hash)) renderDownloads().catch(function () {}); }, 3200);
+      });
+    });
   }
 
   /* Requests: schedule changes and refunds */

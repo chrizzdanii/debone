@@ -109,3 +109,15 @@ iframe[src*="youtube"],iframe[src*="youtu.be"],iframe[src*="vimeo"]{aspect-ratio
   .theme-brand .view-head h1{font-size:clamp(1.9rem,8.5vw,2.6rem)}
 }
 @media (max-width:420px){.theme-brand .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+
+/* ---------- Help button must never cover the Community Send button (v55) ---------- */
+body.on-community .cw-fab,
+body:has(.wa2-shell) .cw-fab,
+body.kbd-open .cw-fab{opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:scale(.6)!important}
+@media (max-width:900px){
+  /* the composer always clears the bottom tab bar and the phone home indicator */
+  .theme-brand .wa2-shell .wa-composer{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  .theme-brand .wa-form{gap:6px}
+  .theme-brand .wa-send{flex:0 0 48px;width:48px;height:48px}
+}
