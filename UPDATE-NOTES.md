@@ -19,3 +19,11 @@ Before deployment: back up the database and test with a student and admin accoun
 - Waiting list page now lists bundles as well as courses. "Launch and notify" opens the bundle and notifies everyone waiting. Saving a bundle from Coming soon to Open also notifies them.
 - A coming-soon course can only be put in a bundle that is also Coming soon. A bundle cannot be launched while it contains a coming-soon course.
 - Files changed: server/server.js, public/admin.js, public/commerce.js, public/dashboard-offers.js, public/bundles.css, public/offers.css, public/bundles.html, server/private/admin.html, server/private/dashboard.html.
+
+## Studio, About and Services pages + "Page content" admin panel
+- New pages: studio.html, about.html, services.html (styles in dx.css, animation in dx.js).
+- Admin > Page content: change photos and wording on those three pages, plus the shared numbers (students, clients, start year). Anything not changed keeps its original.
+- Studio gallery photos come from Selected work; the five Studio service cards use Services photos.
+- Code: server/page-slots.js lists every editable item. After editing a page or that list, run `node tests/page-slots.test.js`.
+- New API: GET /api/page-content (public), /api/staff/page-content (admin). New collection: pageSlots.
+- Please check the story timeline text on the About page and the numbers (index page says 50,000 clients; the build plan says 3,000+).

@@ -21,3 +21,11 @@ Only server/server.js was changed; no customer data or other files are touched.
 - Bundles: the "Save %" badge now shows (the code read the wrong field), plus Best value, Coming soon with a waiting-list button.
 - Nav: current page highlighted, reading-progress bar, phone menu locks page scroll and closes on link tap.
 Not browser-tested. Test on staging first.
+
+## v54: mobile and responsive pass
+New: public/mobile.css, public/mobile.js (added to every page, the dashboard and admin).
+- Tables become cards on phones. Before, the refund and payment tables stayed 760px wide, so amounts and buttons were pushed off-screen.
+- Dashboard and admin get a bottom tab bar (Home, Courses, Live, Tasks, Menu), swipe from the left edge to open the menu, bigger tap targets, 16px fields (no iPhone zoom), and the top bar no longer wraps "Log out".
+- Fixed "PRACTICE &AMP; MARKS" on the Assignments page.
+- The community drop zone can no longer get stuck open on a phone.
+- No stuck hover effects on touch screens; menus and dialogs fit the real screen height.

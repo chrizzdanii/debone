@@ -17,6 +17,7 @@ const ROOT = path.join(__dirname, '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const PRIVATE_DIR = path.join(__dirname, 'private');
 const { createStore, SUPABASE, DATA_DIR } = require('./store');
+const { SLOTS: PAGE_SLOTS, PAGES: PAGE_LIST, SLOT_MAP: PAGE_SLOT_MAP, LIMITS: PAGE_LIMITS } = require('./page-slots');
 const SECRET_FILE = path.join(DATA_DIR, 'session.secret');
 const ON_VERCEL = !!process.env.VERCEL;
 const COURSES_FILE = path.join(__dirname, 'courses.json');
@@ -67,7 +68,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || (() => {
 const DB_DEFAULT = () => ({
   users: [], enrollments: [], progress: [], payments: [],
   courses: null, announcements: [],
-  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], waitlist: [], communityMigrated: false, qrStats: {}
+  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], waitlist: [], communityMigrated: false, qrStats: {}, pageSlots: []
 });
 const store = createStore(DB_DEFAULT);
 let db = DB_DEFAULT();
@@ -149,6 +150,7 @@ function bootstrap() {
     });
     if (changed) save();
   })();
+  if (!Array.isArray(db.pageSlots)) db.pageSlots = [];
   if (!db.works) db.works = worksSeed.works.map(w => Object.assign({ createdAt: seedTime, updatedAt: seedTime }, w));
   seed.courses.forEach(sc => {
     const dc = db.courses.find(c => c.id === sc.id);
@@ -1111,6 +1113,103 @@ route('DELETE', '/api/staff/services/:id/image', async ctx => {
   if (!sv) throw httpError(404, 'Service not found');
   sv.imageData = null; sv.imageUrl = null; sv.updatedAt = now(); save();
   json(ctx.res, 200, { ok: true });
+});
+
+/* ---------- Page content: editable photos and text on the Studio, About and Services pages ---------- */
+function pageSlotRecord(key) { return db.pageSlots.find(x => x.id === key); }
+function pageSlotView(slot) {
+  const r = pageSlotRecord(slot.key);
+  const out = { key: slot.key, page: slot.page, group: slot.group, label: slot.label, type: slot.type, hint: slot.hint || '', def: slot.def, changed: false };
+  if (slot.type === 'image') {
+    out.defAlt = slot.alt || '';
+    out.alt = (r && r.alt) || slot.alt || '';
+    out.image = r && r.imageData ? `/api/page-content/${slot.key}/image?v=${encodeURIComponent(r.updatedAt)}` : (r && r.imageUrl) || slot.def;
+    out.changed = !!(r && (r.imageData || r.imageUrl));
+    out.uploaded = !!(r && r.imageData);
+  } else {
+    out.value = r && r.text !== undefined && r.text !== null ? r.text : slot.def;
+    out.changed = !!(r && r.text !== undefined && r.text !== null && r.text !== slot.def);
+  }
+  return out;
+}
+route('GET', '/api/page-content', async ctx => {
+  // Only what the admin changed is sent. Everything else already sits in the page as its default.
+  const content = {};
+  db.pageSlots.forEach(r => {
+    const slot = PAGE_SLOT_MAP.get(r.id);
+    if (!slot) return;
+    if (slot.type === 'image') {
+      const entry = {};
+      if (r.imageData) entry.image = `/api/page-content/${slot.key}/image?v=${encodeURIComponent(r.updatedAt)}`;
+      else if (r.imageUrl) entry.image = r.imageUrl;
+      if (r.alt) entry.alt = r.alt;
+      if (entry.image || entry.alt) content[slot.key] = entry;
+    } else if (r.text !== undefined && r.text !== null) content[slot.key] = { text: r.text };
+  });
+  json(ctx.res, 200, { content });
+});
+route('GET', '/api/page-content/:key/image', async ctx => {
+  const r = pageSlotRecord(ctx.params.key);
+  if (!r || !r.imageData) throw httpError(404, 'No image');
+  ctx.res.writeHead(200, { 'Content-Type': r.imageData.mime, 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+  ctx.res.end(Buffer.from(r.imageData.b64, 'base64'));
+});
+route('GET', '/api/staff/page-content', async ctx => {
+  requireStaff(ctx, true);
+  json(ctx.res, 200, { pages: PAGE_LIST, slots: PAGE_SLOTS.map(pageSlotView) });
+});
+function pageSlotFor(ctx) {
+  const slot = PAGE_SLOT_MAP.get(ctx.params.key);
+  if (!slot) throw httpError(404, 'That part of the page does not exist.');
+  return slot;
+}
+function pageSlotEnsure(slot) {
+  let r = pageSlotRecord(slot.key);
+  if (!r) { r = { id: slot.key, text: null, alt: '', imageUrl: null, imageData: null, updatedAt: now() }; db.pageSlots.push(r); }
+  return r;
+}
+function pageSlotTidy(r) { if (r.text == null && !r.alt && !r.imageUrl && !r.imageData) db.pageSlots = db.pageSlots.filter(x => x !== r); }
+route('PUT', '/api/staff/page-content/:key', async ctx => {
+  requireStaff(ctx, true);
+  const slot = pageSlotFor(ctx), b = ctx.body || {};
+  if (slot.type !== 'image') {
+    const t0 = clean(b.text, 600);
+    if (slot.key === 'stat-since' && !/^(19|20)\d{2}$/.test(t0)) throw httpError(400, 'Please type a year, for example 1997.');
+  }
+  const r = pageSlotEnsure(slot);
+  if (slot.type === 'image') {
+    if (b.alt !== undefined) r.alt = clean(b.alt, 160);
+    if (b.url !== undefined) {
+      const u = clean(b.url, 600);
+      if (u) {
+        if (!/^https:\/\/[^\s"'<>()]+$/i.test(u)) throw httpError(400, 'Please paste a full image address that starts with https://');
+        r.imageUrl = u; r.imageData = null;
+      } else if (!r.imageData) r.imageUrl = null;
+    }
+  } else {
+    if (b.text === undefined) throw httpError(400, 'Nothing to save.');
+    const t = clean(b.text, PAGE_LIMITS[slot.type] || 140).replace(/\s*\n\s*/g, ' ');
+    if (!t) throw httpError(400, 'This line cannot be empty. Use Reset to go back to the original.');
+    r.text = t;
+  }
+  r.updatedAt = now();
+  pageSlotTidy(r);
+  json(ctx.res, 200, { slot: pageSlotView(slot) });
+});
+route('POST', '/api/staff/page-content/:key/image', async ctx => {
+  requireStaff(ctx, true);
+  const slot = pageSlotFor(ctx);
+  if (slot.type !== 'image') throw httpError(400, 'This part of the page is text, not a photo.');
+  const img = validImage(ctx.body.data);
+  const r = pageSlotEnsure(slot);
+  r.imageData = img; r.imageUrl = null; r.updatedAt = now();
+  json(ctx.res, 200, { slot: pageSlotView(slot) });
+});
+route('DELETE', '/api/staff/page-content/:key', async ctx => {
+  requireStaff(ctx, true);
+  const slot = pageSlotFor(ctx);
+  db.pageSlots = db.pageSlots.filter(x => x.id !== slot.key);
+  json(ctx.res, 200, { slot: pageSlotView(slot) });
 });
 
 /* ---------- Assistant: answers questions in the student dashboard ---------- */
