@@ -29,7 +29,7 @@
 .theme-editorial .hero h1,.theme-editorial .hero .lead,.theme-editorial .hero .eyebrow{color:#F4EFE6}
 .theme-editorial .hero-shade{background:linear-gradient(180deg,rgba(20,18,14,.25) 0%,rgba(20,18,14,.55) 50%,rgba(20,18,14,.9) 100%)}
 .theme-editorial .eyebrow{color:var(--orange);font-family:"Inter",sans-serif;font-size:.7rem;letter-spacing:.22em}
-.theme-editorial .eyebrow::before{background:var(--orange);width:32px}
+.theme-editorial .eyebrow::before{content:none;display:none}
 .theme-editorial .hero .eyebrow{color:#E9C9B5}
 .theme-editorial .hero .eyebrow::before{background:#E9C9B5}
 
