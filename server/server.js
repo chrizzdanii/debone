@@ -133,8 +133,7 @@ function bootstrap() {
     db.announcements = seed.announcements;
     save();
   }
-  if (!db.products || db.productCatalogueVersion !== 'debone-465-v1') { db.productCatalogueVersion = 'debone-465-v1'; db.products = []; }
-  if (!db.products.length) db.products = productSeed.products.map(p => ({ id: p.id, name: p.name, cat: p.cat, summary: p.summary || '', description: p.description || '', price: p.price, imageUrl: p.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime }));
+  if (!db.products) db.products = productSeed.products.map(p => ({ id: p.id, name: p.name, cat: p.cat, summary: p.summary || '', description: p.description || '', price: p.price, imageUrl: p.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime }));
   if (!db.settings) db.settings = Object.assign({}, SETTINGS_DEFAULTS);
   if (!db.services) db.services = servicesSeed.services.map((sv, i) => Object.assign({ order: i + 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, sv));
   (function normaliseServiceOrder() {
