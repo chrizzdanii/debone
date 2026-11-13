@@ -27,3 +27,9 @@ Before deployment: back up the database and test with a student and admin accoun
 - Code: server/page-slots.js lists every editable item. After editing a page or that list, run `node tests/page-slots.test.js`.
 - New API: GET /api/page-content (public), /api/staff/page-content (admin). New collection: pageSlots.
 - Please check the story timeline text on the About page and the numbers (index page says 50,000 clients; the build plan says 3,000+).
+
+## Mobile fix, new overview dashboards, no dashes
+- Phone layout: every admin table (courses, users, payments, newsletter and the rest that use the `.tbl` class) now turns into labelled cards. KPI summary cards sit two per row. Changes in mobile.css and mobile.js.
+- New overview for admin, instructor and student (public/overview.js and overview.css). Live pill with "updated Xs ago", counting numbers, sparklines, trend chart with touch readout, top courses, revenue mix, activity feed, quick actions. Admin polls /api/staff/live-stats every 6 seconds and updates in place. Student view updates in place on the existing live refresh.
+- Dashes removed from the Studio, About and Services pages (text, hidden defaults in server/page-slots.js, server/services.json). public/nodash.js also cleans text added later in the admin Page content panel and the shared menu strings on other pages.
+- Run `node tests/page-slots.test.js` after editing page text.

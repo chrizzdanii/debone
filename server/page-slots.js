@@ -99,7 +99,7 @@ text('about-team-2-name', 'about', 'The people', 'Card 2 name', 'Editors & retou
 text('about-team-2-role', 'about', 'The people', 'Card 2 line', 'Colour, cuts, cleanup and finishing. Replace with a real name and photo any time.', { long: true });
 image('about-team-3', 'about', 'The people', 'Card 3 photo', IMG.training, 'DEBONE instructors teaching', 'Portrait photo of a person or team.');
 text('about-team-3-name', 'about', 'The people', 'Card 3 name', 'Instructors');
-text('about-team-3-role', 'about', 'The people', 'Card 3 line', 'Hands-on teaching for the next generation of creators. Replace with a real name and photo any time.', { long: true });
+text('about-team-3-role', 'about', 'The people', 'Card 3 line', 'Hands on teaching for the next generation of creators. Replace with a real name and photo any time.', { long: true });
 
 image('about-visit-img', 'about', 'Visit', 'Visit section photo', IMG.dslr, 'The DEBONE studio in Elelenwo', 'Landscape photo.');
 image('about-cta-bg', 'about', 'Visit', 'Bottom banner background', IMG.studioShoot, 'DEBONE studio atmosphere', 'Wide, darker photos look best here.');
