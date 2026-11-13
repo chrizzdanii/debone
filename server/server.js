@@ -134,6 +134,15 @@ function bootstrap() {
     save();
   }
   if (!db.products) db.products = productSeed.products.map(p => ({ id: p.id, name: p.name, cat: p.cat, summary: p.summary || '', description: p.description || '', price: p.price, imageUrl: p.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime }));
+
+  // DEBONE supplied-photo shop migration: once only, keep only the 50 verified image-matched products.
+  // Do not affect digitalProducts, courses, students, or orders.
+  if (!db.debonePhotoCatalogue50Applied) {
+    db.products = productSeed.products.map(p => ({ id: p.id, name: p.name, cat: p.cat, summary: p.summary || '', description: p.description || '', price: p.price, imageUrl: p.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime }));
+    db.debonePhotoCatalogue50Applied = true;
+    save();
+  }
+
   if (!db.settings) db.settings = Object.assign({}, SETTINGS_DEFAULTS);
   if (!db.services) db.services = servicesSeed.services.map((sv, i) => Object.assign({ order: i + 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, sv));
   (function normaliseServiceOrder() {
