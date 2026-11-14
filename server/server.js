@@ -143,6 +143,18 @@ function bootstrap() {
     save();
   }
 
+  // Replace the old placeholder wording with the real product descriptions. Anything the admin has written themselves is left alone.
+  (function upgradeShopCopy() {
+    let changed = false;
+    productSeed.products.forEach(sp => {
+      const p = db.products.find(x => x.id === sp.id);
+      if (!p) return;
+      if (/Please confirm the exact brand, model and specifications/.test(p.description || '')) { p.description = sp.description; changed = true; }
+      if (/ for DEBONE customers\.?$/.test(p.summary || '')) { p.summary = sp.summary; changed = true; }
+    });
+    if (changed) save();
+  })();
+
   if (!db.settings) db.settings = Object.assign({}, SETTINGS_DEFAULTS);
   if (!db.services) db.services = servicesSeed.services.map((sv, i) => Object.assign({ order: i + 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, sv));
   (function normaliseServiceOrder() {
@@ -1766,32 +1778,42 @@ route('PATCH', '/api/staff/orders/:id', async ctx => {
 });
 
 /* ============ Digital products store and downloads ============ */
+/* The PDF of a digital product is uploaded by the admin and kept in DEBONE's own private storage (Supabase Storage or the
+   server's disk). Students never receive a link to it: the server checks their purchase and streams the file itself. */
+const PDF_MAX_BYTES = 25 * 1024 * 1024;        // largest PDF an admin can upload
+const PDF_PART_MAX = 3.5 * 1024 * 1024;        // one upload piece (Vercel allows 4.5 MB per request)
+const hasStoredFile = p => !!(p && p.file && p.file.key);
+const hasDigitalFile = p => hasStoredFile(p) || !!(p && p.fileUrl);   // fileUrl = an older outside link, still served through the server
 function productPublic(p) {
   return { id: p.id, title: p.title, author: p.author || '', description: p.description || '', category: p.category || '',
     price: p.price, pages: p.pages || null, formats: p.formats || '', toc: p.toc || [], previewUrl: p.previewUrl || '',
     image: p.imageData ? `/api/store/${p.id}/image?v=${encodeURIComponent(p.updatedAt)}` : null, hasImage: !!p.imageData };
 }
+function productStaffView(p) {
+  return Object.assign(productPublic(p), {
+    active: p.active, sales: db.purchases.filter(x => x.productId === p.id).length,
+    hasFile: hasStoredFile(p), legacyLink: !hasStoredFile(p) && !!p.fileUrl,
+    fileName: hasStoredFile(p) ? p.file.name : '', fileSize: hasStoredFile(p) ? p.file.size : 0, fileUploadedAt: hasStoredFile(p) ? p.file.uploadedAt : null });
+}
 function productInputDigital(b) {
   const title = clean(b.title, 120);
   if (title.length < 3) throw httpError(400, 'Give the product a title.');
   const price = Math.max(0, Math.round(Number(b.price) || 0));
-  const fileUrl = clean(b.fileUrl, 500);
-  if (fileUrl && !/^https?:\/\//i.test(fileUrl)) throw httpError(400, 'The file link must start with http:// or https://');
   const previewUrl = clean(b.previewUrl, 500);
   if (previewUrl && !/^https?:\/\//i.test(previewUrl)) throw httpError(400, 'The preview link must start with http:// or https://');
   const toc = (Array.isArray(b.toc) ? b.toc : String(b.toc || '').split('\n')).map(x => clean(x, 160)).filter(Boolean).slice(0, 40);
   return { title, author: clean(b.author, 120), description: clean(b.description, 2000), category: clean(b.category, 60),
-    price, pages: b.pages ? Math.max(1, Math.round(Number(b.pages))) : null, formats: clean(b.formats, 60), toc, previewUrl, fileUrl,
+    price, pages: b.pages ? Math.max(1, Math.round(Number(b.pages))) : null, formats: clean(b.formats, 60), toc, previewUrl,
     active: b.active !== false && b.active !== 'false' };
 }
 route('GET', '/api/store', async ctx => {
-  json(ctx.res, 200, { products: db.digitalProducts.filter(p => p.active).map(productPublic) });
+  json(ctx.res, 200, { products: db.digitalProducts.filter(p => p.active).map(p => Object.assign(productPublic(p), { ready: hasDigitalFile(p) })) });
 });
 route('GET', '/api/store/:id', async ctx => {
   const p = db.digitalProducts.find(x => x.id === ctx.params.id && x.active);
   if (!p) throw httpError(404, 'Product not found');
   const owned = ctx.user ? db.purchases.some(x => x.userId === ctx.user.id && x.productId === p.id) : false;
-  json(ctx.res, 200, { product: productPublic(p), owned });
+  json(ctx.res, 200, { product: Object.assign(productPublic(p), { ready: hasDigitalFile(p) }), owned });
 });
 route('GET', '/api/store/:id/image', async ctx => {
   const p = db.digitalProducts.find(x => x.id === ctx.params.id);
@@ -1803,7 +1825,7 @@ route('POST', '/api/store/:id/buy', async ctx => {
   const user = requireUser(ctx);
   const p = db.digitalProducts.find(x => x.id === ctx.params.id && x.active);
   if (!p) throw httpError(404, 'Product not found');
-  if (!p.fileUrl) throw httpError(400, 'This product is not ready to buy yet.');
+  if (!hasDigitalFile(p)) throw httpError(400, 'This product is not ready to buy yet.');
   if (db.purchases.some(x => x.userId === user.id && x.productId === p.id)) return json(ctx.res, 200, { alreadyOwned: true });
   if (p.price === 0) {
     db.purchases.push({ id: uid(8), userId: user.id, productId: p.id, reference: 'FREE-' + uid(4), createdAt: now(), downloads: 0, expiresAt: new Date(Date.now() + cfg('downloadDays') * 86400000).toISOString() });
@@ -1819,27 +1841,61 @@ route('GET', '/api/me/downloads', async ctx => {
     const expired = new Date(x.expiresAt).getTime() < Date.now();
     return { id: x.id, title: p.title || 'Product', author: p.author || '', formats: p.formats || '', purchasedAt: x.createdAt,
       expiresAt: x.expiresAt, downloadsUsed: x.downloads || 0, downloadsLeft: Math.max(0, limit - (x.downloads || 0)),
-      available: !expired && (x.downloads || 0) < limit && !!p.fileUrl, reason: expired ? 'expired' : (x.downloads || 0) >= limit ? 'limit' : (!p.fileUrl ? 'not ready' : '') };
+      available: !expired && (x.downloads || 0) < limit && hasDigitalFile(p), reason: expired ? 'expired' : (x.downloads || 0) >= limit ? 'limit' : (!hasDigitalFile(p) ? 'not ready' : '') };
   }) });
 });
+/* An older product may still carry an outside (for example Google Drive) link. The server fetches it itself, so the student never sees the address. */
+async function fetchLegacyFile(link) {
+  let url = String(link);
+  const g = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=)([\w-]{10,})/i) || url.match(/docs\.google\.com\/\w+\/d\/([\w-]{10,})/i);
+  if (g) url = 'https://drive.google.com/uc?export=download&id=' + g[1];
+  const unavailable = httpError(502, 'This file is being moved to our own secure storage. Please contact us and we will send it to you right away.');
+  let r;
+  try { r = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(20000) }); } catch (e) { throw unavailable; }
+  const type = String(r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (!r.ok || !type || type === 'text/html') throw unavailable;
+  if (Number(r.headers.get('content-length')) > PDF_MAX_BYTES) throw unavailable;
+  const data = Buffer.from(await r.arrayBuffer());
+  if (!data.length || data.length > PDF_MAX_BYTES) throw unavailable;
+  if (data.subarray(0, 1024).indexOf('%PDF-') !== -1) return { data, mime: 'application/pdf', ext: 'pdf' };
+  const ext = { 'application/zip': 'zip', 'application/epub+zip': 'epub', 'application/x-zip-compressed': 'zip' }[type] || 'bin';
+  return { data, mime: type, ext };
+}
 route('GET', '/api/downloads/:id', async ctx => {
   const user = requireUser(ctx);
+  if (limited('dl:' + user.id, 12)) throw httpError(429, 'Too many download attempts. Please wait a minute and try again.');
   const x = db.purchases.find(y => y.id === ctx.params.id && y.userId === user.id);
   if (!x) throw httpError(404, 'Download not found');
   const p = db.digitalProducts.find(y => y.id === x.productId);
-  if (!p || !p.fileUrl) throw httpError(404, 'This file is not available yet. Please contact us.');
+  if (!p || !hasDigitalFile(p)) throw httpError(404, 'This file is not available yet. Please contact us.');
   if (new Date(x.expiresAt).getTime() < Date.now()) throw httpError(403, 'This download has expired. Please contact us to renew it.');
   if ((x.downloads || 0) >= cfg('downloadLimit')) throw httpError(403, 'You have used all your downloads for this product. Please contact us.');
+  let data, mime = 'application/pdf', ext = 'pdf';
+  if (hasStoredFile(p)) {
+    data = await store.getFile(p.file.key);
+    if (!data) throw httpError(404, 'We could not find this file on our server. Please contact us and we will fix it right away.');
+  } else {
+    ({ data, mime, ext } = await fetchLegacyFile(p.fileUrl));
+  }
+  // The download is counted only once the file is ready to be sent
   x.downloads = (x.downloads || 0) + 1; save();
-  redirect(ctx.res, p.fileUrl);
+  const nice = String(p.title || 'download').replace(/[^\w .()&-]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || 'download';
+  const headers = {
+    'Content-Type': mime,
+    'Content-Disposition': `attachment; filename="${nice}.${ext}"; filename*=UTF-8''${encodeURIComponent(nice)}.${ext}`,
+    'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'X-Robots-Tag': 'noindex'
+  };
+  // Small files carry a length so the browser can show progress; bigger ones on Vercel stream without it
+  if (data.length <= 4 * 1024 * 1024 || !ON_VERCEL) headers['Content-Length'] = data.length;
+  await ctx.res.streamBuffer(200, headers, data);
 });
 route('GET', '/api/staff/products', async ctx => {
   requireStaff(ctx, true);
-  json(ctx.res, 200, { products: db.digitalProducts.map(p => Object.assign(productPublic(p), { active: p.active, fileUrl: p.fileUrl || '', sales: db.purchases.filter(x => x.productId === p.id).length })) });
+  json(ctx.res, 200, { products: db.digitalProducts.map(productStaffView), maxPdfMb: Math.round(PDF_MAX_BYTES / 1048576), partBytes: 3 * 1024 * 1024 });
 });
 route('POST', '/api/staff/products/digital', async ctx => {
   requireStaff(ctx, true);
-  const p = Object.assign({ id: uid(8), createdAt: now(), updatedAt: now(), imageData: null }, productInputDigital(ctx.body));
+  const p = Object.assign({ id: uid(8), createdAt: now(), updatedAt: now(), imageData: null, file: null, fileUrl: '' }, productInputDigital(ctx.body));
   if (ctx.body.data) p.imageData = validImage(ctx.body.data);
   db.digitalProducts.push(p); save();
   json(ctx.res, 201, { ok: true, id: p.id });
@@ -1854,7 +1910,54 @@ route('PATCH', '/api/staff/products/digital/:id', async ctx => {
 });
 route('DELETE', '/api/staff/products/digital/:id', async ctx => {
   requireStaff(ctx, true);
+  const p = db.digitalProducts.find(x => x.id === ctx.params.id);
+  if (p && hasStoredFile(p)) store.deleteFiles([p.file.key]).catch(() => {});
   db.digitalProducts = db.digitalProducts.filter(x => x.id !== ctx.params.id); save(); json(ctx.res, 200, { ok: true });
+});
+/* PDF upload. The browser sends the file in pieces of about 3 MB (raw bytes). The last piece joins them and saves the PDF. */
+async function savePdf(ctx, p, buf, name) {
+  if (buf.length > PDF_MAX_BYTES) throw httpError(413, 'That PDF is larger than ' + Math.round(PDF_MAX_BYTES / 1048576) + ' MB. Please compress it and try again.');
+  if (buf.subarray(0, 1024).indexOf('%PDF-') === -1) throw httpError(400, 'That file is not a PDF. Please choose a .pdf file.');
+  const key = 'digital/' + p.id + '/' + uid(8) + '.pdf';
+  await store.putFile(key, buf, 'application/pdf');
+  const old = hasStoredFile(p) ? p.file.key : null;
+  p.file = { key, name: clean(name, 160).replace(/[\\/]/g, '') || (slugify(p.title) + '.pdf'), size: buf.length, mime: 'application/pdf', uploadedAt: now() };
+  p.fileUrl = '';   // the older outside link is replaced by the uploaded PDF
+  p.updatedAt = now(); save();
+  if (old && old !== key) store.deleteFiles([old]).catch(() => {});
+  json(ctx.res, 200, { ok: true, product: productStaffView(p) });
+}
+route('POST', '/api/staff/digital-files/:id/chunk', async ctx => {
+  requireStaff(ctx, true);
+  const p = db.digitalProducts.find(x => x.id === ctx.params.id);
+  if (!p) throw httpError(404, 'Product not found');
+  const uploadId = String(ctx.query.get('upload') || ''), index = Number(ctx.query.get('index')), total = Number(ctx.query.get('total'));
+  if (!/^[a-f0-9]{16,40}$/.test(uploadId) || !Number.isInteger(index) || !Number.isInteger(total) || total < 1 || total > 12 || index < 0 || index >= total) throw httpError(400, 'That upload request is not valid.');
+  const buf = await readBody(ctx.req, PDF_PART_MAX);
+  if (!buf.length) throw httpError(400, 'The upload was empty. Please choose the file again.');
+  const name = ctx.query.get('name') || '';
+  if (total === 1) return savePdf(ctx, p, buf, name);
+  const part = i => 'digital-tmp/' + p.id + '/' + uploadId + '/' + i;
+  await store.putFile(part(index), buf, 'application/octet-stream');
+  if (index < total - 1) return json(ctx.res, 200, { ok: true, received: index + 1, total });
+  const parts = [];
+  for (let i = 0; i < total - 1; i++) {
+    const got = await store.getFile(part(i));
+    if (!got) throw httpError(400, 'Part of the upload went missing. Please upload the file again.');
+    parts.push(got);
+  }
+  parts.push(buf);
+  const whole = Buffer.concat(parts);
+  store.deleteFiles(parts.map((_, i) => part(i))).catch(() => {});
+  return savePdf(ctx, p, whole, name);
+});
+route('DELETE', '/api/staff/products/digital/:id/file', async ctx => {
+  requireStaff(ctx, true);
+  const p = db.digitalProducts.find(x => x.id === ctx.params.id);
+  if (!p) throw httpError(404, 'Product not found');
+  if (hasStoredFile(p)) store.deleteFiles([p.file.key]).catch(() => {});
+  p.file = null; p.fileUrl = ''; p.updatedAt = now(); save();
+  json(ctx.res, 200, { ok: true, product: productStaffView(p) });
 });
 route('GET', '/api/staff/purchases', async ctx => {
   requireStaff(ctx, true);
@@ -2565,6 +2668,9 @@ route('POST', '/api/me/certificates/request', async ctx => {
   if (db.certificates.some(c => c.userId === user.id && c.courseId === course.id)) throw httpError(400, 'You already have this certificate.');
   if (db.certRequests.some(r => r.userId === user.id && r.courseId === course.id && r.status === 'requested')) throw httpError(400, 'Your request is already waiting for approval.');
   if (!courseProgress(user, course).complete) throw httpError(400, 'Finish every lesson and pass every assignment (50% or more) before you request a certificate.');
+  // The profile is only checked here, once the course is finished, so students are told at the moment it matters.
+  const prof = completion(user);
+  if (prof.missing.length) throw Object.assign(httpError(400, 'Please complete your profile before you request your certificate.'), { extra: { code: 'profile_incomplete', missing: prof.missing } });
   db.certRequests.push({ id: uid(8), userId: user.id, courseId: course.id, status: 'requested', createdAt: now() });
   save(); json(ctx.res, 201, { ok: true, message: 'Request sent. Our team will review it and issue your certificate.' });
 });
@@ -2705,6 +2811,26 @@ route('DELETE', '/api/staff/products/:id', async ctx => {
   db.products = db.products.filter(x => x.id !== ctx.params.id);
   save();
   json(ctx.res, 200, { ok: true });
+});
+route('DELETE', '/api/staff/products', async ctx => {
+  // Delete all shop products. The admin page asks the admin to confirm first, and the server asks again so a stray request cannot wipe the shop.
+  requireStaff(ctx, true);
+  if (ctx.query.get('confirm') !== 'DELETE-ALL') throw httpError(400, 'Please confirm that you want to delete every shop product.');
+  const deleted = db.products.length;
+  db.products = []; save();
+  json(ctx.res, 200, { ok: true, deleted });
+});
+route('POST', '/api/staff/products/restore-defaults', async ctx => {
+  // Puts back any of the original catalogue products that are missing. Products the admin has added or edited are not touched.
+  requireStaff(ctx, true);
+  let added = 0;
+  productSeed.products.forEach(sp => {
+    if (db.products.some(x => x.id === sp.id)) return;
+    db.products.push({ id: sp.id, name: sp.name, cat: sp.cat, summary: sp.summary || '', description: sp.description || '', price: sp.price, imageUrl: sp.image || null, imageData: null, createdAt: now(), updatedAt: now() });
+    added++;
+  });
+  save();
+  json(ctx.res, 200, { ok: true, added });
 });
 route('POST', '/api/staff/products/:id/image', async ctx => {
   requireStaff(ctx, true);
@@ -3369,10 +3495,34 @@ route('POST', '/api/staff/announcements', async ctx => {
   requireStaff(ctx, true);
   const title = clean(ctx.body.title, 120), body = clean(ctx.body.body, 500);
   if (!title) throw httpError(400, 'Give the announcement a title.');
-  db.announcements.unshift({ title, body, createdAt: now() });
+  db.announcements.unshift({ id: uid(6), title, body, createdAt: now() });
   db.announcements = db.announcements.slice(0, 20); save();
   db.users.filter(u => !isStaff(u)).forEach(u => notify(u.id, title, body || 'Open your dashboard to read the full announcement.', '#overview', { kind: 'announcement' }));
   json(ctx.res, 201, { ok: true });
+});
+
+/* Older announcements were saved without an id, so they are given one the first time the list is opened. */
+function announcementsWithIds() { db.announcements.forEach(a => { if (!a.id) a.id = uid(6); }); return db.announcements; }
+route('GET', '/api/staff/announcements', async ctx => {
+  requireStaff(ctx, true);
+  const list = announcementsWithIds(); save();
+  json(ctx.res, 200, { announcements: list.map(a => ({ id: a.id, title: a.title, body: a.body || '', createdAt: a.createdAt || '' })) });
+});
+route('DELETE', '/api/staff/announcements', async ctx => {
+  requireStaff(ctx, true);
+  if (ctx.query.get('confirm') !== 'DELETE-ALL') throw httpError(400, 'Please confirm that you want to delete every announcement.');
+  const deleted = db.announcements.length;
+  db.announcements = []; save();
+  json(ctx.res, 200, { ok: true, deleted });
+});
+route('DELETE', '/api/staff/announcements/:id', async ctx => {
+  requireStaff(ctx, true);
+  announcementsWithIds();
+  const before = db.announcements.length;
+  db.announcements = db.announcements.filter(a => a.id !== ctx.params.id);
+  if (db.announcements.length === before) throw httpError(404, 'That announcement was not found. It may already be deleted.');
+  save();
+  json(ctx.res, 200, { ok: true });
 });
 
 route('GET', '/api/staff/payments', async ctx => {
@@ -3492,6 +3642,26 @@ function persist() {
 function saveBeforeReply(res) {
   const realWriteHead = res.writeHead.bind(res), realEnd = res.end.bind(res);
   let head = null, finished = false;
+  // Sends a file in small pieces. Changes are saved first, then the file is streamed. Streaming also keeps big files
+  // under the 4.5 MB response limit that Vercel applies to non-streamed replies.
+  res.streamBuffer = async function (status, headers, buf) {
+    if (finished) return res;
+    finished = true;
+    try { await persist(); } catch (err) {
+      console.error('Saving to the database failed:', err.message);
+      realWriteHead(500, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      realEnd(JSON.stringify({ error: 'Something went wrong while saving. Please try again.' }));
+      return res;
+    }
+    realWriteHead(status, headers);
+    const STEP = 64 * 1024;
+    for (let i = 0; i < buf.length; i += STEP) {
+      if (res.destroyed || res.writableEnded) return res;
+      if (!res.write(buf.subarray(i, i + STEP))) await new Promise(resolve => { res.once('drain', resolve); res.once('close', resolve); });
+    }
+    realEnd();
+    return res;
+  };
   res.writeHead = function (...a) { head = a; return res; };
   res.end = function (...a) {
     if (finished) return res;
@@ -3583,14 +3753,16 @@ async function handler(req, res) {
       }
       const ctx = { req, res, params: found.m.groups || {}, query: url.searchParams, user: readSession(req), body: null };
       if (!/^\/api\/(events|live|staff\/live-stats)/.test(pathname)) touchPresence(req, ctx.user, pathname);
-      if (['POST', 'PATCH', 'PUT'].includes(req.method) && !pathname.endsWith('/webhook')) ctx.body = await readJson(req, pathname.endsWith('/proof') ? 4.2 * 1024 * 1024 : pathname.endsWith('/community/chat') ? 3.6 * 1024 * 1024 : (pathname.endsWith('/avatar') || pathname.endsWith('/image') || pathname.startsWith('/api/staff/works') || pathname.startsWith('/api/staff/bundles') || pathname.startsWith('/api/staff/products') || pathname.startsWith('/api/staff/services')) ? 400 * 1024 : 100 * 1024);
+      // Digital product PDFs arrive as raw bytes in small pieces; the route reads them itself
+      if (/^\/api\/staff\/digital-files\//.test(pathname)) ctx.body = {};
+      else if (['POST', 'PATCH', 'PUT'].includes(req.method) && !pathname.endsWith('/webhook')) ctx.body = await readJson(req, pathname.endsWith('/proof') ? 4.2 * 1024 * 1024 : pathname.endsWith('/community/chat') ? 3.6 * 1024 * 1024 : (pathname.endsWith('/avatar') || pathname.endsWith('/image') || pathname.startsWith('/api/staff/works') || pathname.startsWith('/api/staff/bundles') || pathname.startsWith('/api/staff/products') || pathname.startsWith('/api/staff/services')) ? 400 * 1024 : 100 * 1024);
       const out = await found.r.handler(ctx);
       if (req.method !== 'GET' && !/\/(chat|notifications|events|qr\/scan)/.test(pathname)) broadcastRefresh();
       return out;
     }
     { const u = readSession(req); if (/\.html$|^\/$/.test(pathname)) touchPresence(req, u, pathname); return serveStatic(req, res, pathname, u); }
   } catch (err) {
-    if (err.status) return json(res, err.status, { error: err.message });
+    if (err.status) return json(res, err.status, Object.assign({ error: err.message }, err.extra || {}));
     console.error(err);
     if (!pathname.startsWith('/api/') && String(req.headers.accept || '').includes('text/html')) return sendErrorPage(res, 500);
     return json(res, 500, { error: 'Something went wrong. Please try again.' });
