@@ -421,8 +421,16 @@
       if (document.hidden || polling) return;
       var busy = window.DLive && DLive.busy && DLive.busy(); if (busy) return;
       polling = true; pullAdmin().then(function () { polling = false; }, function () { polling = false; });
-    }, 6000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && adminState) pullAdmin(); });
+    }, 12000);
+    if (!window.__deboneOverviewVisibilityBound) {
+      window.__deboneOverviewVisibilityBound = true;
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && adminState && !polling) {
+          polling = true;
+          pullAdmin().finally(function () { polling = false; });
+        }
+      });
+    }
   }
 
   /* =====================================================================

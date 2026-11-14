@@ -59,9 +59,12 @@
     if (!enrolled.length) { setView(head('Learn live', 'Live classes') + empty('Enrol in a course to see its live classes.')); return; }
 
     var all = [];
-    for (var i = 0; i < enrolled.length; i++) {
-      var r = await api('/api/courses/' + encodeURIComponent(enrolled[i].id) + '/sessions');
-      r.sessions.forEach(function (s) { all.push(s); });
+    for (var i = 0; i < enrolled.length; i += 5) {
+      var batch = enrolled.slice(i, i + 5);
+      var results = await Promise.all(batch.map(function (course) {
+        return api('/api/courses/' + encodeURIComponent(course.id) + '/sessions');
+      }));
+      results.forEach(function (r) { (r.sessions || []).forEach(function (s) { all.push(s); }); });
     }
     var live = all.filter(function (s) { return s.status === 'live'; });
     var upcoming = all.filter(function (s) { return s.status === 'scheduled'; });
@@ -195,13 +198,16 @@
   }
 
   function startChat(sessionId) {
+    if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
     lastStamp = '';
     var log = document.getElementById('chat-log');
     api('/api/sessions/' + encodeURIComponent(sessionId) + '/chat').then(function (r) {
       drawMessages(r.messages, true);
     }).catch(function (e) { if (log) log.innerHTML = '<p class="muted">' + esc(e.message) + '</p>'; });
     chatTimer = setInterval(function () { pollChat(sessionId); }, 3500);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && chatTimer) pollChat(sessionId); });
+    if (window.__deboneChatVisibilityHandler) document.removeEventListener('visibilitychange', window.__deboneChatVisibilityHandler);
+    window.__deboneChatVisibilityHandler = function () { if (!document.hidden && chatTimer) pollChat(sessionId); };
+    document.addEventListener('visibilitychange', window.__deboneChatVisibilityHandler);
 
     var form = document.getElementById('chat-form');
     if (!form) return;
@@ -229,9 +235,14 @@
     var enrolled = dash.courses.filter(function (c) { return c.enrolled; });
     if (!enrolled.length) { setView(head('Practice & marks', 'Assignments') + empty('Enrol in a course to see its assignments.')); return; }
     var blocks = [];
-    for (var i = 0; i < enrolled.length; i++) {
-      var r = await api('/api/courses/' + encodeURIComponent(enrolled[i].id) + '/assignments');
-      if (r.assignments.length) blocks.push({ course: enrolled[i], items: r.assignments });
+    for (var i = 0; i < enrolled.length; i += 5) {
+      var batch = enrolled.slice(i, i + 5);
+      var results = await Promise.all(batch.map(function (course) {
+        return api('/api/courses/' + encodeURIComponent(course.id) + '/assignments');
+      }));
+      results.forEach(function (r, index) {
+        if (r.assignments && r.assignments.length) blocks.push({ course: batch[index], items: r.assignments });
+      });
     }
     if (!blocks.length) { setView(head('Practice & marks', 'Assignments') + empty('No assignments have been set yet.')); return; }
 

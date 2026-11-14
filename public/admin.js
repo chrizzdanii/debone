@@ -161,10 +161,19 @@
     crumb.textContent = 'Live classes';
     var courses = await allCourses();
     var sessions = [], lessonsByCourse = {};
-    for (var i = 0; i < courses.length; i++) {
-      var c = (await api('/api/staff/courses/' + encodeURIComponent(courses[i].id))).course;
-      lessonsByCourse[courses[i].id] = c.lessons || [];
-      c.sessions.forEach(function (s) { s.courseTitle = courses[i].title; sessions.push(s); });
+    // Load independent course details in small parallel batches rather than serially.
+    for (var i = 0; i < courses.length; i += 5) {
+      var batch = courses.slice(i, i + 5);
+      var details = await Promise.all(batch.map(function (course) {
+        return api('/api/staff/courses/' + encodeURIComponent(course.id));
+      }));
+      details.forEach(function (result, index) {
+        var course = batch[index], c = result.course;
+        lessonsByCourse[course.id] = c.lessons || [];
+        (c.sessions || []).forEach(function (session) {
+          session.courseTitle = course.title; sessions.push(session);
+        });
+      });
     }
     sessions.sort(function (a, b) { return (b.startsAt || '').localeCompare(a.startsAt || ''); });
     var firstCourse = courses[0] ? courses[0].id : '';
@@ -483,10 +492,21 @@
     crumb.textContent = 'Assignments';
     var courses = await allCourses();
     var rows = [], lessonsByCourse = {};
-    for (var i = 0; i < courses.length; i++) {
-      var c = (await api('/api/staff/courses/' + encodeURIComponent(courses[i].id))).course;
-      lessonsByCourse[courses[i].id] = c.lessons || [];
-      c.assignments.forEach(function (a) { a.courseTitle = courses[i].title; a.lessonLabel = (function () { var k = (c.lessons || []).findIndex(function (l) { return l.id === a.lessonId; }); return k < 0 ? '' : ' · Lesson ' + (k + 1); })(); rows.push(a); });
+    for (var i = 0; i < courses.length; i += 5) {
+      var batch = courses.slice(i, i + 5);
+      var details = await Promise.all(batch.map(function (course) {
+        return api('/api/staff/courses/' + encodeURIComponent(course.id));
+      }));
+      details.forEach(function (result, index) {
+        var course = batch[index], c = result.course;
+        lessonsByCourse[course.id] = c.lessons || [];
+        (c.assignments || []).forEach(function (a) {
+          a.courseTitle = course.title;
+          var k = (c.lessons || []).findIndex(function (l) { return l.id === a.lessonId; });
+          a.lessonLabel = k < 0 ? '' : ' · Lesson ' + (k + 1);
+          rows.push(a);
+        });
+      });
     }
     setView(head('Teaching', 'Assignments', 'Set work, read submissions, and give marks and feedback.') +
       '<section class="box"><h2>New assignment</h2>' +
