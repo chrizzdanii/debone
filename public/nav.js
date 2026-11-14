@@ -1,3 +1,28 @@
+/* Phone menu button (v56). The home page and the pages that load inner.js already wire this button themselves.
+   Every other page (Store, Contact, Book, Bundles, Talent and so on) relied on nothing, so the button did nothing.
+   Wiring it here, once, makes the menu work on every page that loads nav.js. */
+(function () {
+  'use strict';
+  var btn = document.querySelector('.menu-btn');
+  var menu = document.getElementById('menu');
+  if (!btn || !menu || btn.__menuWired) return;
+  btn.__menuWired = true;
+  var OPEN = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+  var CLOSE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  function setMenu(open) {
+    menu.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    btn.innerHTML = open ? CLOSE : OPEN;
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+  btn.addEventListener('click', function () { setMenu(!menu.classList.contains('open')); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && menu.classList.contains('open')) setMenu(false); });
+  var wide = window.matchMedia('(min-width: 901px)');
+  var onWide = function () { if (wide.matches && menu.classList.contains('open')) setMenu(false); };
+  if (wide.addEventListener) wide.addEventListener('change', onWide); else if (wide.addListener) wide.addListener(onWide);
+})();
+
 /* Navigation (v35): hover or click opens a section; it stays open while the pointer is over it. */
 (function () {
   'use strict';

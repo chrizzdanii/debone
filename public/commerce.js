@@ -35,7 +35,9 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
           '<p>' + esc(p.description) + '</p>' +
           (p.toc && p.toc.length ? '<details class="st-toc"><summary>Table of contents</summary><ol>' + p.toc.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ol></details>' : '') +
           '<div class="st-foot"><b>' + (p.price ? naira(p.price) : 'Free') + '</b>' +
-          '<button class="btn btn-solid btn-sm" type="button" data-buy="' + esc(p.id) + '">' + (p.price ? 'Buy now' : 'Get it free') + '</button></div></div></article>';
+          (p.ready === false
+            ? '<span class="btn btn-ghost btn-sm" aria-disabled="true" style="opacity:.7;pointer-events:none">Coming soon</span>'
+            : '<button class="btn btn-solid btn-sm" type="button" data-buy="' + esc(p.id) + '">' + (p.price ? 'Buy now' : 'Get it free') + '</button>') + '</div></div></article>';
       }).join('') || '<div class="empty-state">Our digital products are being prepared. Check back soon.</div>';
       $('st-grid').querySelectorAll('[data-buy]').forEach(function (b) {
         b.addEventListener('click', function () {

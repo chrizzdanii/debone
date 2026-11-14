@@ -1,0 +1,66 @@
+/* Product page (v56): breadcrumb, gallery, price block, highlights, ordering steps. */
+.theme-brand .pv-hero{padding:clamp(104px,12vw,132px) 0 0;border-bottom:0;background:none}
+.theme-brand .pv-hero::before{display:none}
+.pv-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font:500 .82rem Inter,sans-serif;color:var(--ash);animation:pvFade .7s both}
+.pv-crumbs a{color:var(--ash);text-decoration:none;transition:color .25s}
+.pv-crumbs a:hover{color:var(--orange)}
+.pv-crumbs i{font-style:normal;opacity:.4}
+.pv-crumbs span{color:var(--bone);max-width:38ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@keyframes pvFade{from{opacity:0}to{opacity:1}}
+@keyframes pvUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes pvPop{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@keyframes pvPulse{0%{box-shadow:0 0 0 0 rgba(107,203,119,.55)}70%{box-shadow:0 0 0 9px rgba(107,203,119,0)}100%{box-shadow:0 0 0 0 rgba(107,203,119,0)}}
+@keyframes pvShine{0%{transform:translateX(-120%) skewX(-18deg)}60%,100%{transform:translateX(220%) skewX(-18deg)}}
+@keyframes pvGlow{0%,100%{opacity:.55}50%{opacity:1}}
+.pv-in{opacity:0;animation:pvUp .85s cubic-bezier(.2,.7,.1,1) both;animation-delay:calc(var(--d,0) * 90ms + 80ms)}
+.pv-still .pv-in{animation:none;opacity:1}
+
+/* gallery */
+.product-gallery{position:sticky;top:104px}
+.pv-frame{border-radius:22px !important;border-color:rgba(224,168,0,.22) !important;box-shadow:0 30px 70px rgba(0,0,0,.5);isolation:isolate;transition:box-shadow .5s,border-color .5s,transform .6s cubic-bezier(.2,.7,.1,1)}
+.pv-frame::before{content:"";position:absolute;inset:-40% -20%;z-index:0;background:radial-gradient(closest-side,rgba(224,168,0,.28),transparent 70%);animation:pvGlow 5s ease-in-out infinite;pointer-events:none}
+.pv-frame img{z-index:1;transition:transform 1.2s cubic-bezier(.2,.7,.1,1)}
+.pv-frame:hover{border-color:rgba(224,168,0,.55) !important;box-shadow:0 40px 90px rgba(0,0,0,.6),0 0 0 1px rgba(224,168,0,.2)}
+.pv-frame:hover img{transform:scale(1.07)}
+.pv-trust{list-style:none;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pv-trust li{display:grid;gap:3px;padding:14px 14px 15px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(180deg,#151515,#0E0E0E);transition:transform .45s cubic-bezier(.2,.7,.1,1),border-color .35s}
+.pv-trust li:hover{transform:translateY(-4px);border-color:rgba(224,168,0,.5)}
+.pv-trust svg{color:var(--orange);margin-bottom:6px}
+.pv-trust b{font:600 .86rem Inter,sans-serif;color:var(--bone)}
+.pv-trust span{font-size:.76rem;color:var(--ash);line-height:1.4}
+
+/* info */
+.product-info .prod-cat span{display:inline-block;padding:7px 14px;border-radius:999px;background:rgba(224,168,0,.1);border:1px solid rgba(224,168,0,.3);font-size:.7rem;letter-spacing:.16em}
+.product-info h1{font-size:clamp(2.2rem,4.4vw,3.7rem);line-height:1.02;margin:16px 0 14px}
+.product-summary{font-size:1.1rem;line-height:1.55;max-width:52ch}
+.pv-buy{margin:26px 0 30px;padding:24px;border-radius:22px;border:1px solid rgba(224,168,0,.28);background:linear-gradient(160deg,rgba(224,168,0,.09),rgba(255,255,255,.015) 55%),#101010;position:relative;overflow:hidden}
+.pv-price small{display:block;font:500 .7rem Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--ash);margin-bottom:6px}
+.pv-price b{font:400 clamp(2rem,3.6vw,2.9rem)/1 Anton,Impact,sans-serif;color:var(--bone)}
+.pv-price b.is-ask{font-size:clamp(1.45rem,2.6vw,1.9rem);color:var(--orange)}
+.pv-avail{display:flex;align-items:center;gap:10px;margin:14px 0 0;font-size:.88rem;color:var(--ash)}
+.pv-avail i{width:9px;height:9px;border-radius:50%;background:#6BCB77;flex:0 0 auto;animation:pvPulse 2.2s infinite}
+.pv-buy .product-actions{margin:22px 0 0}
+.pv-buy .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px}
+.pv-add{position:relative;overflow:hidden}
+.pv-add::after{content:"";position:absolute;top:0;bottom:0;width:38%;left:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:pvShine 3.6s ease-in-out infinite;pointer-events:none}
+.pv-buy .btn:active{transform:scale(.97)}
+.product-desc{border-top:0;padding-top:0}
+.product-desc h3,.pv-high h3{font:600 .78rem Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin:0 0 14px}
+.product-desc p{color:rgba(242,237,228,.82);font-size:1.02rem;line-height:1.75;max-width:62ch;margin:0 0 14px}
+.pv-high{margin-top:26px;padding:24px;border-radius:20px;border:1px solid var(--line);background:#0F0F0F}
+.pv-high .product-points{margin:0;gap:12px}
+.pv-high .product-points li{align-items:flex-start;line-height:1.5;opacity:0;animation:pvPop .6s cubic-bezier(.2,.7,.1,1) both;animation-delay:calc(var(--i,0) * 90ms + 700ms)}
+.pv-still .pv-high .product-points li{animation:none;opacity:1}
+.pv-high .product-points li::before{display:none}
+.pv-high .product-points svg{flex:0 0 auto;margin-top:2px;padding:3px;width:22px;height:22px;border-radius:50%;background:rgba(107,203,119,.14);color:#6BCB77}
+.pv-steps{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:12px;counter-reset:s}
+.pv-steps li{display:flex;gap:16px;align-items:flex-start;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(180deg,#141414,#0D0D0D);transition:transform .45s cubic-bezier(.2,.7,.1,1),border-color .35s}
+.pv-steps li:hover{transform:translateX(6px);border-color:rgba(224,168,0,.5)}
+.pv-steps b{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--orange);color:#0B0B0B;font:700 .9rem Inter,sans-serif}
+.pv-steps div{display:grid;gap:2px}
+.pv-steps strong{font:600 .98rem Inter,sans-serif;color:var(--bone)}
+.pv-steps span{font-size:.86rem;color:var(--ash);line-height:1.45}
+
+@media (max-width:900px){.product-gallery{position:static}.pv-trust{grid-template-columns:1fr}.pv-trust li{grid-template-columns:auto 1fr;column-gap:12px;align-items:center}.pv-trust svg{grid-row:1/3;margin:0}.pv-buy{padding:20px}}
+@media (prefers-reduced-motion:reduce){.pv-in,.pv-high .product-points li{animation:none !important;opacity:1 !important}.pv-frame::before,.pv-avail i,.pv-add::after{animation:none !important}}

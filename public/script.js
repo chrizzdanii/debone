@@ -34,9 +34,9 @@
     menuBtn.innerHTML = open ? MENU_CLOSE : MENU_OPEN;
     document.body.style.overflow = open ? 'hidden' : '';
   }
-  if (menuBtn) menuBtn.addEventListener('click', function () {
+  if (menuBtn && !menuBtn.__menuWired) { menuBtn.__menuWired = true; menuBtn.addEventListener('click', function () {
     setMenu(!menu.classList.contains('open'));
-  });
+  }); }
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') setMenu(false);
   });

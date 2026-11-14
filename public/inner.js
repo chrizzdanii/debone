@@ -30,7 +30,7 @@
     menuBtn.innerHTML = open ? MENU_CLOSE : MENU_OPEN;
     document.body.style.overflow = open ? 'hidden' : '';
   }
-  if (menuBtn) menuBtn.addEventListener('click', function () { setMenu(!menu.classList.contains('open')); });
+  if (menuBtn && !menuBtn.__menuWired) { menuBtn.__menuWired = true; menuBtn.addEventListener('click', function () { setMenu(!menu.classList.contains('open')); }); }
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
 
   /* In-page links (including links back to index.html#section on the same page) */

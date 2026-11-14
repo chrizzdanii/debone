@@ -9,7 +9,7 @@
     if (opts.body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
     return fetch(url, init).then(function (r) {
       if (r.status === 401) { location.replace('/401.html'); throw new Error('Please log in.'); }
-      return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || 'Something went wrong.'); return d; });
+      return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) { var er = new Error(d.error || 'Something went wrong.'); er.code = d.code; er.missing = d.missing; throw er; } return d; });
     });
   }
   function toast(t, tone) { if (window.DModal) DModal.toast({ title: t, tone: tone || 'ok' }); }
@@ -395,6 +395,23 @@
     });
   }
 
+  /* Shown only when a student who has finished a course asks for a certificate with an unfinished profile */
+  var GATE_LABELS = { name: 'Full name', phone: 'Phone number', avatar: 'Profile photo', dob: 'Date of birth', gender: 'Gender', state: 'State', city: 'City', occupation: 'Occupation', educationLevel: 'Education level', goals: 'Learning goals', nokName: 'Emergency contact name', nokPhone: 'Emergency contact phone' };
+  function profileGate(missing) {
+    var chime = window.DeboneZoomProfile && window.DeboneZoomProfile.chime;
+    if (!window.DModal) { toast('Please complete your profile before you request your certificate.', 'err'); return; }
+    DModal.open({ size: 'sm', eyebrow: 'Almost there', title: 'One last step before your certificate', body:
+      '<div class="pg-wrap"><div class="pg-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div>' +
+      '<p class="pg-lead">You have finished the course, well done. Please complete your profile so your name and details are correct on your certificate.</p>' +
+      '<div class="pg-miss">' + missing.map(function (k) { return '<span>' + esc(GATE_LABELS[k] || k) + '</span>'; }).join('') + '</div>' +
+      '<div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Later</button><button type="button" class="btn btn-solid" data-go>Complete my profile</button></div></div>',
+      onMount: function (box, inst) {
+        if (chime) chime('update');
+        box.querySelector('[data-cancel]').addEventListener('click', function () { inst.close(); });
+        box.querySelector('[data-go]').addEventListener('click', function () { inst.close(); location.hash = '#profile'; });
+      } });
+  }
+
   /* ---------- Certificates: request one when a course is complete ---------- */
   async function renderCertificates() {
     crumb.textContent = 'Certificates';
@@ -419,7 +436,10 @@
       b.addEventListener('click', function () {
         b.disabled = true; b.textContent = 'Sending…';
         api('/api/me/certificates/request', { method: 'POST', body: { courseId: b.getAttribute('data-cert-req') } })
-          .then(function (res) { toast(res.message); renderCertificates(); }).catch(function (e) { toast(e.message, 'err'); b.disabled = false; b.textContent = 'Request certificate'; });
+          .then(function (res) { toast(res.message); renderCertificates(); }).catch(function (e) {
+            b.disabled = false; b.textContent = 'Request certificate';
+            if (e.code === 'profile_incomplete') profileGate(e.missing || []); else toast(e.message, 'err');
+          });
       });
     });
   }

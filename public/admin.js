@@ -838,17 +838,56 @@
   }
 
   /* ---------- Announcements (admin) ---------- */
-  function renderAnnounce() {
+  async function renderAnnounce() {
     if (!isAdmin()) return denied();
     crumb.textContent = 'Announcements';
+    var r = await api('/api/staff/announcements');
+    var list = r.announcements || [];
+    var TRASH = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
     setView(head('News', 'Announcements', 'Post news to every student dashboard.') +
       '<section class="box"><form class="form-grid" id="ann-form">' +
         '<div class="field"><label>Title</label><input class="input" name="title" required maxlength="120"></div>' +
         '<div class="field"><label>Message</label><textarea class="input" name="body" maxlength="500"></textarea></div>' +
-        '<div><button class="btn btn-solid" type="submit">Post announcement</button></div></form></section>');
+        '<div><button class="btn btn-solid" type="submit">Post announcement</button></div></form></section>' +
+      '<div class="dt-tools" style="margin-top:22px"><span class="muted">' + list.length + ' posted announcement' + (list.length === 1 ? '' : 's') + '</span>' +
+        (list.length ? '<button class="btn btn-ghost btn-danger" type="button" id="ann-delall">Delete all</button>' : '') + '</div>' +
+      '<section class="ann-list">' + (list.length ? list.map(function (a, i) {
+        return '<article class="ann-item" style="--i:' + Math.min(i, 12) + '"><div class="ann-main"><b>' + esc(a.title) + '</b>' + (a.body ? '<p>' + esc(a.body) + '</p>' : '') +
+          '<span class="muted small">' + (a.createdAt ? esc(fmt(a.createdAt)) : '') + '</span></div>' +
+          '<button class="btn btn-ghost btn-sm btn-danger ann-del" type="button" data-ann-del="' + esc(a.id) + '" aria-label="Delete announcement: ' + esc(a.title) + '">' + TRASH + 'Delete</button></article>';
+      }).join('') : '<p class="muted ann-empty">No announcements posted yet.</p>') + '</section>');
     bindForm('#ann-form', async function (f) {
       await api('/api/staff/announcements', { method: 'POST', body: { title: fv(f, 'title'), body: fv(f, 'body') } });
-      toast('Announcement posted.'); f.reset();
+      toast('Announcement posted.'); renderAnnounce();
+    });
+    view.querySelectorAll('[data-ann-del]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        if (!window.confirm('Delete this announcement? Students will no longer see it.')) return;
+        b.disabled = true;
+        try { await api('/api/staff/announcements/' + encodeURIComponent(b.getAttribute('data-ann-del')), { method: 'DELETE' }); toast('Announcement deleted.'); renderAnnounce(); }
+        catch (e) { toast(e.message, 'err'); b.disabled = false; }
+      });
+    });
+    var all = document.getElementById('ann-delall');
+    if (all) all.addEventListener('click', function () {
+      DModal.open({ size: 'sm', eyebrow: 'Danger zone', title: 'Delete all ' + list.length + ' announcements?', body:
+        '<form class="sub-form" id="aa-form" novalidate><p class="da-warn">Every announcement will disappear from all student dashboards. This cannot be undone.</p>' +
+        '<div class="field"><label>Type <b>DELETE</b> to confirm</label><input class="input" id="aa-input" autocomplete="off" spellcheck="false" placeholder="DELETE"></div>' +
+        '<p class="form-error" id="aa-err" role="alert"></p>' +
+        '<div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid btn-danger-solid" id="aa-go" disabled>Delete all announcements</button></div></form>',
+        onMount: function (box, inst) {
+          var input = box.querySelector('#aa-input'), go = box.querySelector('#aa-go'), err = box.querySelector('#aa-err');
+          input.focus();
+          input.addEventListener('input', function () { go.disabled = input.value.trim() !== 'DELETE'; });
+          box.querySelector('[data-cancel]').addEventListener('click', function () { inst.close(); });
+          box.querySelector('#aa-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (input.value.trim() !== 'DELETE') return;
+            go.disabled = true; go.textContent = 'Deleting…'; err.textContent = '';
+            try { var d = await api('/api/staff/announcements?confirm=DELETE-ALL', { method: 'DELETE' }); inst.close(); toast(d.deleted + ' announcements deleted.'); renderAnnounce(); }
+            catch (ex) { err.textContent = ex.message; go.disabled = false; go.textContent = 'Delete all announcements'; }
+          });
+        } });
     });
   }
 
@@ -909,7 +948,7 @@
         '<div class="grid-2"><div class="field"><label>Product name</label><input class="input" name="name" required maxlength="120" value="' + esc(it.name || '') + '"></div>' +
         '<div class="field"><label>Category</label><select class="input" name="cat">' + cats.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === it.cat ? ' selected' : '') + '>' + esc(c.label) + '</option>'; }).join('') + '</select></div></div>' +
         '<div class="field"><label>Short summary (shown on the card)</label><input class="input" name="summary" maxlength="200" value="' + esc(it.summary || '') + '"></div>' +
-        '<div class="field"><label>Full description</label><textarea class="input" name="description" rows="4" maxlength="2000">' + esc(it.description || '') + '</textarea></div>' +
+        '<div class="field"><label>Full description</label><textarea class="input" name="description" rows="9" maxlength="2000">' + esc(it.description || '') + '</textarea><p class="muted small">Leave a blank line between paragraphs. Start a line with "- " to make it a bullet point under Highlights.</p></div>' +
         '<div class="grid-2"><div class="field"><label>Price in naira (blank = price on request)</label><input class="input" type="number" name="price" min="0" value="' + (it.price == null ? '' : it.price) + '"></div></div>' +
         itemImageField(it, 'Product photo', false) +
         '<p class="form-error" id="pf-err" role="alert"></p>' +
@@ -947,7 +986,9 @@
     var cats = d.categories;
     var catLabel = function (id) { var c = cats.find(function (x) { return x.id === id; }); return c ? c.label : id; };
     setView(head('Shop', 'Shop products', 'Add, edit and remove the products customers see in the shop.') +
-      '<div class="dt-tools"><span class="muted">' + d.products.length + ' products</span><button class="btn btn-solid" type="button" id="p-new">Add product</button></div>' +
+      '<div class="dt-tools"><span class="muted">' + d.products.length + ' products</span><span class="dt-tools-btns">' +
+      (d.products.length ? '<button class="btn btn-ghost btn-danger" type="button" id="p-delall">Delete all</button>' : '<button class="btn btn-ghost" type="button" id="p-restore">Restore the original catalogue</button>') +
+      '<button class="btn btn-solid" type="button" id="p-new">Add product</button></span></div>' +
       '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Photo</th><th></th></tr></thead><tbody>' +
       d.products.map(function (p, i) {
         return '<tr style="--i:' + i + '"><td><div class="thumb-cell">' + (p.image ? '<img src="' + esc(p.image) + '" alt="">' : '<span class="thumb-empty">No photo</span>') +
@@ -955,8 +996,37 @@
           '<td>' + esc(catLabel(p.cat)) + '</td><td>' + (p.price ? naira(p.price) : '<span class="muted">On request</span>') + '</td>' +
           '<td>' + (p.hasImage ? '<span class="gpill pass">Uploaded</span>' : p.image ? '<span class="gpill none">Stock photo</span>' : '<span class="gpill none">None</span>') + '</td>' +
           '<td class="dt-act"><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(p.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(p.id) + '">Delete</button></td></tr>';
-      }).join('') + '</tbody></table></div></section>');
+      }).join('') + (d.products.length ? '' : '<tr><td colspan="5" class="muted">The shop has no products.</td></tr>') + '</tbody></table></div></section>');
     document.getElementById('p-new').addEventListener('click', function () { productForm(cats, null); });
+    var delAll = document.getElementById('p-delall');
+    if (delAll) delAll.addEventListener('click', function () {
+      DModal.open({ size: 'sm', eyebrow: 'Danger zone', title: 'Delete all ' + d.products.length + ' products?', body:
+        '<form class="sub-form" id="da-form" novalidate><p class="da-warn">This removes every product from the shop, together with the photos you uploaded. It cannot be undone. Customers will see an empty shop until you add products again.</p>' +
+        '<div class="field"><label>Type <b>DELETE</b> to confirm</label><input class="input" id="da-input" autocomplete="off" spellcheck="false" placeholder="DELETE"></div>' +
+        '<p class="form-error" id="da-err" role="alert"></p>' +
+        '<div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid btn-danger-solid" id="da-go" disabled>Delete all products</button></div></form>',
+        onMount: function (box, inst) {
+          var input = box.querySelector('#da-input'), go = box.querySelector('#da-go'), err = box.querySelector('#da-err');
+          input.focus();
+          input.addEventListener('input', function () { go.disabled = input.value.trim() !== 'DELETE'; });
+          box.querySelector('[data-cancel]').addEventListener('click', function () { inst.close(); });
+          box.querySelector('#da-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (input.value.trim() !== 'DELETE') return;
+            go.disabled = true; go.textContent = 'Deleting…'; err.textContent = '';
+            try {
+              var r = await api('/api/staff/products?confirm=DELETE-ALL', { method: 'DELETE', timeout: 60000 });
+              inst.close(); toast(r.deleted + ' products deleted.'); renderProducts();
+            } catch (ex) { err.textContent = ex.message; go.disabled = false; go.textContent = 'Delete all products'; }
+          });
+        } });
+    });
+    var restore = document.getElementById('p-restore');
+    if (restore) restore.addEventListener('click', async function () {
+      restore.disabled = true;
+      try { var r = await api('/api/staff/products/restore-defaults', { method: 'POST', body: {} }); toast(r.added + ' products restored.'); renderProducts(); }
+      catch (ex) { toast(ex.message, 'err'); restore.disabled = false; }
+    });
     view.querySelectorAll('[data-edit]').forEach(function (b) {
       b.addEventListener('click', function () { productForm(cats, d.products.find(function (p) { return p.id === b.getAttribute('data-edit'); })); });
     });
@@ -1531,8 +1601,58 @@
   }
 
   /* ---------- Digital products (admin) ---------- */
-  function digitalForm(p) {
+  var PDF_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 17h4"/></svg>';
+  var UP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M4 16v3a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3"/></svg>';
+  var LOCK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>';
+  function fileSize(n) { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+
+  /* Sends one piece of a PDF. XMLHttpRequest is used so the progress bar moves smoothly while the bytes travel. */
+  function sendPdfPart(url, blob, onBytes) {
+    return new Promise(function (resolve, reject) {
+      var x = new XMLHttpRequest();
+      x.open('POST', url); x.withCredentials = true; x.timeout = 120000;
+      x.setRequestHeader('Content-Type', 'application/octet-stream');
+      x.upload.onprogress = function (e) { if (e.lengthComputable && onBytes) onBytes(e.loaded); };
+      x.onload = function () {
+        var data = {}; try { data = JSON.parse(x.responseText); } catch (e) { /* not JSON */ }
+        if (x.status === 401) { location.replace('staff-login.html'); return reject(new Error('Please log in.')); }
+        if (x.status >= 200 && x.status < 300) return resolve(data);
+        var er = new Error(data.error || (x.status === 413 ? 'The upload was too large for the server.' : 'The upload failed (code ' + x.status + ').'));
+        er.final = x.status >= 400 && x.status < 500 && x.status !== 408 && x.status !== 429;
+        reject(er);
+      };
+      x.onerror = function () { reject(new Error('The connection dropped during the upload.')); };
+      x.ontimeout = function () { reject(new Error('The upload timed out. Check your connection and try again.')); };
+      x.send(blob);
+    });
+  }
+  async function uploadPdf(productId, file, partBytes, onProgress) {
+    var total = Math.max(1, Math.ceil(file.size / partBytes));
+    var rnd = new Uint8Array(12); (window.crypto || window.msCrypto).getRandomValues(rnd);
+    var uploadId = Array.prototype.map.call(rnd, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    var out = null;
+    for (var i = 0; i < total; i++) {
+      var blob = file.slice(i * partBytes, Math.min(file.size, (i + 1) * partBytes));
+      var url = '/api/staff/digital-files/' + encodeURIComponent(productId) + '/chunk?upload=' + uploadId + '&index=' + i + '&total=' + total + '&name=' + encodeURIComponent(file.name);
+      for (var attempt = 0; ; attempt++) {
+        try {
+          out = await sendPdfPart(url, blob, function (loaded) { onProgress(Math.min(1, (i * partBytes + loaded) / file.size)); });
+          break;
+        } catch (e) {
+          if (e.final || attempt >= 2) throw e;
+          await new Promise(function (r) { setTimeout(r, 900 * (attempt + 1)); });
+        }
+      }
+      onProgress(Math.min(1, ((i + 1) * partBytes) / file.size));
+    }
+    return out;
+  }
+
+  function digitalForm(p, meta) {
+    meta = meta || {};
     var isNew = !p, it = p || {};
+    var maxMb = meta.maxPdfMb || 25, partBytes = meta.partBytes || 3 * 1024 * 1024;
+    var st = { id: isNew ? null : it.id, picked: null, existing: it.hasFile ? { name: it.fileName, size: it.fileSize, at: it.fileUploadedAt } : null, legacy: !!it.legacyLink, busy: false, pct: 0, removed: false };
     DModal.open({ size: 'lg', eyebrow: isNew ? 'New digital product' : 'Edit product', title: isNew ? 'Add an eBook or digital product' : esc(it.title), body:
       '<form class="sub-form" id="dpf" novalidate>' +
         '<div class="grid-2"><div class="field"><label>Title</label><input class="input" name="title" required maxlength="120" value="' + esc(it.title || '') + '"></div>' +
@@ -1543,24 +1663,88 @@
         '<div class="field"><label>Pages</label><input class="input" type="number" name="pages" min="1" value="' + (it.pages || '') + '"></div></div>' +
         '<div class="grid-2"><div class="field"><label>Formats</label><input class="input" name="formats" maxlength="60" value="' + esc(it.formats || 'PDF') + '"></div>' +
         '<div class="field"><label>Active (visible in the store)</label><select class="input" name="active"><option value="true"' + (it.active !== false ? ' selected' : '') + '>Yes</option><option value="false"' + (it.active === false ? ' selected' : '') + '>No</option></select></div></div>' +
-        '<div class="field"><label>File link (Google Drive or similar). Buyers get this file through a controlled download.</label><input class="input" name="fileUrl" maxlength="500" placeholder="https://" value="' + esc(it.fileUrl || '') + '"></div>' +
+        '<div class="field pdf-field"><label>Product PDF <span class="pdf-private">' + LOCK_ICON + 'Private</span></label>' +
+          '<div class="pdf-box" id="pdf-box"></div>' +
+          '<input type="file" id="pdf-input" accept="application/pdf,.pdf" hidden>' +
+          '<p class="muted small">PDF only, up to ' + maxMb + ' MB. The file is kept privately on the DEBONE server. Students download it from their dashboard, so there is no link to share.</p></div>' +
         '<div class="field"><label>Preview link (optional, for the free preview pages)</label><input class="input" name="previewUrl" maxlength="500" placeholder="https://" value="' + esc(it.previewUrl || '') + '"></div>' +
         '<div class="field"><label>Table of contents (one line per chapter)</label><textarea class="input" name="toc" rows="4" maxlength="4000">' + esc((it.toc || []).join('\n')) + '</textarea></div>' +
         itemImageField(it, 'Cover image', false) +
         '<p class="form-error" id="dpf-err" role="alert"></p>' +
-        '<div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid">' + (isNew ? 'Add product' : 'Save changes') + '</button></div></form>',
+        '<div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid" id="dpf-go">' + (isNew ? 'Add product' : 'Save changes') + '</button></div></form>',
       onMount: function (box, inst) {
         bindImageField(box, null);
-        box.querySelector('[data-cancel]').addEventListener('click', inst.close);
+        var pdfBox = box.querySelector('#pdf-box'), pdfInput = box.querySelector('#pdf-input'), err = box.querySelector('#dpf-err'), go = box.querySelector('#dpf-go');
+        var touched = false;   // something was saved, so the list behind the dialog must refresh when it closes
+        function paintPdf() {
+          var h;
+          if (st.busy) {
+            var pct = Math.round(st.pct * 100);
+            h = '<div class="pdf-row is-busy"><span class="pdf-ico">' + PDF_ICON + '</span><div class="pdf-meta"><b>' + esc(st.picked.name) + '</b><span>' + (pct >= 100 ? 'Finishing up…' : 'Uploading ' + pct + '%') + '</span>' +
+              '<div class="pdf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div></div></div>';
+          } else if (st.picked) {
+            h = '<div class="pdf-row is-picked"><span class="pdf-ico">' + PDF_ICON + '</span><div class="pdf-meta"><b>' + esc(st.picked.name) + '</b><span>' + fileSize(st.picked.size) + ' · uploads when you save</span></div>' +
+              '<div class="pdf-act"><button type="button" class="btn btn-ghost btn-sm" data-pdf-pick>Change</button><button type="button" class="pdf-x" data-pdf-clear aria-label="Do not upload this file">&times;</button></div></div>';
+          } else if (st.existing && !st.removed) {
+            h = '<div class="pdf-row is-ok"><span class="pdf-ico">' + PDF_ICON + '</span><div class="pdf-meta"><b>' + esc(st.existing.name) + '</b><span>' + fileSize(st.existing.size) + (st.existing.at ? ' · uploaded ' + esc(fmt(st.existing.at)) : '') + '</span></div>' +
+              '<div class="pdf-act"><button type="button" class="btn btn-ghost btn-sm" data-pdf-pick>Replace PDF</button><button type="button" class="btn btn-ghost btn-sm pdf-rm" data-pdf-remove>Remove</button></div></div>';
+          } else {
+            h = (st.legacy ? '<p class="pdf-warn">This product still uses an old outside link. Upload the PDF to move it onto the DEBONE server.</p>' : '') +
+              '<button type="button" class="pdf-drop" data-pdf-pick><span class="pdf-up">' + UP_ICON + '</span><b>Choose the PDF</b><span>or drag and drop it here</span></button>';
+          }
+          pdfBox.innerHTML = h;
+        }
+        function takeFile(f) {
+          err.textContent = '';
+          if (!f) return;
+          if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') { err.textContent = 'Please choose a PDF file.'; return; }
+          if (f.size > maxMb * 1048576) { err.textContent = 'That PDF is ' + fileSize(f.size) + '. The limit is ' + maxMb + ' MB. Please compress it and try again.'; return; }
+          if (f.size < 100) { err.textContent = 'That file looks empty.'; return; }
+          st.picked = f; paintPdf();
+        }
+        paintPdf();
+        pdfBox.addEventListener('click', async function (e) {
+          if (st.busy) return;
+          if (e.target.closest('[data-pdf-pick]')) { pdfInput.click(); return; }
+          if (e.target.closest('[data-pdf-clear]')) { st.picked = null; paintPdf(); return; }
+          if (e.target.closest('[data-pdf-remove]')) {
+            if (!window.confirm('Remove the uploaded PDF? Buyers will not be able to download it until you upload a new one.')) return;
+            try { await api('/api/staff/products/digital/' + encodeURIComponent(st.id) + '/file', { method: 'DELETE' }); st.existing = null; st.legacy = false; touched = true; paintPdf(); toast('PDF removed.'); }
+            catch (ex) { err.textContent = ex.message; }
+          }
+        });
+        pdfInput.addEventListener('change', function () { takeFile(pdfInput.files[0]); pdfInput.value = ''; });
+        ['dragenter', 'dragover'].forEach(function (n) { pdfBox.addEventListener(n, function (e) { e.preventDefault(); if (!st.busy) pdfBox.classList.add('drag'); }); });
+        ['dragleave', 'drop'].forEach(function (n) { pdfBox.addEventListener(n, function (e) { e.preventDefault(); pdfBox.classList.remove('drag'); }); });
+        pdfBox.addEventListener('drop', function (e) { if (!st.busy && e.dataTransfer && e.dataTransfer.files[0]) takeFile(e.dataTransfer.files[0]); });
+
+        box.querySelector('[data-cancel]').addEventListener('click', function () { if (st.busy) return; inst.close(); if (touched) renderDigital(); });
         box.querySelector('#dpf').addEventListener('submit', async function (e) {
           e.preventDefault();
-          var f = e.target, err = box.querySelector('#dpf-err'); err.textContent = '';
-          var body = {}; ['title','author','description','category','price','pages','formats','fileUrl','previewUrl','toc','active'].forEach(function (k) { body[k] = fv(f, k); });
+          if (st.busy) return;
+          var f = e.target; err.textContent = '';
+          var body = {}; ['title','author','description','category','price','pages','formats','previewUrl','toc','active'].forEach(function (k) { body[k] = fv(f, k); });
           var picked = box.querySelector('#if-prev').dataset.picked; if (picked) body.data = picked;
+          var label = go.textContent; go.disabled = true; go.textContent = 'Saving…';
           try {
-            await api(isNew ? '/api/staff/products/digital' : '/api/staff/products/digital/' + encodeURIComponent(it.id), { method: isNew ? 'POST' : 'PATCH', body: body });
+            if (!st.id) { var made = await api('/api/staff/products/digital', { method: 'POST', body: body }); st.id = made.id; touched = true; }
+            else { await api('/api/staff/products/digital/' + encodeURIComponent(st.id), { method: 'PATCH', body: body }); touched = true; }
+            if (st.picked) {
+              st.busy = true; st.pct = 0; paintPdf(); go.textContent = 'Uploading PDF…';
+              var up = await uploadPdf(st.id, st.picked, partBytes, function (v) {
+                st.pct = v; var bar = pdfBox.querySelector('.pdf-bar i'); if (bar) bar.style.width = Math.round(v * 100) + '%';
+                var s = pdfBox.querySelector('.pdf-meta > span'); if (s) s.textContent = v >= 1 ? 'Finishing up…' : 'Uploading ' + Math.round(v * 100) + '%';
+              });
+              st.busy = false;
+              var pr = up && up.product; st.existing = pr ? { name: pr.fileName, size: pr.fileSize, at: pr.fileUploadedAt } : { name: st.picked.name, size: st.picked.size, at: null };
+              st.picked = null; st.legacy = false; st.removed = false;
+            }
             inst.close(); toast(isNew ? 'Product added.' : 'Product saved.'); renderDigital();
-          } catch (ex) { err.textContent = ex.message; }
+          } catch (ex) {
+            st.busy = false; paintPdf();
+            err.textContent = st.id && st.picked ? 'The product was saved, but the PDF did not upload: ' + ex.message + ' Press the button to try the upload again.' : ex.message;
+            go.disabled = false; go.textContent = st.id && st.picked ? 'Retry PDF upload' : label;
+          }
         });
       } });
   }
@@ -1569,18 +1753,19 @@
     var d = await api('/api/staff/products');
     setView(head('Digital Store', 'Digital products', 'eBooks, prompt packs, templates and guides. Buyers download them after payment.') +
       '<div class="dt-tools"><span class="muted">' + d.products.length + ' products</span><button class="btn btn-solid" type="button" id="dp-new">Add product</button></div>' +
-      '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th>Product</th><th>Price</th><th>File</th><th>Sales</th><th>Status</th><th></th></tr></thead><tbody>' +
+      '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th>Product</th><th>Price</th><th>PDF</th><th>Sales</th><th>Status</th><th></th></tr></thead><tbody>' +
       (d.products.length ? d.products.map(function (p, i) {
+        var filePill = p.hasFile ? '<span class="gpill pass" title="' + esc(p.fileName) + ' · ' + fileSize(p.fileSize) + '">Uploaded</span>' : p.legacyLink ? '<span class="gpill none" title="Upload the PDF to move this file onto the DEBONE server">Old link</span>' : '<span class="gpill fail">No PDF</span>';
         return '<tr style="--i:' + i + '"><td><div class="thumb-cell">' + (p.image ? '<img src="' + esc(p.image) + '" alt="">' : '<span class="thumb-empty">No cover</span>') + '<div><b>' + esc(p.title) + '</b><p class="muted small">' + esc(p.author || '') + '</p></div></div></td>' +
-          '<td>' + (p.price ? naira(p.price) : 'Free') + '</td><td>' + (p.fileUrl ? '<span class="gpill pass">Linked</span>' : '<span class="gpill fail">No file</span>') + '</td><td>' + p.sales + '</td>' +
+          '<td>' + (p.price ? naira(p.price) : 'Free') + '</td><td>' + filePill + '</td><td>' + p.sales + '</td>' +
           '<td><span class="gpill ' + (p.active ? 'pass' : 'none') + '">' + (p.active ? 'Live' : 'Hidden') + '</span></td>' +
           '<td class="dt-act"><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(p.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(p.id) + '">Delete</button></td></tr>';
       }).join('') : '<tr><td colspan="6" class="muted">No digital products yet.</td></tr>') + '</tbody></table></div></section>');
-    document.getElementById('dp-new').addEventListener('click', function () { digitalForm(null); });
-    view.querySelectorAll('[data-edit]').forEach(function (b) { b.addEventListener('click', function () { digitalForm(d.products.find(function (p) { return p.id === b.getAttribute('data-edit'); })); }); });
+    document.getElementById('dp-new').addEventListener('click', function () { digitalForm(null, d); });
+    view.querySelectorAll('[data-edit]').forEach(function (b) { b.addEventListener('click', function () { digitalForm(d.products.find(function (p) { return p.id === b.getAttribute('data-edit'); }), d); }); });
     view.querySelectorAll('[data-del]').forEach(function (b) {
       b.addEventListener('click', async function () {
-        if (!window.confirm('Delete this product? Existing buyers keep their downloads only if it is not deleted.')) return;
+        if (!window.confirm('Delete this product and its uploaded PDF? Buyers will no longer be able to download it.')) return;
         try { await api('/api/staff/products/digital/' + encodeURIComponent(b.getAttribute('data-del')), { method: 'DELETE' }); toast('Deleted.'); renderDigital(); } catch (e) { toast(e.message, 'err'); }
       });
     });
@@ -2170,40 +2355,116 @@
 
   /* ---------- Zoom student verification ---------- */
   var zoomRoster = [];
+  var ZI = {
+    video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg>',
+    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5.2a3.5 3.5 0 0 1 0 6.6M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>',
+    badge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.2h.01"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4 17v2a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-2"/></svg>',
+    copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
+    off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg>',
+    empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M8 10.5h5"/></svg>'
+  };
+  function initials(name) {
+    var p = String(name || '?').trim().split(/\s+/).filter(Boolean);
+    return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+  }
+  function countUp(el, to) {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || to < 2) { el.textContent = to; return; }
+    var t0 = performance.now(), dur = 900;
+    (function tick(now) {
+      var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(to * e);
+      if (k < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
   async function renderZoomVerification() {
     crumb.textContent = 'Zoom Student Verification';
     var result = await api('/api/staff/zoom-verification');
     zoomRoster = result.students || [];
+    var courseMap = new Map(zoomRoster.flatMap(function (r) { return r.courses.map(function (c) { return [c.id, c.title]; }); }));
+    var stats = [
+      { k: 'total', label: 'Students', icon: ZI.users, n: zoomRoster.length, tone: '' },
+      { k: 'named', label: 'Zoom names registered', icon: ZI.video, n: zoomRoster.filter(function (r) { return !!r.zoomName; }).length, tone: '' },
+      { k: 'ready', label: 'Ready to admit', icon: ZI.badge, n: zoomRoster.filter(function (r) { return r.zoomName && r.eligible && !r.duplicate; }).length, tone: 'good' },
+      { k: 'dup', label: 'Duplicate names', icon: ZI.warn, n: zoomRoster.filter(function (r) { return r.duplicate; }).length, tone: 'warn' }
+    ];
     setView(head('Academy', 'Zoom Student Verification', 'Compare the Zoom Waiting Room display name with paid, enrolled students. Names alone do not prove identity.') +
-      '<section class="panel zoom-admin-panel"><div class="zoom-admin-intro"><span class="zoom-admin-eyebrow">LIVE CLASS SECURITY</span><h3>Waiting Room roster</h3><p>Compare each participant with a paid student before admitting them to class.</p></div><div class="zoom-roster-filters"><div class="form-group"><label for="zoom-roster-search">Search student or Zoom display name</label><input id="zoom-roster-search" type="search" placeholder="Search names…" autocomplete="off"></div>' +
-      '<div class="form-group"><label for="zoom-roster-course">Filter by course</label><select id="zoom-roster-course"><option value="">All courses</option>' +
-      Array.from(new Map(zoomRoster.flatMap(function (r) { return r.courses.map(function (c) { return [c.id, c.title]; }); })).entries()).map(function (c) { return '<option value="'+esc(c[0])+'">'+esc(c[1])+'</option>'; }).join('') + '</select></div></div>' +
-      '<div class="zoom-roster-actions" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0"><p class="muted" id="zoom-roster-summary" aria-live="polite" style="margin:0"></p><button type="button" id="zoom-roster-export" class="btn btn-outline">Export roster CSV</button></div><div style="overflow-x:auto"><table class="table" style="width:100%;min-width:640px"><thead><tr><th>Student</th><th>Zoom display name</th><th>Enrolled courses</th><th>Access</th></tr></thead><tbody id="zoom-roster-body"></tbody></table></div>' +
-      '<p class="muted" style="margin-top:16px">Zoom Free does not verify identities automatically. Check the correct course and use a private second check when a name is suspicious. Admission is managed inside Zoom.</p></section>');
-    var search = document.getElementById('zoom-roster-search');
-    var visibleRoster = [];
-    var exportButton = document.getElementById('zoom-roster-export');
-    if (exportButton) exportButton.addEventListener('click', function () {
-      var cells = [['Student', 'Zoom display name', 'Courses', 'Duplicate name', 'Active enrollment']].concat(visibleRoster.map(function(r){ return [r.name, r.zoomName || '', r.courses.map(function(c){return c.title;}).join('; '), r.duplicate ? 'Yes' : 'No', r.eligible ? 'Yes' : 'No']; }));
-      var csv = cells.map(function(row){ return row.map(function(value){ var v = String(value == null ? '' : value); if (/^[=+@\-\t\r]/.test(v)) v = '\'' + v; return '"' + v.replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
-      var url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-      var link = document.createElement('a'); link.href=url; link.download='debone-zoom-roster.csv'; link.click(); setTimeout(function(){URL.revokeObjectURL(url);}, 1000);
+      '<div class="zv">' +
+      '<section class="zv-hero" aria-label="Live class security"><div class="zv-orb" aria-hidden="true"></div>' +
+        '<span class="zv-shield">' + ZI.badge + '</span>' +
+        '<div><span class="zv-eyebrow">Live class security</span><h3>Check every name before you admit</h3>' +
+        '<p>Open the Zoom Waiting Room, search for each participant here, and admit only students with an active enrollment.</p></div></section>' +
+      '<div class="zv-stats">' + stats.map(function (s, i) {
+        return '<div class="zv-stat ' + s.tone + '" style="--i:' + i + '"><span class="zv-sico">' + s.icon + '</span><div><b data-count="' + s.n + '">0</b><span>' + s.label + '</span></div></div>';
+      }).join('') + '</div>' +
+      '<section class="zv-panel"><div class="zv-tools">' +
+        '<label class="zv-search">' + ZI.search + '<span class="sr-only">Search student or Zoom display name</span><input id="zoom-roster-search" type="search" placeholder="Search a student or Zoom display name" autocomplete="off"></label>' +
+        '<label class="zv-select">' + ZI.book + '<span class="sr-only">Filter by course</span><select id="zoom-roster-course"><option value="">All courses</option>' +
+          Array.from(courseMap.entries()).map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[1]) + '</option>'; }).join('') + '</select></label>' +
+        '<button type="button" id="zoom-roster-export" class="zv-export">' + ZI.download + 'Export CSV</button></div>' +
+        '<div class="zv-chips" role="group" aria-label="Filter by status">' +
+          [['all', 'All'], ['ready', 'Ready to admit'], ['missing', 'No Zoom name'], ['dup', 'Duplicates'], ['noenroll', 'No enrollment']].map(function (c, i) {
+            return '<button type="button" class="zv-chip' + (i === 0 ? ' on' : '') + '" data-f="' + c[0] + '" aria-pressed="' + (i === 0) + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+        '<p class="zv-summary" id="zoom-roster-summary" aria-live="polite"></p>' +
+        '<div class="zv-table" role="table" aria-label="Zoom roster"><div class="zv-row zv-head" role="row"><span role="columnheader">Student</span><span role="columnheader">Zoom display name</span><span role="columnheader">Enrolled courses</span><span role="columnheader">Access</span></div>' +
+        '<div id="zoom-roster-body" role="rowgroup"></div></div>' +
+        '<p class="zv-note">' + ZI.badge + '<span>Zoom Free does not verify identities automatically. Check the correct course and use a private second check when a name is suspicious. Admission is managed inside Zoom.</span></p>' +
+      '</section></div>');
+    view.querySelectorAll('.zv-stat b[data-count]').forEach(function (b) { countUp(b, Number(b.getAttribute('data-count')) || 0); });
+
+    var search = document.getElementById('zoom-roster-search'), filter = document.getElementById('zoom-roster-course'), status = 'all', visibleRoster = [];
+    document.getElementById('zoom-roster-export').addEventListener('click', function () {
+      var cells = [['Student', 'Zoom display name', 'Courses', 'Duplicate name', 'Active enrollment']].concat(visibleRoster.map(function (r) { return [r.name, r.zoomName || '', r.courses.map(function (c) { return c.title; }).join('; '), r.duplicate ? 'Yes' : 'No', r.eligible ? 'Yes' : 'No']; }));
+      var csv = cells.map(function (row) { return row.map(function (value) { var v = String(value == null ? '' : value); if (/^[=+@\-\t\r]/.test(v)) v = '\'' + v; return '"' + v.replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+      var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      var link = document.createElement('a'); link.href = url; link.download = 'debone-zoom-roster.csv'; link.click(); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     });
-    var filter = document.getElementById('zoom-roster-course');
     function paint() {
       var q = search.value.trim().toLocaleLowerCase(), courseId = filter.value;
+      function eligibleFor(r) { return courseId ? r.courses.some(function (c) { return c.id === courseId; }) : r.eligible; }
       var rows = zoomRoster.filter(function (r) {
-        return (!courseId || r.courses.some(function (c) { return c.id === courseId; })) &&
-          (!q || (r.name + ' ' + r.zoomName).toLocaleLowerCase().includes(q));
+        if (courseId && !r.courses.some(function (c) { return c.id === courseId; })) return false;
+        if (q && !(r.name + ' ' + r.zoomName).toLocaleLowerCase().includes(q)) return false;
+        if (status === 'ready') return !!r.zoomName && eligibleFor(r) && !r.duplicate;
+        if (status === 'missing') return !r.zoomName;
+        if (status === 'dup') return !!r.duplicate;
+        if (status === 'noenroll') return !eligibleFor(r);
+        return true;
       });
       visibleRoster = rows;
-      document.getElementById('zoom-roster-summary').textContent = rows.length + ' students shown · ' + rows.filter(function(r){return !!r.zoomName;}).length + ' Zoom names registered';
-      document.getElementById('zoom-roster-body').innerHTML = rows.length ? rows.map(function (r) {
-        var eligible = courseId ? r.courses.some(function (c) { return c.id === courseId; }) : r.eligible;
-        return '<tr><td><strong>'+esc(r.name)+'</strong></td><td>'+ (r.zoomName ? '<strong>'+esc(r.zoomName)+'</strong>' : '<span class="muted">Not submitted</span>') + (r.duplicate ? ' <strong style="color:#b45309">Duplicate — verify</strong>' : '') + '</td><td>'+esc(r.courses.map(function(c){return c.title;}).join(', ') || 'None')+'</td><td>'+ (eligible ? '<span style="color:#16803b">Active enrollment</span>' : '<span class="muted">No active enrollment</span>')+'</td></tr>';
-      }).join('') : '<tr><td colspan="4">No matching students found.</td></tr>';
+      document.getElementById('zoom-roster-summary').textContent = rows.length + ' students shown · ' + rows.filter(function (r) { return !!r.zoomName; }).length + ' Zoom names registered';
+      document.getElementById('zoom-roster-body').innerHTML = rows.length ? rows.map(function (r, i) {
+        var ok = eligibleFor(r);
+        return '<div class="zv-row" role="row" style="--i:' + Math.min(i, 14) + '">' +
+          '<span class="zv-who" role="cell"><i class="zv-av" aria-hidden="true">' + esc(initials(r.name)) + '</i><b>' + esc(r.name) + '</b></span>' +
+          '<span class="zv-zname" role="cell" data-label="Zoom name">' + (r.zoomName
+            ? '<button type="button" class="zv-zn" data-copy="' + esc(r.zoomName) + '" title="Copy this name">' + ZI.video + '<span>' + esc(r.zoomName) + '</span>' + ZI.copy + '</button>'
+            : '<span class="zv-missing">Not submitted</span>') +
+            (r.duplicate ? '<span class="zv-tag warn">' + ZI.warn + 'Duplicate, verify</span>' : '') + '</span>' +
+          '<span class="zv-courses" role="cell" data-label="Courses">' + (r.courses.length ? r.courses.map(function (c) { return '<em>' + esc(c.title) + '</em>'; }).join('') : '<span class="zv-missing">None</span>') + '</span>' +
+          '<span role="cell" data-label="Access">' + (ok ? '<span class="zv-tag good">' + ZI.check + 'Active enrollment</span>' : '<span class="zv-tag off">' + ZI.off + 'No active enrollment</span>') + '</span></div>';
+      }).join('') : '<div class="zv-empty">' + ZI.empty + '<b>No matching students</b><span>Try a different name, course or status.</span></div>';
     }
-    search.addEventListener('input', paint); filter.addEventListener('change', paint); paint();
+    search.addEventListener('input', paint); filter.addEventListener('change', paint);
+    view.querySelector('.zv-chips').addEventListener('click', function (e) {
+      var b = e.target.closest('.zv-chip'); if (!b) return;
+      status = b.getAttribute('data-f');
+      view.querySelectorAll('.zv-chip').forEach(function (x) { var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); });
+      paint();
+    });
+    document.getElementById('zoom-roster-body').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-copy]'); if (!b) return;
+      var text = b.getAttribute('data-copy');
+      var done = function () { b.classList.add('copied'); toast('Copied "' + text + '"'); setTimeout(function () { b.classList.remove('copied'); }, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { toast('Could not copy. Select the name and copy it.', 'err'); });
+      else toast('Copy is not available in this browser.', 'err');
+    });
+    paint();
   }
 
   /* ---------- Router ---------- */
