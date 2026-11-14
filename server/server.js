@@ -95,7 +95,7 @@ const SETTINGS_DEFAULTS = {
   businessName: 'DEBONE Photos & Video Editing Studio', tagline: 'Since 1997, in Port Harcourt.',
   phone1: '0803 598 8889', phone2: '0813 976 3301', whatsapp: '2348035988889', email: '',
   address: '179 Old Refinery Road, Elelenwo, Port Harcourt, Rivers State, Nigeria',
-  hours: 'Monday to Saturday, 8:00 am to 6:00 pm', facebook: '', instagram: '', tiktok: '', youtube: '',
+  hours: 'Monday to Saturday, 7:00 am to 8:00 pm · Sunday, 2:00 pm to 7:00 pm', facebook: '', instagram: '', tiktok: '', youtube: '',
   announcement: '', announcementOn: false,
   // Business rules. These are defaults: change them in Site settings.
   replayDays: 14, downloadLimit: 3, downloadDays: 365, depositPercent: 50,
@@ -1235,45 +1235,188 @@ route('DELETE', '/api/staff/page-content/:key', async ctx => {
 
 /* ---------- Assistant: answers questions in the student dashboard ---------- */
 const GUIDES = [
-  { id: 'enrol', q: ['enrol', 'enroll', 'sign up for a course', 'join a course', 'buy a course', 'pay for a course', 'how do i get a course'],
-    a: 'To enrol: open Browse courses in the menu, choose a course and press Enrol. Free courses open straight away. Paid courses take you to Paystack’s secure payment page. Once payment succeeds, the course unlocks on your screen by itself.' },
-  { id: 'payment', q: ['payment', 'paid', 'paystack', 'unlock', 'locked', 'not unlocked', 'money deducted', 'debited', 'payment failed'],
-    a: 'Payments are checked on our server, so the course unlocks as soon as Paystack confirms the payment, even if you close the page. Check Payments in the menu to see the status of each payment. If you were debited but the course is still locked after a few minutes, send us the payment reference on WhatsApp and we will fix it.' },
-  { id: 'coupon', q: ['coupon', 'discount', '30%', 'promo', 'promo code', 'voucher'],
-    a: 'Your 30% coupon appears on the Overview page after you subscribe to the newsletter with your account email. Press Enrol on a course, paste the code in the box (or press Use it), and the price is reduced at checkout. Each coupon works once.' },
-  { id: 'assignment', q: ['assignment', 'submit', 'homework', 'upload my work', 'send my work', 'submission'],
-    a: 'Open Assignments in the menu. Press Submit on the assignment, write your answer or paste a link to your work (Google Drive or YouTube), then press Submit assignment. You can update your work until your instructor marks it.' },
-  { id: 'grades', q: ['grade', 'marks', 'result', 'fail', 'pass', 'distinction', 'score'],
-    a: 'Results are shown in colour: red means Fail (below 50%), green means Pass (50% to 74%), and gold means Distinction (75% and above). Open View result on a marked assignment to see your marks and your instructor’s feedback.' },
-  { id: 'performance', q: ['performance', 'progress', 'improve', 'how am i doing', 'track'],
-    a: 'Open Performance in the menu. It shows your average score, your best score, a chart of each marked assignment, your results by course, and a tip for your next step.' },
-  { id: 'profile', q: ['profile', 'photo', 'picture', 'avatar', 'account details', 'personal details', 'complete my profile'],
-    a: 'Open Profile in the menu. Add your photo and your details (date of birth, gender, state, city, education, learning goals and an emergency contact). The percentage shows how complete your profile is, and the list shows what is still needed.' },
-  { id: 'password', q: ['password', 'forgot', 'reset', 'can not log in', 'cannot log in', 'login problem', 'log in'],
-    a: 'If you forgot your password, use Forgot password on the login page. We email you a link that works for one hour. Check your spam folder if it does not arrive within a few minutes. You can also change your password from Profile when you are logged in.' },
-  { id: 'live', q: ['live', 'live class', 'class', 'zoom', 'meet', 'youtube', 'recording', 'video room'],
-    a: 'Open Live classes in the menu. Your instructor schedules each class there, with the join link and the time. Use the class chat to ask questions during a live session, and watch past recordings from the same page.' },
-  { id: 'notifications', q: ['notification', 'notice', 'bell', 'alert', 'popup', 'pop up'],
-    a: 'New announcements, live classes, assignments and marks appear as a pop-up in the top right corner, and in the bell icon at the top. Click a pop-up to go straight to it.' },
-  { id: 'tour', q: ['tour', 'tutorial', 'how to use', 'how do i use', 'guide me', 'show me around'],
-    a: 'Press Take a tour at the top of the dashboard. It walks you through every part of the dashboard in about a minute, and you can start it again at any time.' },
-  { id: 'price', q: ['price', 'cost', 'how much', 'fee', 'naira', '₦'],
-    a: 'Each course shows its price on the Browse courses page. Free courses show Free. Courses marked Coming soon are not open for enrolment yet. Shop prices are on the Shop page, and some products are priced on request.' },
-  { id: 'refund', q: ['refund', 'money back', 'cancel'],
-    a: 'Refunds follow our refund policy, which is linked in the footer of the website. For a refund request, contact us on WhatsApp with your name, your account email and the payment reference.' },
-  { id: 'contact', q: ['contact', 'phone', 'whatsapp', 'call', 'speak to', 'human', 'support', 'agent', 'staff', 'address', 'where are you', 'hours', 'open'],
-    a: 'You can reach the studio on WhatsApp or by phone, or visit us. Use the button below to message us on WhatsApp, and include your account email so we can find your account quickly.' },
-  { id: 'hello', q: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'thanks', 'thank you'],
-    a: 'Hello, and welcome. I can help with enrolling, payments, coupons, assignments, results, your profile, live classes and passwords. What would you like help with?' }
+  { id: 'enrol', q: ['enrol', 'enroll', 'register for', 'sign up for a course', 'join a course', 'buy a course', 'pay for a course', 'how do i get a course', 'take a course', 'start a course', 'apply for a course', 'enrolling', 'enrolment', 'enrollment in'],
+    a: 'To enrol: open Browse courses in the menu, choose a course and press Enrol. Free courses open straight away. Paid courses take you to Paystack’s secure payment page, and the course unlocks on your account by itself once the payment succeeds.',
+    next: ['How much do courses cost?', 'Do you have a coupon?', 'Can I buy a bundle?'] },
+  { id: 'payment', q: ['payment', 'paid', 'paystack', 'unlock', 'locked', 'not unlocked', 'money deducted', 'debited', 'payment failed', 'transaction', 'receipt', 'reference', 'charged'],
+    a: 'Payments are confirmed on our server, so a course unlocks as soon as Paystack confirms it, even if you close the page. Open Payments in the menu to see the status of each one. If you were debited and the course is still locked after a few minutes, send us the payment reference on WhatsApp and we will fix it.',
+    next: ['How do refunds work?', 'How do I contact the studio?'] },
+  { id: 'coupon', q: ['coupon', 'discount', '30%', 'promo', 'promo code', 'voucher', 'cheaper', 'offer'],
+    a: 'Your 30% coupon appears on the Overview page after you subscribe to the newsletter with your account email. On a course press Enrol, paste the code in the box (or press Use it) and the price drops at checkout. Each coupon works once.',
+    next: ['How do I enrol?', 'Can I buy a bundle?'] },
+  { id: 'bundle', q: ['bundle', 'all courses', 'package', 'all 5', 'set of courses', 'combo'],
+    a: 'A course bundle gives you a set of courses for one payment, at a lower price than buying them one by one. Open Course bundles on the website (Academy menu) or Browse courses in your dashboard to see what is in each bundle and its price.',
+    next: ['How do I enrol?', 'How much do courses cost?'] },
+  { id: 'lessons', q: ['lesson', 'lessons', 'next lesson', 'finish button', 'finish lesson', 'complete lesson', 'mark complete', 'lesson locked', 'unlock next', 'notes'],
+    a: 'Each lesson opens on the day its live class starts. In a lesson you read, take notes, join the live class (or watch the recording if you missed it) and submit the assignment. The Finish button only works once you have joined the live class or watched the recording, and submitted the assignment. Then the next lesson unlocks when its live class day comes.',
+    next: ['How do I submit an assignment?', 'I missed the live class', 'Where are recordings?'] },
+  { id: 'missed', q: ['missed', 'i missed', 'missed the live class', 'missed live class', 'missed class', 'miss the class', 'could not attend', 'was absent', 'watch recording', 'recording', 'recordings', 'replay', 'rewatch'],
+    a: 'If you missed a live class, open that lesson and press Watch recording. Once you have watched it you will see “You have watched the recorded video”, and you can submit the assignment and finish the lesson like everyone else.',
+    next: ['How do I submit an assignment?', 'How do live classes work?'] },
+  { id: 'live', q: ['live', 'live class', 'class', 'classes', 'zoom', 'meet', 'youtube', 'video room', 'join class', 'join live', 'schedule', 'timetable', 'when is'],
+    a: 'Open Live classes in the menu. Your instructor schedules each class there with the join link and time. When a class is ongoing you will see a Join live button, and after joining the lesson shows “Live class joined”. Use the class chat to ask questions during the session.',
+    next: ['I missed the live class', 'How do I submit an assignment?'] },
+  { id: 'assignment', q: ['assignment', 'submit', 'homework', 'upload my work', 'send my work', 'submission', 'task', 'project'],
+    a: 'Open Assignments in the menu (or the lesson itself). Press Submit, write your answer or paste a link to your work (Google Drive or YouTube), then press Submit assignment. You can update your work until your instructor marks it.',
+    next: ['What do the grade colours mean?', 'Can I resubmit?'] },
+  { id: 'resubmit', q: ['resubmit', 'edit my submission', 'change my answer', 'submitted wrong', 'wrong file', 'update my work'],
+    a: 'Yes. Until your instructor marks it you can open the assignment again, change your answer or link and submit again. After it has been marked, message your instructor if something needs correcting.',
+    next: ['What do the grade colours mean?'] },
+  { id: 'grades', q: ['grade', 'grades', 'marks', 'result', 'results', 'fail', 'pass', 'distinction', 'score', 'colour', 'color'],
+    a: 'Results are shown in colour: red means Fail (below 50%), green means Pass (50% to 74%) and gold means Distinction (75% and above). Open View result on a marked assignment to see your marks and your instructor’s feedback.',
+    next: ['How is my performance?', 'How do I get my certificate?'] },
+  { id: 'performance', q: ['performance', 'progress', 'improve', 'how am i doing', 'track', 'average'],
+    a: 'Open Performance in the menu. It shows your average score, your best score, a chart of each marked assignment, results by course and a tip for your next step.',
+    next: ['What do the grade colours mean?'] },
+  { id: 'certificate', q: ['certificate', 'certification', 'certified', 'graduate', 'verify certificate', 'my certificate', 'diploma'],
+    a: 'Certificates are not automatic. When you finish a course and your work is approved, the DEBONE team sends your certificate. Anyone can check a certificate on the Verify a certificate page using the code printed on it. If you think you qualify and have not received it, message the studio with your name and course.',
+    next: ['How do I verify a certificate?', 'What do the grade colours mean?'] },
+  { id: 'verify', q: ['verify', 'verification', 'is my certificate real', 'check certificate', 'certificate code', 'genuine'],
+    a: 'Open Verify a certificate (Academy menu), type the code printed on the certificate and press Verify. A real certificate shows the student’s name, the course and the date issued. Codes are not case sensitive.',
+    next: ['How do I get my certificate?'] },
+  { id: 'profile', q: ['profile', 'photo', 'picture', 'avatar', 'account details', 'personal details', 'complete my profile', 'change my name', 'update my details'],
+    a: 'Open Profile in the menu. Add your photo and your details (date of birth, gender, state, city, education, learning goals and an emergency contact). The percentage shows how complete your profile is and the list shows what is still needed. Changes show on your dashboard straight away.',
+    next: ['How do I reset my password?'] },
+  { id: 'password', q: ['password', 'forgot', 'reset', 'can not log in', 'cannot log in', 'cant log in', 'login problem', 'log in', 'login', 'locked out', 'sign in'],
+    a: 'If you forgot your password, use Forgot password on the login page. We email you a link that works for one hour. Check your spam folder if it does not arrive within a few minutes. When you are logged in you can also change your password from Profile.',
+    next: ['How do I contact the studio?'] },
+  { id: 'community', q: ['community', 'chat with students', 'group chat', 'delete message', 'upload image', 'send file', 'classmates'],
+    a: 'Open Community in the menu to chat with other students. You can send images and files, and you can delete your own messages. Be respectful: staff can remove messages that break the rules.',
+    next: ['How do live classes work?'] },
+  { id: 'instructor_chat', q: ['ask instructor', 'talk to instructor', 'message instructor', 'instructor chat', 'teacher', 'question for my instructor'],
+    a: 'You can chat with your instructor from the live class chat and from your course page. Keep questions specific (include the lesson name) so you get a quick, useful answer.',
+    next: ['How do live classes work?', 'How do I submit an assignment?'] },
+  { id: 'notifications', q: ['notification', 'notifications', 'notice', 'bell', 'alert', 'popup', 'pop up', 'announcement'],
+    a: 'New announcements, live classes, assignments and marks appear as a pop-up in the top right corner and in the bell icon at the top. Click a pop-up to go straight to it.',
+    next: ['Can you show me around?'] },
+  { id: 'tour', q: ['tour', 'tutorial', 'how to use', 'how do i use', 'guide me', 'show me around', 'new here', 'getting started', 'get started'],
+    a: 'Press Take a tour at the top of the dashboard. It walks you through every part in about a minute and you can start it again at any time.',
+    next: ['How do I enrol?', 'How do I complete my profile?'] },
+  { id: 'price', q: ['price', 'cost', 'how much', 'fee', 'fees', 'naira', '₦', 'tuition', 'afford', 'expensive'],
+    a: 'Each course shows its price on the Browse courses page. Free courses show Free, and courses marked Coming soon are not open yet. Bundles are cheaper than buying courses separately, and newsletter subscribers get a 30% coupon.',
+    next: ['Do you have a coupon?', 'Can I buy a bundle?'] },
+  { id: 'refund', q: ['refund', 'money back', 'cancel', 'cancellation', 'reimburse'],
+    a: 'Refunds follow our refund policy, linked in the footer of the website. To request one, message us on WhatsApp with your name, account email and payment reference.',
+    next: ['How do I contact the studio?'] },
+  { id: 'webinar', q: ['webinar', 'webinars', 'free class', 'free session', 'introduction session'],
+    a: 'Free webinars are short live introductions. Open Free webinars (Academy menu), pick one and press Register free. You get a reminder before it starts and a join link when it is time.',
+    next: ['How do I enrol?'] },
+  { id: 'challenge', q: ['challenge', 'challenges', 'contest', 'competition', 'win', 'showcase'],
+    a: 'Monthly challenges let you enter your work, get showcased and win. Open Monthly challenges (Academy menu) to see the current theme and how to enter.',
+    next: ['How do I enrol?'] },
+  { id: 'talent', q: ['talent', 'talent directory', 'hire', 'hire a creator', 'find a photographer', 'freelancer'],
+    a: 'The Talent directory lists creators trained at DEBONE. Open it from the Studio menu to see their work, or message us on WhatsApp and we will connect you to the right person.',
+    next: ['How do I book a shoot?'] },
+  { id: 'instructor_apply', q: ['become an instructor', 'teach', 'teach with', 'apply to teach', 'instructor application', 'be an instructor', 'tutor'],
+    a: 'If you are a qualified professional you can apply on Become an instructor (Academy menu). It is a short three-step form. We review every application before anything is published and agree payment and revenue terms in writing first.',
+    next: ['How do I contact the studio?'] },
+  { id: 'ai', q: ['ai video', 'ai course', 'artificial intelligence', 'automation', 'ai training', 'capcut', 'video editing course', 'learn editing'],
+    a: 'DEBONE also trains people in AI and creator skills such as AI video creation, plus video and photo editing. Open Browse courses to see what is available now and what is coming soon, with dates and prices.',
+    next: ['How do I enrol?', 'How much do courses cost?'] },
+  { id: 'nin', q: ['nin', 'national identity', 'id card', 'plastic id', 'enrollment', 'nin slip', 'nin validation', 'nin modification', 'bulk id'],
+    a: 'We offer NIN enrollment, validation, modification and search, plastic ID cards, and bulk ID for schools and companies. See the NIN & ID services page, then visit the studio or message us on WhatsApp with what you need.',
+    next: ['Where is the studio?', 'What are your opening hours?'] },
+  { id: 'shop', q: ['shop', 'buy', 'camera', 'laptop', 'printer', 'equipment', 'gear', 'accessories', 'order', 'delivery', 'in stock', 'available'],
+    a: 'Open the Shop (Store menu, Gear & devices) to browse laptops, printers, cameras and creator gear, 20 products per page. Add what you want and we confirm the price, stock and pick-up or delivery with you on WhatsApp. Payment for shop orders is arranged on WhatsApp.',
+    next: ['Where is the studio?', 'How do I contact the studio?'] },
+  { id: 'studio', q: ['book a shoot', 'photographer', 'videographer', 'photography', 'videography', 'drone', 'music video', 'event coverage', 'wedding', 'shoot', 'quotation', 'quote', 'editing service'],
+    a: 'We do photography, video coverage, music videos, drone and aerial shots, event coverage (including abroad) and photo and video editing. Use Book a shoot to request a quotation and we reply with availability and a price.',
+    next: ['Where is the studio?', 'What are your opening hours?'] },
+  { id: 'digital', q: ['website', 'web design', 'logo', 'graphic design', 'social media content', 'branding', 'digital services'],
+    a: 'Our Digital services include websites and online stores, AI video, AI images, graphic design, social media content and business automation. Open Digital services and send a short description to request a quotation.',
+    next: ['How do I contact the studio?'] },
+  { id: 'cyber', q: ['cybercafe', 'cyber cafe', 'browsing', 'printing', 'photocopy', 'scanning', 'lamination', 'repair'],
+    a: 'The studio offers printing and photocopying, cybercafe services and computer and printer repair. Visit us or message us on WhatsApp to confirm a service and price before you come.',
+    next: ['Where is the studio?', 'What are your opening hours?'] },
+  { id: 'location', q: ['where are you', 'address', 'location', 'directions', 'map', 'find you', 'where is the studio', 'studio location', 'visit', 'elelenwo', 'port harcourt', 'how do i get there'],
+    a: 'The studio is at 179 Old Refinery Road, Elelenwo, Port Harcourt, Rivers State. Open Contact & support on the website for the map and a Get directions button.',
+    next: ['What are your opening hours?', 'How do I contact the studio?'] },
+  { id: 'hours', q: ['hours', 'opening', 'open', 'close', 'closing', 'what time', 'sunday', 'saturday', 'weekend'],
+    a: null,
+    next: ['Where is the studio?', 'How do I contact the studio?'] },
+  { id: 'contact', q: ['contact', 'phone', 'whatsapp', 'call', 'speak to', 'human', 'support', 'agent', 'staff', 'person', 'email you', 'reach you'],
+    a: 'You can reach the studio on WhatsApp or by phone, or visit us. Use the button below to message us on WhatsApp and include your account email so we can find your account quickly.',
+    next: ['Where is the studio?', 'What are your opening hours?'] },
+  { id: 'tech', q: ['not working', 'error', 'bug', 'problem', 'issue', 'broken', 'cannot open', 'cant open', 'video not playing', 'page not loading', 'slow', 'crash', 'stuck'],
+    a: 'Sorry about that. Try refreshing the page, then log out and back in. If a video will not play, check your internet connection and try another browser. If it still fails, message us on WhatsApp with a screenshot and what you were doing, and we will fix it.',
+    next: ['How do I contact the studio?'] },
+  { id: 'about', q: ['about debone', 'who are you', 'what is debone', 'since when', 'how long', 'history', 'established', 'government approved', 'founded'],
+    a: 'DEBONE Photos & Video Editing Studio was established in 1997 and is government approved. We have served over 50,000 clients and trained over 1,400 students in photography, video, editing, printing, computer services, NIN and ID services and academy courses.',
+    next: ['What do you offer?', 'How do I enrol?'] },
+  { id: 'offer', q: ['what do you offer', 'what do you do', 'services', 'what can you do', 'what do you sell'],
+    a: 'DEBONE offers an online academy (live courses, bundles, webinars, challenges), photo and video services, printing and repair, NIN and ID services, digital services such as websites and AI video, and a shop for cameras, laptops, printers and creator gear.',
+    next: ['How do I enrol?', 'How do I book a shoot?', 'What does the shop sell?'] }
 ];
-function guideAnswer(text) {
-  const t = String(text || '').toLowerCase();
+
+const SMALLTALK = [
+  { id: 'hello', re: /^(hello|hi|hey|hiya|yo|good (morning|afternoon|evening)|howdy|sup|what'?s up|wassup)\b/, a: n => `Hello${n ? ' ' + n : ''}! Good to see you. I can help with enrolling, payments, lessons and live classes, assignments, results, certificates, your profile, and also the shop, NIN services and the studio. What would you like to know?` },
+  { id: 'howare', re: /how are you|how('?s| is) it going|how do you do|you good\b/, a: n => `I’m doing well, thanks for asking${n ? ', ' + n : ''}! What can I help you with today?` },
+  { id: 'thanks', re: /\b(thanks|thank you|thank u|thx|appreciate|cheers|much obliged)\b/, a: () => 'You’re welcome! Is there anything else I can help you with?' },
+  { id: 'bye', re: /\b(bye|goodbye|see you|see ya|good night|later|that'?s all|nothing else|i'?m done)\b/, a: n => `Take care${n ? ', ' + n : ''}, and good luck with your learning! I’m here whenever you need me.` },
+  { id: 'whoami', re: /who are you|what are you|your name|are you (a )?(bot|robot|real|human|ai)\b/, a: () => 'I’m the DEBONE assistant, a chatbot for students and visitors. I can answer questions about courses, payments, classes and our services, and I can point you to the studio team on WhatsApp when you need a person.' },
+  { id: 'cando', re: /what can you (do|help)|how can you help|help me\b|i need help|can you help/, a: () => 'I can help with: enrolling and payments, coupons and bundles, lessons and live classes, assignments and results, certificates, your profile and password, the shop, NIN and ID services, booking a shoot, and how to reach the studio. Just ask in your own words.' },
+  { id: 'praise', re: /\b(great|awesome|amazing|nice|cool|perfect|brilliant|you'?re (good|great|helpful))\b/, a: () => 'Glad that helped! Anything else you would like to ask?' },
+  { id: 'upset', re: /\b(angry|frustrated|annoyed|disappointed|upset|terrible|useless|stupid|worst|waste)\b/, a: n => `I’m sorry about that${n ? ', ' + n : ''}. Let’s get it sorted. Tell me what happened, or message the studio on WhatsApp so a person can look at it right away.` },
+  { id: 'yes', re: /^(yes|yeah|yep|yup|sure|ok|okay|alright|please|go on|continue)\b[.! ]*$/, a: null },
+  { id: 'no', re: /^(no|nope|nah|not really|no thanks|no thank you)\b[.! ]*$/, a: () => 'No problem. If anything else comes up, just ask.' }
+];
+
+function normText(s) { return String(s || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9₦%'\s]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function guideAnswer(text, lastTopic) {
+  const t = ' ' + normText(text) + ' ';
   let best = null, score = 0;
   GUIDES.forEach(g => {
-    const hits = g.q.filter(k => t.includes(k)).length;
-    if (hits > score) { score = hits; best = g; }
+    let s = 0;
+    g.q.forEach(k => {
+      const key = normText(k);
+      if (!key) return;
+      const hit = key.indexOf(' ') > -1 ? t.includes(' ' + key + ' ') || t.includes(key) : t.includes(' ' + key + ' ') || t.includes(' ' + key + 's ') || t.includes(' ' + key + 'ing ');
+      if (hit) s += key.indexOf(' ') > -1 ? 3 : 1;
+    });
+    if (g.id === lastTopic && s > 0) s += 0.5;
+    if (s > score) { score = s; best = g; }
   });
   return best;
+}
+function smartReply(text, ctx) {
+  const raw = String(text || '').trim();
+  const t = normText(raw);
+  const first = ctx.firstName || '';
+  const topicById = id => GUIDES.find(g => g.id === id);
+  // 1. Real questions about the studio or the course list get a live answer from our data
+  if (/\b(which|what|list|show).{0,20}\b(courses?|classes)\b|\bcourses? (do you|are|available)|available courses|what can i (learn|study)/.test(t) && ctx.courses.length) {
+    const open = ctx.courses.filter(c => !c.comingSoon).slice(0, 8), soon = ctx.courses.filter(c => c.comingSoon).slice(0, 4);
+    let r = 'Here are our courses right now:\n' + open.map(c => '• ' + c.title + ' (' + (c.free ? 'free' : '₦' + Number(c.price || 0).toLocaleString('en-NG')) + ')').join('\n');
+    if (soon.length) r += '\nComing soon: ' + soon.map(c => c.title).join(', ') + '.';
+    r += '\nOpen Browse courses to enrol.';
+    return { reply: r, topic: 'courses', next: ['How do I enrol?', 'Can I buy a bundle?', 'Do you have a coupon?'] };
+  }
+  // 2. Hours come from settings
+  const h = guideAnswer(raw, ctx.lastTopic);
+  if (h && h.id === 'hours') return { reply: 'We are open ' + (ctx.hours || 'Monday to Saturday, 7:00 am to 8:00 pm · Sunday, 2:00 pm to 7:00 pm') + '. The studio is at ' + (ctx.address || '179 Old Refinery Road, Elelenwo, Port Harcourt') + '. Hours can change on public holidays, so message us on WhatsApp if you are travelling a long way.', topic: 'hours', next: h.next };
+  // 3. Small talk (only when the message is mostly small talk)
+  const words = t.split(' ').length;
+  for (const s of SMALLTALK) {
+    if (s.re.test(t) && (!h || words <= 3)) {
+      if (s.id === 'yes') {
+        const last = topicById(ctx.lastTopic);
+        if (last && last.next && last.next.length) return { reply: 'Great. Here is something you may want to ask next: ' + last.next[0], topic: ctx.lastTopic, next: last.next };
+        return { reply: 'Sure. What would you like to know?', topic: null, next: ctx.defaults };
+      }
+      return { reply: s.a(first), topic: null, next: ctx.defaults, small: true };
+    }
+  }
+  // 4. Short follow ups such as "and the price?" or "how?"
+  if (!h && ctx.lastTopic && /^(how|why|when|where|and|what about|more|tell me more|explain|really)\b/.test(t) && words <= 5) {
+    const last = topicById(ctx.lastTopic);
+    if (last && last.a) return { reply: last.a + ' If you want a person to confirm, message the studio on WhatsApp.', topic: last.id, next: last.next };
+  }
+  if (h) {
+    const base = h.a;
+    const lead = ctx.studentNote && ctx.studentNote[h.id] ? ctx.studentNote[h.id] + ' ' : '';
+    return { reply: lead + base, topic: h.id, next: h.next };
+  }
+  return null;
 }
 function studentContext(user) {
   const enrolled = db.enrollments.filter(e => e.userId === user.id && e.status === 'active').map(e => {
@@ -1295,18 +1438,30 @@ route('POST', '/api/chat', async ctx => {
   if (!last) throw httpError(400, 'Please type your question.');
   const settings = Object.assign({}, SETTINGS_DEFAULTS, db.settings);
   const whatsapp = 'https://wa.me/' + String(settings.whatsapp || '2348035988889').replace(/\D/g, '');
-  const sug = ['How do I enrol?', 'My payment went through but the course is locked', 'How do I submit an assignment?', 'What do the grade colours mean?'];
+  const defaults = ['How do I enrol?', 'How do live classes work?', 'How do I get my certificate?', 'What does the shop sell?'];
+  const sctx = studentContext(user);
+  const studentNote = {};
+  if (sctx.paymentsPending > 0) studentNote.payment = 'I can see ' + sctx.paymentsPending + ' payment' + (sctx.paymentsPending > 1 ? 's' : '') + ' still pending on your account.';
+  if (sctx.awaitingMarks > 0) studentNote.grades = 'You have ' + sctx.awaitingMarks + ' submission' + (sctx.awaitingMarks > 1 ? 's' : '') + ' waiting to be marked.';
+  if (sctx.profileComplete < 100) studentNote.profile = 'Your profile is ' + sctx.profileComplete + '% complete.';
+  const lastBot = messages.filter(m => m.role === 'assistant').pop();
+  let lastTopic = null;
+  if (lastBot) { const lg = GUIDES.find(g => g.a && lastBot.content.startsWith(g.a.slice(0, 40))); if (lg) lastTopic = lg.id; }
+  const first = String(user.name || '').split(' ')[0];
+  const smart = smartReply(last.content, { firstName: first, lastTopic, courses: db.courses, hours: settings.hours, address: settings.address, defaults, studentNote });
+  const sug = (smart && smart.next && smart.next.length ? smart.next : defaults).slice(0, 4);
   if (process.env.ANTHROPIC_API_KEY) {
     const courses = db.courses.map(c => `- ${c.title}: ${c.free ? 'free' : '₦' + c.price}${c.comingSoon ? ' (coming soon, not open yet)' : ''}${c.liveLabel ? ' · ' + c.liveLabel : ''}`).join('\n');
+    const kbText = GUIDES.filter(g => g.a).map(g => '- ' + g.a).join('\n');
     const system = [
-      `You are the friendly support assistant inside the student dashboard of ${settings.businessName}, a photography, video, printing and computer services studio in Port Harcourt, Nigeria, with an online academy.`,
-      'Answer in clear, short, friendly English. Use simple steps when explaining how to do something. Never invent prices, dates or policies that are not listed here.',
+      `You are the friendly, conversational support assistant inside the student dashboard of ${settings.businessName}, a photography, video, printing and computer services studio in Port Harcourt, Nigeria, with an online academy. The studio was established in 1997 and is government approved.`,
+      'Talk like a warm, helpful person: greet students by first name, answer small talk briefly and naturally, ask a short clarifying question when the request is vague, and remember what was said earlier in the chat. Use clear, short English and simple steps. Never invent prices, dates, names or policies that are not listed here.',
       'For payment problems, refunds, account-specific issues you cannot check, or anything needing a person, say so and suggest contacting the studio on WhatsApp.',
       'Never ask for or repeat passwords or card details. Never reveal other students’ information.',
       `Studio contact: phones ${settings.phone1}, ${settings.phone2}; WhatsApp ${settings.whatsapp}; ${settings.address}; hours: ${settings.hours}.`,
       'Courses:\n' + courses,
-      'Dashboard guide: Browse courses to enrol; Payments shows payment status; Assignments to submit work and see results (red Fail below 50%, green Pass 50 to 74%, gold Distinction 75% and above); Performance shows progress; Live classes; Profile for photo and details; Take a tour button; bell for notifications; coupons for newsletter subscribers are entered at checkout.',
-      'This student: ' + JSON.stringify(studentContext(user))
+      'What you know about how things work:\n' + kbText,
+      'This student: ' + JSON.stringify(sctx)
     ].join('\n');
     try {
       const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1320,9 +1475,9 @@ route('POST', '/api/chat', async ctx => {
       console.error('Assistant provider error:', r.status);
     } catch (e) { console.error('Assistant provider failed:', e.message); }
   }
-  const g = guideAnswer(last.content);
-  const reply = g ? g.a : 'I can help with enrolling, payments, coupons, assignments, results, your profile, live classes and passwords. If your question is about something else, message the studio on WhatsApp and a person will reply.';
-  json(ctx.res, 200, { reply, source: g ? 'guide' : 'fallback', suggestions: sug, handoff: whatsapp });
+  if (smart) return json(ctx.res, 200, { reply: smart.reply, source: smart.small ? 'guide' : 'guide', suggestions: sug, handoff: whatsapp });
+  const fallback = (first ? first + ', I' : 'I') + ' am not sure I understood that one. I can help with enrolling, payments, lessons and live classes, assignments, results, certificates, your profile, the shop, NIN services and the studio. Could you rephrase, or pick one of the options below? For anything else, message the studio on WhatsApp and a person will reply.';
+  json(ctx.res, 200, { reply: fallback, source: 'fallback', suggestions: defaults, handoff: whatsapp });
 });
 
 /* ============ Feedback and suggestions ============ */
