@@ -159,22 +159,11 @@
 
   async function renderLive() {
     crumb.textContent = 'Live classes';
-    var courses = await allCourses();
-    var sessions = [], lessonsByCourse = {};
-    // Load independent course details in small parallel batches rather than serially.
-    for (var i = 0; i < courses.length; i += 5) {
-      var batch = courses.slice(i, i + 5);
-      var details = await Promise.all(batch.map(function (course) {
-        return api('/api/staff/courses/' + encodeURIComponent(course.id));
-      }));
-      details.forEach(function (result, index) {
-        var course = batch[index], c = result.course;
-        lessonsByCourse[course.id] = c.lessons || [];
-        (c.sessions || []).forEach(function (session) {
-          session.courseTitle = course.title; sessions.push(session);
-        });
-      });
-    }
+    // One compact staff request replaces the course list plus N full-course requests.
+    var payload = await api('/api/staff/teaching-overview');
+    var courses = payload.courses || [];
+    var sessions = payload.sessions || [];
+    var lessonsByCourse = payload.lessonsByCourse || {};
     sessions.sort(function (a, b) { return (b.startsAt || '').localeCompare(a.startsAt || ''); });
     var firstCourse = courses[0] ? courses[0].id : '';
 
@@ -490,24 +479,11 @@
   /* ---------- Assignments and marking ---------- */
   async function renderAssignments() {
     crumb.textContent = 'Assignments';
-    var courses = await allCourses();
-    var rows = [], lessonsByCourse = {};
-    for (var i = 0; i < courses.length; i += 5) {
-      var batch = courses.slice(i, i + 5);
-      var details = await Promise.all(batch.map(function (course) {
-        return api('/api/staff/courses/' + encodeURIComponent(course.id));
-      }));
-      details.forEach(function (result, index) {
-        var course = batch[index], c = result.course;
-        lessonsByCourse[course.id] = c.lessons || [];
-        (c.assignments || []).forEach(function (a) {
-          a.courseTitle = course.title;
-          var k = (c.lessons || []).findIndex(function (l) { return l.id === a.lessonId; });
-          a.lessonLabel = k < 0 ? '' : ' · Lesson ' + (k + 1);
-          rows.push(a);
-        });
-      });
-    }
+    // Fetch compact assignment metadata in a single authenticated request.
+    var payload = await api('/api/staff/teaching-overview');
+    var courses = payload.courses || [];
+    var rows = payload.assignments || [];
+    var lessonsByCourse = payload.lessonsByCourse || {};
     setView(head('Teaching', 'Assignments', 'Set work, read submissions, and give marks and feedback.') +
       '<section class="box"><h2>New assignment</h2>' +
       '<form class="form-grid" id="assign-form">' +

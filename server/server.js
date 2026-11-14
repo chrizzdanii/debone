@@ -3782,6 +3782,33 @@ route('GET', '/api/staff/payments', async ctx => {
   json(ctx.res, 200, { payments: rows });
 });
 
+/* Compact teaching overview: avoid downloading every lesson body and resource
+   just to show live classes or assignments in the admin dashboard. */
+route('GET', '/api/staff/teaching-overview', async ctx => {
+  requireStaff(ctx);
+  const courses = db.courses.map(c => ({ id: c.id, title: c.title }));
+  const titleById = new Map(courses.map(c => [c.id, c.title]));
+  const lessonsByCourse = {};
+  const lessonPositions = new Map();
+  for (const c of db.courses) {
+    lessonsByCourse[c.id] = (c.lessons || []).map(l => ({ id: l.id, title: l.title }));
+    lessonPositions.set(c.id, new Map((c.lessons || []).map((l, i) => [l.id, i + 1])));
+  }
+  const sessions = db.sessions.map(s => ({
+    ...sessionView(s, null),
+    recordingRaw: s.recordingUrl || '',
+    r2Uploaded: !!s.r2RecordingKey,
+    courseTitle: titleById.get(s.courseId) || ''
+  }));
+  const assignments = db.assignments.map(a => ({
+    ...a,
+    courseTitle: titleById.get(a.courseId) || '',
+    lessonLabel: lessonPositions.get(a.courseId)?.get(a.lessonId)
+      ? ' · Lesson ' + lessonPositions.get(a.courseId).get(a.lessonId) : ''
+  }));
+  json(ctx.res, 200, { courses, lessonsByCourse, sessions, assignments });
+});
+
 /* Staff reads a course's full lesson list (including drafts) */
 route('GET', '/api/staff/courses/:id', async ctx => {
   requireStaff(ctx);
