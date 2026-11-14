@@ -5,7 +5,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   var reference = Math.round(n * 1.5);
   var money = function (x) { return '₦' + Math.round(x).toLocaleString('en-NG'); };
   return '<span class="debone-price-comparison" aria-label="Illustrative price comparison">' +
-    '<s>' + money(reference) + '</s><span class="debone-value-badge">✦ 33% below comparison</span>' +
+    '<s>' + money(reference) + '</s><span class="debone-value-badge">33% below comparison</span>' +
     '</span>';
 };
 /* Store, bundles, talent, challenges, studio booking and quotations (v32). */
@@ -243,7 +243,8 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       e.preventDefault();
       var f = e.target, msg = $('ct-msg'), btn = f.querySelector('button[type=submit]');
       msg.className = 'form-ok'; msg.textContent = '';
-      var body = { name: f.name.value.trim(), email: f.email.value.trim(), category: 'Contact enquiry', message: f.message.value.trim() };
+      var topic = f.topic && f.topic.value ? f.topic.value : '';
+      var body = { name: f.name.value.trim(), email: f.email.value.trim(), category: 'Other', message: (topic ? '[Contact · ' + topic + '] ' : '[Contact] ') + f.message.value.trim() };
       btn.disabled = true; btn.textContent = 'Sending…';
       req('/api/feedback', { method: 'POST', body: body }).then(function (res) { msg.textContent = res.message; f.reset(); })
         .catch(function (err) { msg.className = 'form-error'; msg.textContent = err.message; })

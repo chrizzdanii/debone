@@ -5,7 +5,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   var reference = Math.round(n * 1.5);
   var money = function (x) { return '₦' + Math.round(x).toLocaleString('en-NG'); };
   return '<span class="debone-price-comparison" aria-label="Illustrative price comparison">' +
-    '<s>' + money(reference) + '</s><span class="debone-value-badge">✦ 33% below comparison</span>' +
+    '<s>' + money(reference) + '</s><span class="debone-value-badge">33% below comparison</span>' +
     '</span>';
 };
 /* Live courses page (v43): every live course with start date, schedule, seats and price. */

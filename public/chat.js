@@ -8,7 +8,7 @@
   var busy = false, panel, log, form, input, chips, sendBtn, fab, typing = null, handoff = 'https://wa.me/2348035988889';
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function icon(name) { return window.DIcons ? DIcons.get(name) : ''; }
-  var SUGGEST = ['How do I enrol in a course?', 'My payment went through but the course is locked', 'How do I submit an assignment?', 'What do the grade colours mean?', 'How do I reset my password?'];
+  var SUGGEST = ['How do I enrol in a course?', 'My payment went through but the course is locked', 'How do live classes work?', 'How do I get my certificate?', 'What courses do you have?'];
 
   function build() {
     fab = document.createElement('button');
@@ -142,7 +142,7 @@
       history = prior;
       prior.forEach(function (m) { var b = bubble(m.role === 'user' ? 'user' : 'bot', '', ''); b.querySelector('p').textContent = m.content; b.classList.add('restored'); });
     } else {
-      var greetFor = function (n) { return 'Hi ' + n + '! I am the DEBONE assistant. I can help with enrolling, payments, coupons, assignments, your results, your profile, live classes and passwords. What would you like help with?'; };
+      var greetFor = function (n) { return 'Hi ' + n + '! I am the DEBONE assistant. Ask me about enrolling, payments, lessons and live classes, assignments, results, certificates, your profile, the shop, NIN services or the studio. Just type in your own words. What would you like to know?'; };
       var greetEl = bubble('bot', '');
       greetEl.querySelector('p').textContent = greetFor('there');
       fetch('/api/me', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
