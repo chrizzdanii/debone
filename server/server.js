@@ -127,6 +127,7 @@ const pdfText = t => String(t || '').replace(/[^\x20-\x7E]/g, '').replace(/[\\()
 const cfgBool = k => { const v = (db.settings || {})[k]; return v === undefined ? !!SETTINGS_DEFAULTS[k] : !!v; };
 
 /* Fills in the starting content (courses, products, services, works, settings) the first time, and refreshes course details from courses.json. Runs once after the database is loaded. */
+const DEBONE_SHOP_11_IDS = ["locor-wide-format-printer", "debone-wide-format-printer-showcase", "canon-pixma-colour-inkjet-printer", "canon-pixma-compact-printer", "konica-minolta-bizhub-c203", "zebra-zt411-label-printer", "hp-desktop-computer-complete-set", "dji-mini-4k-drone", "sony-4k-professional-camcorder", "a3-pouch-laminating-machine", "futong-single-head-embroidery-machine"];
 function bootstrap() {
   if (!db.courses) {
     db.courses = JSON.parse(JSON.stringify(seed.courses));
@@ -140,6 +141,32 @@ function bootstrap() {
   if (!db.debonePhotoCatalogue50Applied) {
     db.products = productSeed.products.map(p => ({ id: p.id, name: p.name, cat: p.cat, summary: p.summary || '', description: p.description || '', price: p.price, imageUrl: p.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime }));
     db.debonePhotoCatalogue50Applied = true;
+    save();
+  }
+
+  // One-time additive import of 11 user-supplied DEBONE-branded product images.
+  // Preserve all existing products and admin edits; do not reset the shop catalogue.
+  if (!db.deboneShop11ImagesApplied) {
+    const suppliedIds = new Set(DEBONE_SHOP_11_IDS);
+    for (const sp of productSeed.products) {
+      if (!suppliedIds.has(sp.id) || db.products.some(p => p.id === sp.id)) continue;
+      db.products.push({ id: sp.id, name: sp.name, cat: sp.cat, summary: sp.summary || '', description: sp.description || '', price: sp.price, imageUrl: sp.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime });
+    }
+    db.deboneShop11ImagesApplied = true;
+    save();
+  }
+
+  // One-time additive import of the four separately supplied DEBONE catalogue images.
+  // Never reset the existing shop or override administrator changes.
+  if (!db.deboneShopFourMissingApplied) {
+    const fourIds = new Set(["white-photography-backdrop", "gopro-hero12-black-action-camera", "dual-channel-wireless-lapel-microphone-kit", "professional-shotgun-microphone"]);
+    let added = 0;
+    for (const sp of productSeed.products) {
+      if (!fourIds.has(sp.id) || db.products.some(p => p.id === sp.id)) continue;
+      db.products.push({ id: sp.id, name: sp.name, cat: sp.cat, summary: sp.summary || '', description: sp.description || '', price: sp.price, imageUrl: sp.image || null, imageData: null, createdAt: seedTime, updatedAt: seedTime });
+      added++;
+    }
+    db.deboneShopFourMissingApplied = true;
     save();
   }
 

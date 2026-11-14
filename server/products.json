@@ -471,6 +471,141 @@
       "description": "LED studio lights give you constant light you can see and adjust, which makes lighting setups faster and more predictable. They run cool, use less power than traditional lamps and suit portraits, product shots, interviews and video.\n\nCombine with a softbox and a light stand for professional results. Ask us what suits the size of your space.\n\n- Constant, adjustable light for photo and video\n- Runs cool and efficiently\n- Suits studios and home setups\n- Pair with a softbox and a stand",
       "price": null,
       "image": "/assets/debone-products/050-led-studio-light.webp"
+    },
+    {
+      "id": "locor-wide-format-printer",
+      "cat": "printing",
+      "name": "Locor Wide-Format Banner Printer",
+      "summary": "Large-format roll printer for colourful banners, signage and display graphics.",
+      "description": "A Locor-branded wide-format roll printer designed for producing large promotional graphics such as banners, shop signs and display prints. The supplied showcase image depicts a roll-fed printer producing a colourful car poster.\n\n- Suitable for large-format signage and advertising graphics\n- Roll-fed printing format for continuous media\n- Confirm the exact printer model, supported media width, ink type and condition before ordering",
+      "price": null,
+      "image": "/assets/debone-products/locor-wide-format-printer.webp"
+    },
+    {
+      "id": "debone-wide-format-printer-showcase",
+      "cat": "printing",
+      "name": "Wide-Format Digital Printing Machine",
+      "summary": "Commercial roll-fed printing machine for banners, posters and signage.",
+      "description": "A commercial wide-format digital printing machine for print shops and businesses producing promotional banners, display graphics and large-format advertising. The illustrated unit has a roll feed and a colour print output.\n\n- Ideal for signage, display graphics and banner production\n- Designed for wide-format roll media\n- Ask us to confirm the actual make, model, print width and ink system before purchase",
+      "price": null,
+      "image": "/assets/debone-products/debone-wide-format-printer-showcase.webp"
+    },
+    {
+      "id": "canon-pixma-colour-inkjet-printer",
+      "cat": "printing",
+      "name": "Canon PIXMA Colour Inkjet Printer",
+      "summary": "Compact Canon PIXMA-style colour printer for home, office and photo printing.",
+      "description": "A compact Canon PIXMA colour inkjet printer for printing everyday documents and colour images. Its small footprint suits desks, home offices and light business use.\n\n- Colour inkjet printing for documents and photos\n- Compact desktop design\n- Confirm the exact PIXMA model, supported paper sizes and ink cartridge type before ordering",
+      "price": null,
+      "image": "/assets/debone-products/canon-pixma-colour-inkjet-printer.webp"
+    },
+    {
+      "id": "canon-pixma-compact-printer",
+      "cat": "printing",
+      "name": "Canon PIXMA Compact Inkjet Printer",
+      "summary": "Space-saving Canon PIXMA-style desktop printer for everyday colour prints.",
+      "description": "A compact Canon PIXMA-style inkjet printer suitable for school assignments, home documents and occasional photo printing. This listing features the closed-front design shown in the supplied image.\n\n- Compact footprint for desks and small offices\n- Suitable for everyday documents and colour printing\n- Exact model, cartridge compatibility and functions should be confirmed before purchase",
+      "price": null,
+      "image": "/assets/debone-products/canon-pixma-compact-printer.webp"
+    },
+    {
+      "id": "konica-minolta-bizhub-c203",
+      "cat": "printing",
+      "name": "Konica Minolta bizhub C203 Photocopier",
+      "summary": "Office multifunction copier for copying, printing and document scanning.",
+      "description": "The Konica Minolta bizhub C203 is an office-class colour multifunction copier designed for document-heavy work environments. The supplied image shows a floor-standing machine with multiple paper drawers, an automatic document feeder and a control panel.\n\n- Suitable for office copying and document workflows\n- Multi-tray floor-standing design\n- Ask us to confirm the machine condition, accessories, meter count and supported functions",
+      "price": null,
+      "image": "/assets/debone-products/konica-minolta-bizhub-c203.webp"
+    },
+    {
+      "id": "zebra-zt411-label-printer",
+      "cat": "printing",
+      "name": "Zebra ZT411 Industrial Label Printer",
+      "summary": "Industrial thermal label printer for barcode, inventory and shipping labels.",
+      "description": "The Zebra ZT411 is an industrial printer designed for barcodes, product identification, inventory tracking and shipping labels. It supports thermal-transfer and direct-thermal printing, with print widths up to approximately 104 mm. The available resolution depends on the configuration.\n\n- Industrial label and barcode printing\n- Colour touchscreen for printer settings\n- Confirm printhead resolution, connectivity and media options before purchase\n- This is a label printer, not a PVC ID card printer",
+      "price": null,
+      "image": "/assets/debone-products/zebra-zt411-label-printer.webp"
+    },
+    {
+      "id": "hp-desktop-computer-complete-set",
+      "cat": "laptops",
+      "name": "HP Desktop Computer Complete Set",
+      "summary": "Desktop tower, monitor, keyboard and mouse for office, business and learning.",
+      "description": "A complete HP-branded desktop computer setup with a monitor, system unit, keyboard and mouse, as illustrated. Suitable for everyday office applications, data entry, schoolwork and general business use.\n\n- Complete desktop workstation arrangement\n- Comfortable full-size keyboard and separate monitor\n- Processor, RAM, storage, screen size and operating system depend on the actual available unit; confirm before ordering",
+      "price": null,
+      "image": "/assets/debone-products/hp-desktop-computer-complete-set.webp"
+    },
+    {
+      "id": "dji-mini-4k-drone",
+      "cat": "cameras",
+      "name": "DJI Mini 4K Camera Drone",
+      "summary": "Compact camera drone for aerial photos and 4K video.",
+      "description": "The DJI Mini 4K is a lightweight foldable camera drone designed for aerial photography and video. It supports 4K video recording at up to 30 fps and has a take-off weight under 249 g.\n\n- 4K/30 fps aerial video capture\n- Lightweight foldable design for travel and location work\n- Useful for property, event and landscape aerial footage\n- Confirm whether the package includes a controller, batteries and carrying accessories",
+      "price": null,
+      "image": "/assets/debone-products/dji-mini-4k-drone.webp"
+    },
+    {
+      "id": "sony-4k-professional-camcorder",
+      "cat": "cameras",
+      "name": "Sony Professional 4K Video Camcorder",
+      "summary": "Professional handheld camcorder for events, interviews and video coverage.",
+      "description": "A Sony-style professional 4K handheld camcorder with a top carry handle, side controls, eyepiece and large zoom lens, as illustrated in the supplied promotional image. Suitable for event coverage, interviews and documentary-style video work.\n\n- Professional handheld camcorder form factor\n- Dedicated video controls and zoom-lens layout\n- Confirm the exact Sony model, recording formats, sensor and included accessories before ordering",
+      "price": null,
+      "image": "/assets/debone-products/sony-4k-professional-camcorder.webp"
+    },
+    {
+      "id": "a3-pouch-laminating-machine",
+      "cat": "printing",
+      "name": "A3 Desktop Pouch Laminating Machine",
+      "summary": "Desktop laminator for protecting certificates, photos and printed documents.",
+      "description": "A desktop pouch laminating machine for sealing documents inside protective laminating film. Suitable for certificates, office notices, school materials and printed photographs when used with the correct pouches.\n\n- Tabletop document laminating design\n- Useful for protecting frequently handled prints\n- Confirm the supported maximum paper size, pouch thickness and temperature controls before ordering",
+      "price": null,
+      "image": "/assets/debone-products/a3-pouch-laminating-machine.webp"
+    },
+    {
+      "id": "futong-single-head-embroidery-machine",
+      "cat": "printing",
+      "name": "FUTONG Single-Head Embroidery Machine",
+      "summary": "Computerised embroidery machine for custom garment and textile decoration.",
+      "description": "A FUTONG-branded single-head computerised embroidery machine with multiple thread positions and a touchscreen-style control unit, as shown in the supplied image. Designed for customised embroidery on compatible garments and textile products.\n\n- Multi-needle embroidery head and thread station\n- Suitable for garment branding and personalised textile designs\n- Confirm needle count, embroidery area, included hoops, power requirements and actual model before ordering",
+      "price": null,
+      "image": "/assets/debone-products/futong-single-head-embroidery-machine.webp"
+    },
+    {
+      "id": "white-photography-backdrop",
+      "cat": "photo",
+      "name": "White Photography Backdrop",
+      "summary": "Seamless white studio background roll for clean portraits, passport photographs and product photography.",
+      "description": "A professional seamless white photography backdrop for portraits, passport photos, fashion shoots, product photography and studio content. The white roll is supported by a horizontal crossbar and two adjustable stands, creating a clean continuous sweep from the background to the floor.\n\n- Plain white background for a bright, distraction-free setting\n- Smooth roll-down sweep for full-length portraits and products\n- Suitable for photo studios, school portraits and creative content\n- Stand and crossbar shown in the supplied promotional image; confirm included accessories before ordering\n\nAsk DEBONE about available backdrop sizes, materials and support-stand options.",
+      "price": null,
+      "image": "/assets/debone-products/white-photography-backdrop.webp"
+    },
+    {
+      "id": "gopro-hero12-black-action-camera",
+      "cat": "cameras",
+      "name": "Action Camera — GoPro HERO12 Black",
+      "summary": "Compact waterproof action camera with 5.3K video, front and rear displays, and advanced video stabilisation.",
+      "description": "The GoPro HERO12 Black is a compact action camera designed for travel, sports, outdoor filming, behind-the-scenes coverage and dynamic content creation. It records detailed 5.3K video and uses HyperSmooth 6.0 stabilisation to reduce camera shake when filming on the move.\n\n- 5.3K video at up to 60 fps and 4K at up to 120 fps\n- 27MP photos and HDR video/photo modes\n- Front colour display and rear touchscreen\n- Waterproof to 10 metres without a separate housing\n- Built-in folding mounting fingers and USB-C connection\n\nThe DEBONE-branded image is an AI-rendered product illustration; confirm the exact model and package contents before purchase.",
+      "price": null,
+      "image": "/assets/debone-products/gopro-hero12-black-action-camera.webp"
+    },
+    {
+      "id": "dual-channel-wireless-lapel-microphone-kit",
+      "cat": "cameras",
+      "name": "Dual-Channel Wireless Lapel Microphone Kit",
+      "summary": "Two clip-on microphones with a wireless receiver for interviews, presentations and two-person recordings.",
+      "description": "A dual-channel wireless lavalier microphone kit for interviews, podcasts, wedding coverage, online lessons, livestreams and mobile video production. The illustrated set includes two bodypack-style transmitters with clip-on lapel microphones and one compact receiver, allowing two speakers to be recorded through one system.\n\n- Two wireless transmitters for two-person audio capture\n- Compact receiver with status display and audio output\n- Clip-on lapel microphones and foam windscreens\n- Portable arrangement for interviews and event coverage\n- Accessories shown include cables and charging components; exact package contents depend on the supplied model\n\nBrand, wireless range, battery life and compatibility should be confirmed with DEBONE before ordering.",
+      "price": null,
+      "image": "/assets/debone-products/dual-channel-wireless-lapel-microphone-kit.webp"
+    },
+    {
+      "id": "professional-shotgun-microphone",
+      "cat": "cameras",
+      "name": "Professional Shotgun Microphone",
+      "summary": "Directional camera microphone with foam windscreen and shock mount for focused video audio recording.",
+      "description": "A professional-style directional shotgun microphone designed to capture focused speech and sound for interviews, documentaries, short films, event coverage and location recording. Its long microphone body, foam windscreen and suspended shock mount are designed to support camera-based audio work while helping reduce handling noise.\n\n- Directional shotgun-style microphone design\n- Foam windscreen for light wind and breath-noise reduction\n- Shock mount with adjustable camera or accessory mounting foot\n- XLR-style audio connection shown in the product image\n- Useful for interviews, filmmaking and professional video setups\n\nThe image is an AI-rendered reference; confirm the actual microphone model, power requirements and connector type before purchase.",
+      "price": null,
+      "image": "/assets/debone-products/professional-shotgun-microphone.webp"
     }
   ]
 }
