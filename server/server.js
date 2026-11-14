@@ -3337,6 +3337,37 @@ function canSeeCourse(user, courseId) {
   return !!c && (isStaff(user) || courseAccess(user, c));
 }
 
+/* Consolidated student class data: one authenticated request instead of N course requests. */
+route('GET', '/api/me/sessions', async ctx => {
+  const user = requireUser(ctx);
+  const allowed = new Set(db.courses.filter(c => canSeeCourse(user, c.id)).map(c => c.id));
+  const sessions = db.sessions.filter(s => allowed.has(s.courseId))
+    .sort((a, b) => (a.startsAt || '').localeCompare(b.startsAt || ''))
+    .map(s => sessionView(s, user));
+  json(ctx.res, 200, { sessions });
+});
+
+route('GET', '/api/me/assignments', async ctx => {
+  const user = requireUser(ctx);
+  const allowed = new Set(db.courses.filter(c => canSeeCourse(user, c.id)).map(c => c.id));
+  const mine = new Map(db.submissions.filter(s => s.userId === user.id).map(s => [s.assignmentId, s]));
+  const grouped = new Map();
+  db.assignments.filter(a => allowed.has(a.courseId)).forEach(a => {
+    const sub = mine.get(a.id);
+    const item = {
+      id: a.id, lessonId: a.lessonId || null, title: a.title, instructions: a.instructions,
+      dueAt: a.dueAt || null, maxMarks: a.maxMarks,
+      submission: sub ? { id: sub.id, text: sub.text, link: sub.link, submittedAt: sub.submittedAt,
+        marks: sub.marks ?? null, feedback: sub.feedback || '', gradedAt: sub.gradedAt || null,
+        grade: sub.marks == null ? null : gradeOf(sub.marks, a.maxMarks) } : null
+    };
+    if (!grouped.has(a.courseId)) grouped.set(a.courseId, []);
+    grouped.get(a.courseId).push(item);
+  });
+  for (const items of grouped.values()) items.sort((a,b) => (a.dueAt || '').localeCompare(b.dueAt || ''));
+  json(ctx.res, 200, { courses: [...grouped].map(([courseId, assignments]) => ({ courseId, assignments })) });
+});
+
 route('GET', '/api/courses/:id/sessions', async ctx => {
   const user = requireUser(ctx);
   if (!canSeeCourse(user, ctx.params.id)) throw httpError(403, 'Enrol in this course to join its live classes.');

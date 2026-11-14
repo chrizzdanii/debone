@@ -58,14 +58,7 @@
     var enrolled = dash.courses.filter(function (c) { return c.enrolled; });
     if (!enrolled.length) { setView(head('Learn live', 'Live classes') + empty('Enrol in a course to see its live classes.')); return; }
 
-    var all = [];
-    for (var i = 0; i < enrolled.length; i += 5) {
-      var batch = enrolled.slice(i, i + 5);
-      var results = await Promise.all(batch.map(function (course) {
-        return api('/api/courses/' + encodeURIComponent(course.id) + '/sessions');
-      }));
-      results.forEach(function (r) { (r.sessions || []).forEach(function (s) { all.push(s); }); });
-    }
+    var all = (await api('/api/me/sessions')).sessions || [];
     var live = all.filter(function (s) { return s.status === 'live'; });
     var upcoming = all.filter(function (s) { return s.status === 'scheduled'; });
     var past = all.filter(function (s) { return s.status === 'ended'; });
@@ -234,16 +227,11 @@
     if (window.DeboneZoomProfile && !dash.user.zoomName) { window.DeboneZoomProfile.show(); }
     var enrolled = dash.courses.filter(function (c) { return c.enrolled; });
     if (!enrolled.length) { setView(head('Practice & marks', 'Assignments') + empty('Enrol in a course to see its assignments.')); return; }
-    var blocks = [];
-    for (var i = 0; i < enrolled.length; i += 5) {
-      var batch = enrolled.slice(i, i + 5);
-      var results = await Promise.all(batch.map(function (course) {
-        return api('/api/courses/' + encodeURIComponent(course.id) + '/assignments');
-      }));
-      results.forEach(function (r, index) {
-        if (r.assignments && r.assignments.length) blocks.push({ course: batch[index], items: r.assignments });
-      });
-    }
+    var result = await api('/api/me/assignments');
+    var courseMap = new Map(enrolled.map(function (c) { return [String(c.id), c]; }));
+    var blocks = (result.courses || []).filter(function (b) {
+      return b.assignments && b.assignments.length && courseMap.has(String(b.courseId));
+    }).map(function (b) { return { course: courseMap.get(String(b.courseId)), items: b.assignments }; });
     if (!blocks.length) { setView(head('Practice & marks', 'Assignments') + empty('No assignments have been set yet.')); return; }
 
     setView(head('Practice & marks', 'Assignments', 'Submit your work, track due dates and see your marks and feedback.') +
