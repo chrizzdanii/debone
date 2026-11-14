@@ -51,17 +51,25 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_URL = (process.env.PUBLIC_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY || '';
 const PAYSTACK_BASE = (process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co').replace(/\/$/, '');
-const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true' || /^https:\/\//.test(PUBLIC_URL);
+const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true' || !!process.env.VERCEL || process.env.NODE_ENV === 'production' || /^https:\/\//.test(PUBLIC_URL);
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
-const SESSION_SECRET = process.env.SESSION_SECRET || (() => {
-  // On Vercel nothing can be saved to disk, so a missing secret is derived from the Supabase key (stable across restarts)
-  if (SUPABASE) return crypto.createHash('sha256').update('debone-session:' + process.env.SUPABASE_SERVICE_ROLE_KEY).digest('hex');
+// Session keys must be independent from database and payment credentials.
+// Production deployments must supply a stable, random SESSION_SECRET.
+const SESSION_SECRET = (() => {
+  const configured = String(process.env.SESSION_SECRET || '').trim();
+  if (configured) {
+    if (configured.length < 32) throw new Error('SESSION_SECRET must contain at least 32 characters.');
+    return configured;
+  }
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET is required in production. Set a random 32+ character value in your hosting environment.');
+  }
   fs.mkdirSync(DATA_DIR, { recursive: true });
   if (fs.existsSync(SECRET_FILE)) return fs.readFileSync(SECRET_FILE, 'utf8').trim();
-  const s = crypto.randomBytes(32).toString('hex');
-  fs.writeFileSync(SECRET_FILE, s, { mode: 0o600 });
-  return s;
+  const secret = crypto.randomBytes(32).toString('hex');
+  fs.writeFileSync(SECRET_FILE, secret, { mode: 0o600 });
+  return secret;
 })();
 
 /* ---------- Database (JSON file, written atomically) ---------- */
@@ -308,13 +316,21 @@ function readSession(req) {
   return user;
 }
 
+// Bounded in-process limiter. On serverless deployments, also enforce a
+// distributed rate limit at the edge/WAF; memory does not persist across instances.
 const hits = new Map();
 function limited(key, max = 10, windowMs = 60000) {
   const t = Date.now();
-  const arr = (hits.get(key) || []).filter(x => t - x < windowMs);
-  arr.push(t);
-  hits.set(key, arr);
-  return arr.length > max;
+  if (hits.size > 5000) {
+    for (const [k, v] of hits) if (v.expires <= t) hits.delete(k);
+    while (hits.size > 5000) hits.delete(hits.keys().next().value);
+  }
+  const old = hits.get(key);
+  const item = old && old.expires > t ? old : { count: 0, expires: t + windowMs };
+  item.count++;
+  hits.delete(key);
+  hits.set(key, item);
+  return item.count > max;
 }
 
 const PROFILE_SPEC = {
@@ -774,7 +790,13 @@ async function readJson(req, limit = 100 * 1024) {
   if (!buf.length) return {};
   try { return JSON.parse(buf.toString('utf8')); } catch { throw httpError(400, 'Invalid request'); }
 }
-const clientIp = req => String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || (req.socket && req.socket.remoteAddress) || 'unknown';
+// Never trust an arbitrary X-Forwarded-For header supplied by a visitor.
+// Vercel sets x-real-ip at its trusted edge; otherwise use the socket address.
+const clientIp = req => {
+  const raw = process.env.VERCEL ? req.headers['x-real-ip'] : null;
+  const candidate = String(raw || req.socket?.remoteAddress || 'unknown').trim();
+  return /^[0-9a-fA-F:.]+$/.test(candidate) ? candidate.slice(0, 64) : 'unknown';
+};
 
 
 /* ---------- Auth ---------- */
@@ -3931,14 +3953,26 @@ async function handler(req, res) {
       return json(res, 200, { ok: true, ran: ['reminders', 'schedule checks'] });
     }
     if (pathname.startsWith('/api/')) {
-      if (req.method !== 'GET' && req.method !== 'HEAD') {
-        // Browsers send Origin on every change request. Reject requests made from another website.
-        const origin = req.headers.origin;
-        if (origin) {
-          let oh = '';
-          try { oh = new URL(origin).host; } catch (e) { oh = ''; }
-          const allowed = [req.headers.host, new URL(PUBLIC_URL).host];
-          if (!oh || !allowed.includes(oh)) return json(res, 403, { error: 'This request was blocked for security reasons.' });
+      if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+        // Webhook callbacks authenticate separately using their provider signature.
+        // For cookie-authenticated browser mutations, enforce same-origin requests.
+        if (!pathname.endsWith('/webhook') && req.headers.cookie?.includes('dsid=')) {
+          const expected = new URL(PUBLIC_URL).origin;
+          const origin = req.headers.origin;
+          const fetchSite = req.headers['sec-fetch-site'];
+          let source = origin;
+          if (!source && req.headers.referer) {
+            try { source = new URL(req.headers.referer).origin; } catch { source = ''; }
+          }
+          // Missing both Origin and Referer is rejected for authenticated writes.
+          if (!source || source !== expected || (fetchSite && !['same-origin', 'none'].includes(fetchSite))) {
+            return json(res, 403, { error: 'This request was blocked for security reasons.' });
+          }
+        } else if (req.headers.origin && !pathname.endsWith('/webhook')) {
+          // Public endpoints also reject cross-site browser submissions.
+          if (req.headers.origin !== new URL(PUBLIC_URL).origin) {
+            return json(res, 403, { error: 'This request was blocked for security reasons.' });
+          }
         }
       }
       const found = routes.map(r => ({ r, m: r.method === req.method ? r.re.exec(pathname) : null })).find(x => x.m);
