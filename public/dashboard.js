@@ -210,7 +210,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       '<p>' + esc(c.summary) + '</p>' +
       '<div><div class="meta-row"><span>' + c.completed + ' of ' + c.total + ' lessons</span><span>' + c.progress + '%</span></div>' +
         '<div class="meter teal"><i data-w="' + c.progress + '"></i></div></div>' +
-      '<div class="foot"><a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">' + label + '</a></div>' +
+      (c.comingSoon ? waitlistBlock(c) : '<div class="foot"><a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">' + label + '</a></div>') +
     '</article>';
   }
 
@@ -248,7 +248,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
 
   function browseCard(c, i) {
     var status, action, extra = '';
-    if (c.comingSoon && !c.enrolled) {
+    if (c.comingSoon) {
       status = '<span class="tag soon">Coming soon</span>';
       action = '';
       extra = waitlistBlock(c);
@@ -261,7 +261,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     }
     var priceLine = (c.free || c.comingSoon || c.enrolled) ? '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons</p>'
       : '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons</p>' + offerBlock(c);
-    return '<article class="dcourse' + (c.offer && !c.enrolled && !c.comingSoon ? ' has-offer' : '') + (c.comingSoon && !c.enrolled ? ' is-soon' : '') + '" style="--i:' + (i || 0) + '">' +
+    return '<article class="dcourse' + (c.offer && !c.enrolled && !c.comingSoon ? ' has-offer' : '') + (c.comingSoon ? ' is-soon' : '') + '" style="--i:' + (i || 0) + '">' +
       (c.offer && !c.enrolled && !c.comingSoon ? '<span class="corner-ribbon">' + c.offer.percent + '% OFF</span>' : '') + thumb(c) + status +
       '<h3>' + esc(c.title) + '</h3>' +
       '<p>' + esc(c.summary) + '</p>' + priceLine + extra +
@@ -990,31 +990,40 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
 
     if (name === 'live' || name === 'assignments' || name === 'performance' || name === 'certificates' || name === 'reviews' || name === 'downloads' || name === 'recordings' || name === 'requests' || name === 'referrals' || name === 'community' || name === 'portfolio' || name === 'bundles' || name === 'bundle') return window.DashExtras.render(name, arg);
     if (name === 'overview') return renderOverview();
-    if (name === 'courses') { renderCourses(); refreshCatalogueStatus(); return; }
-    if (name === 'browse') { renderBrowse(); refreshCatalogueStatus(); return; }
+    if (name === 'courses') return renderCourses();
+    if (name === 'browse') return renderBrowse();
     if (name === 'payments') return renderPayments();
     if (name === 'profile') return renderProfile();
     if (name === 'course') return renderCourse(arg ? decodeURIComponent(arg) : null);
   }
 
-  /* Refresh course status from the server when entering course listings.
-     Academy and student pages must use the same database-backed comingSoon flag.
-     Render cached data immediately, then replace it only if the view is still open. */
-  var catalogueRefresh = null;
-  var catalogueRefreshAt = 0;
-  function refreshCatalogueStatus() {
-    var now = Date.now();
-    if (catalogueRefresh || now - catalogueRefreshAt < 1500) return;
-    catalogueRefreshAt = now;
-    catalogueRefresh = api('/api/dashboard').then(function (fresh) {
+  // The academy reads the latest course status from the server. Keep the student
+  // catalogue in sync when the admin changes Coming Soon / enrolment status.
+  var courseStatusRefresh = null;
+  var courseStatusRequestId = 0;
+  async function refreshCourseStatusOnNavigation() {
+    var section = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
+    if (section !== 'courses' && section !== 'browse') return;
+    var requestId = ++courseStatusRequestId;
+    if (!courseStatusRefresh) {
+      courseStatusRefresh = api('/api/dashboard').finally(function () { courseStatusRefresh = null; });
+    }
+    try {
+      var fresh = await courseStatusRefresh;
+      if (requestId !== courseStatusRequestId || !state.d) return;
       state.d = fresh;
-      var section = (location.hash || '#overview').slice(1).split('/')[0];
-      if (section === 'courses') renderCourses();
-      else if (section === 'browse') renderBrowse();
-    }).catch(function () {
-      // Retain the last successfully loaded catalogue if the network is unavailable.
-    }).finally(function () { catalogueRefresh = null; });
+      var current = (location.hash || '#overview').replace(/^#/, '').split('/')[0];
+      if (current === 'courses') renderCourses();
+      else if (current === 'browse') renderBrowse();
+    } catch (err) {
+      // Preserve the already rendered catalogue if connectivity is interrupted.
+      console.warn('Unable to refresh course status:', err);
+    }
   }
+  window.addEventListener('hashchange', refreshCourseStatusOnNavigation);
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) refreshCourseStatusOnNavigation();
+  });
 
   /* ---------- Global events ---------- */
   document.addEventListener('click', function (e) {
