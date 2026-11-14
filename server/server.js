@@ -2988,6 +2988,19 @@ route('PATCH', '/api/staff/products/:id', async ctx => {
   save();
   json(ctx.res, 200, { product: productView(p) });
 });
+/* The order of db.products is the order the shop shows. The admin drags rows (or types a position) and sends the new id order here. */
+route('PUT', '/api/staff/products/order', async ctx => {
+  requireStaff(ctx, true);
+  const ids = Array.isArray(ctx.body.ids) ? ctx.body.ids.map(String) : null;
+  if (!ids || !ids.length) throw httpError(400, 'Send the product ids in the order you want.');
+  const byId = new Map(db.products.map(x => [x.id, x]));
+  const seen = new Set(), first = [];
+  ids.forEach(id => { if (byId.has(id) && !seen.has(id)) { seen.add(id); first.push(byId.get(id)); } });
+  // products that were not in the list (for example added meanwhile) keep their relative order after the listed ones
+  db.products = first.concat(db.products.filter(x => !seen.has(x.id)));
+  save();
+  json(ctx.res, 200, { ok: true, count: db.products.length });
+});
 route('DELETE', '/api/staff/products/:id', async ctx => {
   requireStaff(ctx, true);
   db.products = db.products.filter(x => x.id !== ctx.params.id);
