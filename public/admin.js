@@ -986,17 +986,17 @@
     var cats = d.categories;
     var catLabel = function (id) { var c = cats.find(function (x) { return x.id === id; }); return c ? c.label : id; };
     setView(head('Shop', 'Shop products', 'Add, edit and remove the products customers see in the shop.') +
-      '<div class="dt-tools"><span class="muted">' + d.products.length + ' products</span><span class="dt-tools-btns">' +
+      '<div class="dt-tools"><span class="muted">' + d.products.length + ' products <span class="ord-hint">· Drag the handle, type a position, or use the arrows to choose the order customers see in the shop.</span> <b class="ord-state" id="ord-state" aria-live="polite"></b></span><span class="dt-tools-btns">' +
       (d.products.length ? '<button class="btn btn-ghost btn-danger" type="button" id="p-delall">Delete all</button>' : '<button class="btn btn-ghost" type="button" id="p-restore">Restore the original catalogue</button>') +
       '<button class="btn btn-solid" type="button" id="p-new">Add product</button></span></div>' +
-      '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Photo</th><th></th></tr></thead><tbody>' +
+      '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th class="ord-h">Order</th><th>Product</th><th>Category</th><th>Price</th><th>Photo</th><th></th></tr></thead><tbody>' +
       d.products.map(function (p, i) {
-        return '<tr style="--i:' + i + '"><td><div class="thumb-cell">' + (p.image ? '<img src="' + esc(p.image) + '" alt="">' : '<span class="thumb-empty">No photo</span>') +
+        return '<tr style="--i:' + i + '" data-id="' + esc(p.id) + '"><td class="ord-cell"><div class="ord"><button type="button" class="ord-grip" aria-label="Drag to reorder ' + esc(p.name) + '" title="Drag to move"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button><input class="ord-n" type="number" min="1" max="' + d.products.length + '" value="' + (i + 1) + '" aria-label="Position of ' + esc(p.name) + ' in the shop"><span class="ord-ud"><button type="button" data-mv="-1" aria-label="Move up">&#9650;</button><button type="button" data-mv="1" aria-label="Move down">&#9660;</button></span></div></td><td><div class="thumb-cell">' + (p.image ? '<img src="' + esc(p.image) + '" alt="">' : '<span class="thumb-empty">No photo</span>') +
           '<div><b>' + esc(p.name) + '</b><p class="muted small">' + esc(p.summary || '') + '</p></div></div></td>' +
           '<td>' + esc(catLabel(p.cat)) + '</td><td>' + (p.price ? naira(p.price) : '<span class="muted">On request</span>') + '</td>' +
           '<td>' + (p.hasImage ? '<span class="gpill pass">Uploaded</span>' : p.image ? '<span class="gpill none">Stock photo</span>' : '<span class="gpill none">None</span>') + '</td>' +
           '<td class="dt-act"><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(p.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(p.id) + '">Delete</button></td></tr>';
-      }).join('') + (d.products.length ? '' : '<tr><td colspan="5" class="muted">The shop has no products.</td></tr>') + '</tbody></table></div></section>');
+      }).join('') + (d.products.length ? '' : '<tr><td colspan="6" class="muted">The shop has no products.</td></tr>') + '</tbody></table></div></section>');
     document.getElementById('p-new').addEventListener('click', function () { productForm(cats, null); });
     var delAll = document.getElementById('p-delall');
     if (delAll) delAll.addEventListener('click', function () {
@@ -1027,6 +1027,72 @@
       try { var r = await api('/api/staff/products/restore-defaults', { method: 'POST', body: {} }); toast(r.added + ' products restored.'); renderProducts(); }
       catch (ex) { toast(ex.message, 'err'); restore.disabled = false; }
     });
+    /* ---- shop order: drag a row, type a position, or use the arrows. Saved straight away; the shop shows products in this order. ---- */
+    (function () {
+      var tb = view.querySelector('table.dt tbody'); if (!tb || !d.products.length) return;
+      var state = document.getElementById('ord-state'), timer = 0, saving = Promise.resolve();
+      function rows() { return Array.prototype.slice.call(tb.querySelectorAll('tr[data-id]')); }
+      function renumber() { rows().forEach(function (r, i) { var n = r.querySelector('.ord-n'); if (n) n.value = i + 1; }); }
+      function say(t, bad) { if (!state) return; state.textContent = t; state.className = 'ord-state' + (bad ? ' bad' : ''); clearTimeout(timer); if (!bad && t) timer = setTimeout(function () { state.textContent = ''; }, 2600); }
+      function save() {
+        var ids = rows().map(function (r) { return r.getAttribute('data-id'); });
+        say('Saving order…');
+        saving = saving.then(function () { return api('/api/staff/products/order', { method: 'PUT', body: { ids: ids } }); })
+          .then(function () { say('Order saved ✓'); })
+          .catch(function (e) { say('Not saved', true); toast(e.message, 'err'); renderProducts(); });
+      }
+      function moveTo(row, idx) {
+        var all = rows(); idx = Math.max(0, Math.min(all.length - 1, idx));
+        var cur = all.indexOf(row); if (cur === idx) { renumber(); return; }
+        var ref = idx > cur ? all[idx].nextElementSibling : all[idx];
+        tb.insertBefore(row, ref);
+        row.classList.remove('ord-landed'); void row.offsetWidth; row.classList.add('ord-landed');
+        renumber(); save();
+        if (row.scrollIntoView) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+      tb.addEventListener('change', function (e) {
+        var n = e.target.closest && e.target.closest('.ord-n'); if (!n) return;
+        var v = parseInt(n.value, 10); if (!isFinite(v)) return renumber();
+        moveTo(n.closest('tr'), v - 1);
+      });
+      tb.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList.contains('ord-n')) { e.preventDefault(); e.target.blur(); } });
+      tb.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('[data-mv]'); if (!b) return;
+        var row = b.closest('tr'); moveTo(row, rows().indexOf(row) + Number(b.getAttribute('data-mv')));
+      });
+      /* pointer drag (mouse, pen and touch) */
+      var drag = null;
+      tb.addEventListener('pointerdown', function (e) {
+        var g = e.target.closest && e.target.closest('.ord-grip'); if (!g || e.button > 0) return;
+        e.preventDefault();
+        var row = g.closest('tr'), rect = row.getBoundingClientRect();
+        drag = { row: row, startIdx: rows().indexOf(row), dy: e.clientY - rect.top, id: e.pointerId };
+        row.classList.add('ord-drag'); document.body.classList.add('ord-dragging');
+        try { g.setPointerCapture(e.pointerId); } catch (x) {}
+        loop();
+      });
+      var lastY = 0;
+      tb.addEventListener('pointermove', function (e) {
+        if (!drag) return; lastY = e.clientY;
+        var r = drag.row, others = rows().filter(function (x) { return x !== r; }), target = null;
+        for (var i = 0; i < others.length; i++) { var b = others[i].getBoundingClientRect(); if (e.clientY < b.top + b.height / 2) { target = others[i]; break; } }
+        if (target !== r.nextElementSibling) { var before = {}; others.forEach(function (o) { before[o.getAttribute('data-id')] = o.getBoundingClientRect().top; });
+          tb.insertBefore(r, target);
+          others.forEach(function (o) { var dy = before[o.getAttribute('data-id')] - o.getBoundingClientRect().top; if (dy) { o.style.transition = 'none'; o.style.transform = 'translateY(' + dy + 'px)'; requestAnimationFrame(function () { o.style.transition = 'transform .25s cubic-bezier(.2,.8,.2,1)'; o.style.transform = ''; }); } });
+          renumber(); }
+      });
+      function loop() { /* edge auto-scroll while dragging */
+        if (!drag) return;
+        if (lastY && lastY < 90) window.scrollBy(0, -14); else if (lastY && window.innerHeight - lastY < 90) window.scrollBy(0, 14);
+        requestAnimationFrame(loop);
+      }
+      function end() {
+        if (!drag) return; var r = drag.row, moved = rows().indexOf(r) !== drag.startIdx;
+        r.classList.remove('ord-drag'); document.body.classList.remove('ord-dragging'); drag = null; lastY = 0;
+        if (moved) { r.classList.add('ord-landed'); save(); }
+      }
+      tb.addEventListener('pointerup', end); tb.addEventListener('pointercancel', end);
+    })();
     view.querySelectorAll('[data-edit]').forEach(function (b) {
       b.addEventListener('click', function () { productForm(cats, d.products.find(function (p) { return p.id === b.getAttribute('data-edit'); })); });
     });
