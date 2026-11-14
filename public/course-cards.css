@@ -1,0 +1,127 @@
+/* Student dashboard: My courses and Browse courses cards.
+   One layout for both pages. Loaded after every other stylesheet so the older, overlapping card rules
+   (pages.css, theme-brand.css, studio.css, offers.css) no longer fight each other. */
+
+html body .grid-courses{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));
+  gap:20px;
+  align-items:stretch;
+}
+
+/* the card: image on top, one padded body underneath, every card in a row the same height */
+html body .grid-courses > .dcourse,
+html body .dcourse{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  padding:0;
+  height:100%;
+  min-width:0;
+  overflow:hidden;
+  border-radius:22px;
+  /* one calm entrance instead of three stacked animations (and no blur filter, which is slow on phones) */
+  animation:dcRise .45s cubic-bezier(.2,.7,.1,1) both;
+  animation-delay:calc(min(var(--i,0),8) * 50ms);
+}
+@keyframes dcRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+html body .view.st-fresh .grid-courses > .dcourse{animation:dcRise .45s cubic-bezier(.2,.7,.1,1) both;animation-delay:calc(min(var(--i,0),8) * 50ms)}
+html body .dcourse > *:not(.corner-ribbon){margin:0 !important}
+
+/* image: same shape on every card */
+html body .dcourse .dc-thumb{
+  position:relative;
+  flex:none;
+  width:100%;
+  aspect-ratio:16/9;
+  margin:0 !important;
+  border-radius:0;
+  overflow:hidden;
+  background:#101010;
+}
+html body .dcourse .dc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* everything under the image */
+html body .dcourse .dc-body{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  flex:1 1 auto;
+  padding:18px 20px 20px;
+  min-width:0;
+}
+/* cards that have no image still get the same inner spacing */
+html body .dcourse:not(:has(.dc-thumb)) .dc-body{padding:22px 20px 20px}
+
+/* badge on the left, lesson count on the right: they sit on their own row, never on top of the title */
+html body .dcourse .dc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0}
+html body .dcourse .dc-top .tag{
+  width:auto;
+  align-self:center;
+  flex:none;
+  margin:0;
+  padding:6px 12px;
+  line-height:1;
+  white-space:nowrap;
+}
+html body .dcourse .dc-count{font:500 .78rem/1 Inter,sans-serif;color:var(--ash,#9A968E);letter-spacing:.02em;white-space:nowrap}
+
+/* title and description */
+html body .dcourse .dc-body h3{
+  margin:0;
+  padding:0;
+  font:400 1.55rem/1.12 Anton,Impact,sans-serif;
+  letter-spacing:.01em;
+  overflow-wrap:anywhere;
+}
+html body .dcourse .dc-body .dc-sum{
+  margin:0;
+  padding:0;
+  color:var(--ash,#9A968E);
+  font-size:.92rem;
+  line-height:1.6;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:4;
+  line-clamp:4;
+  overflow:hidden;
+}
+
+/* progress bar (My courses) and price block (Browse) */
+html body .dcourse .dc-prog{margin:2px 0 0}
+html body .dcourse .dc-prog .meta-row{display:flex;justify-content:space-between;gap:10px;margin:0 0 8px;font-size:.82rem;color:var(--ash,#9A968E)}
+html body .dcourse .dc-price{margin:0}
+html body .dcourse .dc-price .pr-line{margin:0}
+html body .dcourse .wl-box{margin:0}
+
+/* the button always sits at the bottom, lined up across the row */
+html body .dcourse .dc-body .foot{
+  margin:auto 0 0;
+  padding:6px 0 0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  flex-wrap:wrap;
+}
+html body .dcourse .dc-body > .foot:first-child{padding-top:0}
+html body .dcourse .dc-body .foot .btn{max-width:100%}
+
+/* the "% OFF" ribbon sits over the image corner */
+html body .dcourse .corner-ribbon{top:14px;right:14px}
+
+/* hover: a small lift only */
+html body .dcourse:hover{transform:translateY(-4px)}
+
+@media (max-width:640px){
+  html body .grid-courses{grid-template-columns:1fr;gap:16px}
+  html body .dcourse .dc-body h3{font-size:1.4rem}
+  html body .dcourse .dc-body{padding:16px 16px 18px}
+  html body .dcourse .dc-body .foot .btn{width:100%;justify-content:center}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html body .dcourse,html body .view.st-fresh .grid-courses > .dcourse{animation:none}
+  html body .dcourse:hover{transform:none}
+}

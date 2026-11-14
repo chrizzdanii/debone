@@ -75,7 +75,7 @@ const SESSION_SECRET = (() => {
 /* ---------- Database (JSON file, written atomically) ---------- */
 const DB_DEFAULT = () => ({
   users: [], enrollments: [], progress: [], payments: [],
-  courses: null, announcements: [],
+  courses: null, announcements: [], trash: [],
   sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], waitlist: [], communityMigrated: false, qrStats: {}, pageSlots: []
 });
 const store = createStore(DB_DEFAULT);
@@ -770,8 +770,18 @@ function requireStaff(ctx, admin = false) {
   return u;
 }
 function json(res, status, obj, extra = {}) {
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...extra });
-  res.end(JSON.stringify(obj));
+  const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...extra };
+  const text = JSON.stringify(obj);
+  // Large replies (the shop list, dashboard data, admin lists) are gzipped when the browser accepts it
+  const req = res.req;
+  if (text.length > 1400 && req && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) {
+    const gz = require('zlib').gzipSync(text, { level: 5 });
+    headers['Content-Encoding'] = 'gzip'; headers['Vary'] = 'Accept-Encoding'; headers['Content-Length'] = gz.length;
+    res.writeHead(status, headers);
+    return res.end(gz);
+  }
+  res.writeHead(status, headers);
+  res.end(text);
 }
 function readBody(req, limit = 100 * 1024) {
   return new Promise((resolve, reject) => {
@@ -2965,9 +2975,43 @@ route('PATCH', '/api/staff/withdrawals/:id', async ctx => {
   save(); json(ctx.res, 200, { ok: true });
 });
 
+/* ---------- Bin (Restore): deleted products and announcements are kept for 90 days so they can be restored ---------- */
+const TRASH_DAYS = 90;
+function trashPurge() {
+  if (!Array.isArray(db.trash)) db.trash = [];
+  const cutoff = Date.now() - TRASH_DAYS * 86400000;
+  const kept = db.trash.filter(t => Date.parse(t.deletedAt) > cutoff);
+  if (kept.length !== db.trash.length) db.trash = kept;
+}
+function trashAdd(kind, data, batch) {
+  if (!Array.isArray(db.trash)) db.trash = [];
+  trashPurge();
+  db.trash.push({ id: uid(8), kind, batch: batch || null, deletedAt: now(), data: JSON.parse(JSON.stringify(data)) });
+}
+function trashView(t) {
+  const d = t.data || {};
+  return kindView[t.kind] ? kindView[t.kind](t, d) : { id: t.id, kind: t.kind, title: d.title || d.name || 'Item', deletedAt: t.deletedAt };
+}
+const kindView = {
+  product: (t, d) => ({ id: t.id, kind: 'product', title: d.name || 'Product', sub: [categoriesOf().find(c => c.id === d.cat)?.label || '', d.price ? '₦' + Number(d.price).toLocaleString('en-US') : 'Price on request'].filter(Boolean).join(' · '), deletedAt: t.deletedAt }),
+  announcement: (t, d) => ({ id: t.id, kind: 'announcement', title: d.title || 'Announcement', sub: (d.body || '').slice(0, 90), deletedAt: t.deletedAt })
+};
+
+/* The shop order lives in its own record (db.shopOrder). Products are stored one row each, so the position of a row in a list is NOT
+   saved by the database; keeping the order as an id list makes it survive restarts and reach every server instance. */
+function orderedProducts() {
+  const ids = db.shopOrder && Array.isArray(db.shopOrder.ids) ? db.shopOrder.ids : null;
+  if (!ids || !ids.length) return db.products.slice();
+  const rank = new Map(ids.map((id, i) => [id, i]));
+  const listed = [], rest = [];
+  db.products.forEach(p => (rank.has(p.id) ? listed : rest).push(p));
+  listed.sort((a, b) => rank.get(a.id) - rank.get(b.id));
+  return listed.concat(rest);   // products added after the last re-order go to the end
+}
+
 /* ---------- Shop products (create, edit, delete, images) ---------- */
 route('GET', '/api/products', async ctx => {
-  json(ctx.res, 200, { categories: categoriesOf(), products: db.products.map(productView) });
+  json(ctx.res, 200, { categories: categoriesOf(), products: orderedProducts().map(productView) });
 });
 route('GET', '/api/products/:id', async ctx => {
   const p = db.products.find(x => x.id === ctx.params.id);
@@ -2999,7 +3043,9 @@ route('POST', '/api/staff/products', async ctx => {
   let id = slugify(input.name), n = 2;
   while (db.products.some(p => p.id === id)) id = slugify(input.name) + '-' + n++;
   const p = Object.assign({ id, imageUrl: null, imageData: null, createdAt: now(), updatedAt: now() }, input);
-  db.products.push(p); save();
+  db.products.push(p);
+  if (db.shopOrder && Array.isArray(db.shopOrder.ids)) db.shopOrder = { ids: db.shopOrder.ids.concat(p.id), updatedAt: now() };
+  save();
   json(ctx.res, 201, { product: productView(p) });
 });
 route('PATCH', '/api/staff/products/:id', async ctx => {
@@ -3010,7 +3056,7 @@ route('PATCH', '/api/staff/products/:id', async ctx => {
   save();
   json(ctx.res, 200, { product: productView(p) });
 });
-/* The order of db.products is the order the shop shows. The admin drags rows (or types a position) and sends the new id order here. */
+/* The admin drags rows (or types a position) and sends the new id order here. The shop and the admin list both read it through orderedProducts(). */
 route('PUT', '/api/staff/products/order', async ctx => {
   requireStaff(ctx, true);
   const ids = Array.isArray(ctx.body.ids) ? ctx.body.ids.map(String) : null;
@@ -3019,23 +3065,31 @@ route('PUT', '/api/staff/products/order', async ctx => {
   const seen = new Set(), first = [];
   ids.forEach(id => { if (byId.has(id) && !seen.has(id)) { seen.add(id); first.push(byId.get(id)); } });
   // products that were not in the list (for example added meanwhile) keep their relative order after the listed ones
-  db.products = first.concat(db.products.filter(x => !seen.has(x.id)));
+  const rest = orderedProducts().filter(x => !seen.has(x.id));
+  const all = first.concat(rest);
+  db.products = all;
+  // ids of products that are in the bin stay in the list, so a restored product goes back to its old place
+  const binned = (db.shopOrder && Array.isArray(db.shopOrder.ids) ? db.shopOrder.ids : []).filter(id => !byId.has(id));
+  db.shopOrder = { ids: all.map(x => x.id).concat(binned), updatedAt: now() };
   save();
   json(ctx.res, 200, { ok: true, count: db.products.length });
 });
 route('DELETE', '/api/staff/products/:id', async ctx => {
   requireStaff(ctx, true);
+  const gone = db.products.find(x => x.id === ctx.params.id);
+  if (gone) trashAdd('product', gone);
   db.products = db.products.filter(x => x.id !== ctx.params.id);
   save();
-  json(ctx.res, 200, { ok: true });
+  json(ctx.res, 200, { ok: true, binned: !!gone });
 });
 route('DELETE', '/api/staff/products', async ctx => {
   // Delete all shop products. The admin page asks the admin to confirm first, and the server asks again so a stray request cannot wipe the shop.
   requireStaff(ctx, true);
   if (ctx.query.get('confirm') !== 'DELETE-ALL') throw httpError(400, 'Please confirm that you want to delete every shop product.');
-  const deleted = db.products.length;
+  const deleted = db.products.length, batch = uid(6);
+  orderedProducts().forEach(p => trashAdd('product', p, batch));   // kept in the bin so Restore can bring them back
   db.products = []; save();
-  json(ctx.res, 200, { ok: true, deleted });
+  json(ctx.res, 200, { ok: true, deleted, restorable: true });
 });
 route('POST', '/api/staff/products/restore-defaults', async ctx => {
   // Puts back any of the original catalogue products that are missing. Products the admin has added or edited are not touched.
@@ -3062,6 +3116,63 @@ route('DELETE', '/api/staff/products/:id/image', async ctx => {
   if (!p) throw httpError(404, 'Product not found');
   p.imageData = null; p.imageUrl = null; p.updatedAt = now(); save();
   json(ctx.res, 200, { product: productView(p) });
+});
+
+
+/* ---------- Bin: list, restore and empty ---------- */
+const TRASH_KINDS = ['product', 'announcement'];
+route('GET', '/api/staff/trash', async ctx => {
+  requireStaff(ctx, true);
+  const kind = ctx.query.get('kind') || '';
+  if (!TRASH_KINDS.includes(kind)) throw httpError(400, 'Unknown kind of item.');
+  trashPurge();
+  const items = db.trash.filter(t => t.kind === kind).sort((a, b) => String(b.deletedAt).localeCompare(String(a.deletedAt))).map(trashView);
+  json(ctx.res, 200, { items, keepDays: TRASH_DAYS });
+});
+route('POST', '/api/staff/trash/restore', async ctx => {
+  requireStaff(ctx, true);
+  const kind = String(ctx.body.kind || '');
+  if (!TRASH_KINDS.includes(kind)) throw httpError(400, 'Unknown kind of item.');
+  trashPurge();
+  const want = ctx.body.all ? null : new Set((Array.isArray(ctx.body.ids) ? ctx.body.ids : []).map(String));
+  if (want && !want.size) throw httpError(400, 'Choose what to restore.');
+  const picked = db.trash.filter(t => t.kind === kind && (!want || want.has(t.id)));
+  let restored = 0, skipped = 0;
+  if (kind === 'product') {
+    picked.forEach(t => {
+      if (db.products.some(x => x.id === t.data.id)) { skipped++; return; }   // a product with this id is already in the shop
+      db.products.push(Object.assign({}, t.data, { updatedAt: now() }));
+      restored++;
+    });
+    // put restored products back in the place they had in the shop order
+    db.products = orderedProducts();
+    if (db.shopOrder && Array.isArray(db.shopOrder.ids)) {
+      const have = new Set(db.shopOrder.ids);
+      const add = db.products.map(x => x.id).filter(id => !have.has(id));
+      if (add.length) db.shopOrder = { ids: db.shopOrder.ids.concat(add), updatedAt: now() };
+    }
+  } else if (kind === 'announcement') {
+    announcementsWithIds();
+    picked.forEach(t => {
+      if (db.announcements.some(a => a.id === t.data.id)) { skipped++; return; }
+      db.announcements.push(t.data); restored++;
+    });
+    db.announcements.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  }
+  const done = new Set(picked.map(t => t.id));
+  db.trash = db.trash.filter(t => !done.has(t.id));
+  save();
+  json(ctx.res, 200, { ok: true, restored, skipped });
+});
+route('DELETE', '/api/staff/trash', async ctx => {
+  requireStaff(ctx, true);
+  const kind = ctx.query.get('kind') || '';
+  if (!TRASH_KINDS.includes(kind)) throw httpError(400, 'Unknown kind of item.');
+  if (ctx.query.get('confirm') !== 'EMPTY-BIN') throw httpError(400, 'Please confirm that you want to remove these items for good.');
+  const before = db.trash.length;
+  db.trash = db.trash.filter(t => t.kind !== kind);
+  save();
+  json(ctx.res, 200, { ok: true, removed: before - db.trash.length });
 });
 
 /* ---------- Selected work (homepage "Recent frames") ---------- */
@@ -3759,16 +3870,19 @@ route('GET', '/api/staff/announcements', async ctx => {
 route('DELETE', '/api/staff/announcements', async ctx => {
   requireStaff(ctx, true);
   if (ctx.query.get('confirm') !== 'DELETE-ALL') throw httpError(400, 'Please confirm that you want to delete every announcement.');
-  const deleted = db.announcements.length;
+  const deleted = db.announcements.length, batch = uid(6);
+  announcementsWithIds().slice().reverse().forEach(a => trashAdd('announcement', a, batch));
   db.announcements = []; save();
-  json(ctx.res, 200, { ok: true, deleted });
+  json(ctx.res, 200, { ok: true, deleted, restorable: true });
 });
 route('DELETE', '/api/staff/announcements/:id', async ctx => {
   requireStaff(ctx, true);
   announcementsWithIds();
   const before = db.announcements.length;
+  const gone = db.announcements.find(a => a.id === ctx.params.id);
   db.announcements = db.announcements.filter(a => a.id !== ctx.params.id);
   if (db.announcements.length === before) throw httpError(404, 'That announcement was not found. It may already be deleted.');
+  if (gone) trashAdd('announcement', gone);
   save();
   json(ctx.res, 200, { ok: true });
 });
@@ -3881,16 +3995,59 @@ function serveStatic(req, res, pathname, user) {
   let file = path.join(baseDir, path.normalize(p));
   if (!file.startsWith(baseDir + path.sep) && file !== baseDir) return sendErrorPage(res, 403);
   if (!path.extname(file) && fs.existsSync(file + '.html')) file += '.html';
-  fs.readFile(file, (err, data) => {
-    if (err) {
-      return sendErrorPage(res, 404);
-    }
-    res.writeHead(200, {
-      'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
+  const ext = path.extname(file);
+  const isPrivatePage = baseDir === PRIVATE_DIR;
+  loadStatic(file, (err, ent) => {
+    if (err) return sendErrorPage(res, 404);
+    const headers = {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
       'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'SAMEORIGIN', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Permissions-Policy': 'camera=(), geolocation=(), payment=()',
-      'Cache-Control': 'no-cache'
+      'ETag': ent.etag, 'Vary': 'Accept-Encoding',
+      'Cache-Control': isPrivatePage ? 'private, no-cache' : cacheControlFor(ext)
+    };
+    // The browser already has this exact file: answer with an empty 304 instead of sending it again
+    if (req.headers['if-none-match'] === ent.etag) { res.writeHead(304, headers); return res.end(); }
+    let body = ent.raw;
+    const accept = String(req.headers['accept-encoding'] || '');
+    if (ent.br && /\bbr\b/.test(accept)) { body = ent.br; headers['Content-Encoding'] = 'br'; }
+    else if (ent.gz && /\bgzip\b/.test(accept)) { body = ent.gz; headers['Content-Encoding'] = 'gzip'; }
+    headers['Content-Length'] = body.length;
+    res.writeHead(200, headers);
+    res.end(req.method === 'HEAD' ? undefined : body);
+  });
+}
+
+/* Static files are read once, compressed once (Brotli and gzip) and kept in memory until the file changes on disk.
+   This makes pages and scripts several times smaller on the wire, and the ETag lets browsers skip re-downloading unchanged files. */
+const zlib = require('zlib');
+const staticCache = new Map();
+const COMPRESSIBLE = new Set(['.html', '.css', '.js', '.json', '.svg', '.txt', '.xml']);
+function cacheControlFor(ext) {
+  if (ext === '.html' || ext === '') return 'no-cache';
+  if (ext === '.css' || ext === '.js') return 'public, max-age=3600, stale-while-revalidate=86400';
+  if (ext === '.json') return 'public, max-age=300, stale-while-revalidate=3600';
+  return 'public, max-age=604800, stale-while-revalidate=86400';   // images, icons, fonts, video
+}
+function loadStatic(file, cb) {
+  fs.stat(file, (err, st) => {
+    if (err || !st.isFile()) return cb(err || new Error('not a file'));
+    const hit = staticCache.get(file);
+    if (hit && hit.mtimeMs === st.mtimeMs && hit.size === st.size) return cb(null, hit);
+    fs.readFile(file, (err2, raw) => {
+      if (err2) return cb(err2);
+      const ext = path.extname(file);
+      const ent = { mtimeMs: st.mtimeMs, size: st.size, raw, gz: null, br: null,
+        etag: '"' + crypto.createHash('sha1').update(raw).digest('base64url').slice(0, 22) + '"' };
+      if (COMPRESSIBLE.has(ext) && raw.length > 1024) {
+        try {
+          ent.br = zlib.brotliCompressSync(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5, [zlib.constants.BROTLI_PARAM_SIZE_HINT]: raw.length } });
+          ent.gz = zlib.gzipSync(raw, { level: 8 });
+        } catch (e) { /* send uncompressed */ }
+      }
+      if (staticCache.size > 400) staticCache.clear();
+      staticCache.set(file, ent);
+      cb(null, ent);
     });
-    res.end(data);
   });
 }
 

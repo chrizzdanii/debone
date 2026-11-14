@@ -4,9 +4,17 @@
   var KEY = 'debone-order-list';
   var WA_NUMBER = '2348035988889';
   var catalog = null;
-  var catalogPromise = fetch('/data/products.json').then(function (r) { return r.json(); }).then(function (d) {
-    catalog = d; return d;
-  }).catch(function () { catalog = { products: [] }; return catalog; });
+  /* The catalogue is only fetched when the order list actually has something in it (most page views never need it).
+     It comes from the live shop, so products an admin added or re-priced show correctly. */
+  var catalogPromise = null;
+  function loadCatalog() {
+    if (catalogPromise) return catalogPromise;
+    catalogPromise = fetch('/api/products').then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .catch(function () { return fetch('/data/products.json').then(function (r) { return r.json(); }); })
+      .then(function (d) { catalog = d; return d; })
+      .catch(function () { catalog = { products: [] }; return catalog; });
+    return catalogPromise;
+  }
 
   function read() {
     try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; }
@@ -14,6 +22,7 @@
   function write(items) {
     localStorage.setItem(KEY, JSON.stringify(items));
     render();
+    if (!catalog && items.length) loadCatalog().then(render);
   }
   function find(id) {
     return (catalog && catalog.products || []).find(function (p) { return p.id === id; });
@@ -131,7 +140,7 @@
   function init() {
     buildUI();
     render();
-    catalogPromise.then(render);
+    if (read().length) loadCatalog().then(render); else render();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

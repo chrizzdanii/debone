@@ -27,7 +27,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   };
   function thumb(c) {
     var u = c.hasImage ? '/api/courses/' + encodeURIComponent(c.id) + '/image' : THUMBS[c.id];
-    return u ? '<div class="dc-thumb"><img src="' + u + '" alt="" loading="lazy"></div>' : '';
+    return u ? '<div class="dc-thumb"><img src="' + u + '" alt="" width="720" height="405" loading="lazy" decoding="async"></div>' : '';
   }
 
   /* ---------- Helpers ---------- */
@@ -202,15 +202,19 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   }
 
   /* ---------- My courses ---------- */
-  function enrolledCard(c) {
+  function enrolledCard(c, i) {
     var label = c.completed === c.total && c.total > 0 ? 'Review' : (c.completed > 0 ? 'Continue' : 'Start');
-    return '<article class="dcourse">' + thumb(c) +
-      '<span class="tag ' + (c.comingSoon ? 'soon' : (c.free ? 'free' : 'paid')) + '">' + (c.comingSoon ? 'Coming soon' : (c.free ? 'Free intro' : 'Unlocked')) + '</span>' +
-      '<h3>' + esc(c.title) + '</h3>' +
-      '<p>' + esc(c.summary) + '</p>' +
-      '<div><div class="meta-row"><span>' + c.completed + ' of ' + c.total + ' lessons</span><span>' + c.progress + '%</span></div>' +
-        '<div class="meter teal"><i data-w="' + c.progress + '"></i></div></div>' +
-      (c.comingSoon ? waitlistBlock(c) : '<div class="foot"><a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">' + label + '</a></div>') +
+    var tagCls = c.comingSoon ? 'soon' : (c.free ? 'free' : 'paid');
+    var tagTxt = c.comingSoon ? 'Coming soon' : (c.free ? 'Free intro' : 'Unlocked');
+    return '<article class="dcourse" style="--i:' + (i || 0) + '">' + thumb(c) +
+      '<div class="dc-body">' +
+        '<div class="dc-top"><span class="tag ' + tagCls + '">' + tagTxt + '</span><span class="dc-count">' + c.total + (c.total === 1 ? ' lesson' : ' lessons') + '</span></div>' +
+        '<h3>' + esc(c.title) + '</h3>' +
+        '<p class="dc-sum">' + esc(c.summary) + '</p>' +
+        '<div class="dc-prog"><div class="meta-row"><span>' + c.completed + ' of ' + c.total + ' done</span><span>' + c.progress + '%</span></div>' +
+          '<div class="meter teal"><i data-w="' + c.progress + '"></i></div></div>' +
+        (c.comingSoon ? waitlistBlock(c) : '<div class="foot"><a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">' + label + '</a></div>') +
+      '</div>' +
     '</article>';
   }
 
@@ -222,7 +226,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
         '<div class="btn-row" style="margin-top:20px"><a class="btn btn-solid" href="#browse">Browse courses</a></div>');
       return;
     }
-    setView(head + (window.DeboneZoomProfile ? window.DeboneZoomProfile.banner(state.d.user) : '') + '<div class="grid-courses stagger">' + list.map(enrolledCard).join('') + '</div>');
+    setView(head + (window.DeboneZoomProfile ? window.DeboneZoomProfile.banner(state.d.user) : '') + '<div class="grid-courses stagger">' + list.map(function (c, i) { return enrolledCard(c, i); }).join('') + '</div>');
     animateBars();
   }
 
@@ -247,10 +251,9 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   }
 
   function browseCard(c, i) {
-    var status, action, extra = '';
+    var status, action = '', extra = '';
     if (c.comingSoon) {
       status = '<span class="tag soon">Coming soon</span>';
-      action = '';
       extra = waitlistBlock(c);
     } else if (c.enrolled) {
       status = '<span class="tag ' + (c.free ? 'free' : 'paid') + '">' + (c.free ? 'Free intro' : 'Unlocked') + '</span>';
@@ -259,13 +262,17 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       status = '<span class="tag ' + (c.offer ? 'hot' : 'paid') + '">' + (c.offer ? 'Limited offer' : 'Locked') + '</span>';
       action = '<button class="btn btn-solid btn-sm' + (c.offer ? ' btn-hurry' : '') + '" type="button" data-enroll="' + esc(c.id) + '">' + (c.offer ? 'Grab the deal · ' : 'Enrol for ') + naira(c.price) + '</button>';
     }
-    var priceLine = (c.free || c.comingSoon || c.enrolled) ? '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons</p>'
-      : '<p class="muted" style="font-size:.85rem">' + c.total + ' lessons</p>' + offerBlock(c);
-    return '<article class="dcourse' + (c.offer && !c.enrolled && !c.comingSoon ? ' has-offer' : '') + (c.comingSoon ? ' is-soon' : '') + '" style="--i:' + (i || 0) + '">' +
-      (c.offer && !c.enrolled && !c.comingSoon ? '<span class="corner-ribbon">' + c.offer.percent + '% OFF</span>' : '') + thumb(c) + status +
-      '<h3>' + esc(c.title) + '</h3>' +
-      '<p>' + esc(c.summary) + '</p>' + priceLine + extra +
-      (action ? '<div class="foot">' + action + '</div>' : '') +
+    var showPrice = !(c.free || c.comingSoon || c.enrolled);
+    var hasOffer = c.offer && !c.enrolled && !c.comingSoon;
+    return '<article class="dcourse' + (hasOffer ? ' has-offer' : '') + (c.comingSoon ? ' is-soon' : '') + '" style="--i:' + (i || 0) + '">' +
+      (hasOffer ? '<span class="corner-ribbon">' + c.offer.percent + '% OFF</span>' : '') + thumb(c) +
+      '<div class="dc-body">' +
+        '<div class="dc-top">' + status + '<span class="dc-count">' + c.total + (c.total === 1 ? ' lesson' : ' lessons') + '</span></div>' +
+        '<h3>' + esc(c.title) + '</h3>' +
+        '<p class="dc-sum">' + esc(c.summary) + '</p>' +
+        (showPrice ? '<div class="dc-price">' + offerBlock(c) + '</div>' : '') + extra +
+        (action ? '<div class="foot">' + action + '</div>' : '') +
+      '</div>' +
     '</article>';
   }
 

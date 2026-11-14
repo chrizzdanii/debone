@@ -1,0 +1,50 @@
+/* Admin dashboard: phone and tablet fixes, plus the Restore (bin) pop-up. Loaded after every other stylesheet. */
+
+/* ---- Restore deleted ---- */
+.btn-restore{display:inline-flex;align-items:center;gap:8px}
+.btn-restore svg{flex:none}
+.rs-count{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--gold,#E0A800);color:#0B0B0B;font:700 .7rem/1 Inter,sans-serif}
+.rs-note{margin:0 0 12px;font-size:.88rem}
+.rs-list{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px;max-height:min(46vh,380px);overflow:auto;overscroll-behavior:contain}
+.rs-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.03)}
+.rs-info{display:grid;gap:2px;min-width:0}
+.rs-info b{overflow-wrap:anywhere}
+.rs-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.rs-empty{text-align:center;padding:10px 0 4px}
+
+/* ---- Tablet and phone ---- */
+@media (max-width:900px){
+  .view,.main{min-width:0}
+  .view img,.view video,.view canvas,.view svg{max-width:100%}
+  .view .box,.view .panel,.view .stat-card{min-width:0;overflow-wrap:anywhere}
+  .view .input,.view select,.view textarea{max-width:100%;font-size:16px}   /* 16px stops iPhones zooming in on tap */
+  .grid-2,.grid-3,.form-grid.cols-2{grid-template-columns:1fr!important}
+  .dt-tools{flex-direction:column;align-items:stretch!important;gap:10px}
+  .dt-tools-btns{display:grid!important;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+  .dt-tools-btns .btn{justify-content:center;width:100%}
+  .dt-tools-btns #p-new,.dt-tools-btns #p-restore{grid-column:1/-1}
+  .ord-hint{display:block}
+}
+@media (max-width:700px){
+  /* product / service / work rows: image beside the text, never wider than the screen */
+  .thumb-cell,body.studio .thumb-cell{display:flex!important;align-items:center;gap:12px;width:100%;min-width:0;text-align:left;justify-content:flex-start!important}
+  .thumb-cell > div,body.studio .thumb-cell > div{min-width:0!important;flex:1 1 0;text-align:left}
+  .thumb-cell img{width:64px!important;height:64px!important;flex:none;object-fit:cover}
+  .thumb-cell .thumb-empty{flex:none}
+  table.dt td:first-child .thumb-cell{display:flex!important}
+  table.dt td,table.tbl td{min-width:0;overflow-wrap:anywhere}
+  table.dt td[data-label="Product"],table.dt td:nth-child(2){display:block!important}
+  .ord{display:flex;align-items:center;gap:10px}
+  .ord-grip{width:44px;height:44px}
+  .ord-n{width:64px;height:44px}
+  .ord-ud button{width:44px;height:21px}
+  .btn,.btn-sm{min-height:44px}
+  .view-head h1,.theme-brand .view-head h1{font-size:clamp(1.9rem,9vw,2.6rem)}
+  .toolbar{flex-wrap:wrap;gap:10px}
+  .dm-box,.theme-brand .dm-box,body.studio .dm-box{max-height:92dvh;width:calc(100vw - 20px)!important;border-radius:22px}
+  .rs-list li{flex-wrap:wrap}
+  .rs-list li .btn{width:100%}
+  .rs-actions .btn{flex:1 1 100%}
+  .ann-item{flex-direction:column;align-items:stretch}
+  .ann-item .btn{width:100%;justify-content:center}
+}

@@ -43,7 +43,7 @@
   }
   function card(p) {
     var media = p.image
-      ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" loading="lazy">'
+      ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" width="400" height="400" loading="lazy" decoding="async">'
       : placeholder(p);
     return '' +
       '<article class="pc">' +

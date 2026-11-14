@@ -833,11 +833,54 @@
       '</tbody></table></div></section>');
   }
 
+  /* ---------- Restore (bin) pop-up, shared by every page that has "Delete all" ---------- */
+  var RESTORE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>';
+  function restoreButton(id, count) {
+    return '<button class="btn btn-ghost btn-restore" type="button" id="' + id + '">' + RESTORE_ICON + 'Restore deleted' + (count ? ' <span class="rs-count">' + count + '</span>' : '') + '</button>';
+  }
+  function openRestore(kind, noun, onDone) {
+    DModal.open({ size: 'md', eyebrow: 'Restore', title: 'Restore deleted ' + noun, body: '<div class="rs-box" id="rs-box"><p class="muted">Loading…</p></div>',
+      onMount: function (box, inst) {
+        var wrap = box.querySelector('#rs-box');
+        function draw(items, keepDays) {
+          if (!items.length) { wrap.innerHTML = '<div class="rs-empty"><b>Nothing to restore</b><p class="muted">When you delete ' + esc(noun) + ' they wait here for ' + keepDays + ' days, so you can bring them back.</p></div><div class="sub-actions"><button type="button" class="btn btn-ghost" data-close>Close</button></div>'; wrap.querySelector('[data-close]').addEventListener('click', function () { inst.close(); }); return; }
+          wrap.innerHTML = '<p class="muted rs-note">' + items.length + ' deleted ' + (items.length === 1 ? noun.replace(/s$/, '') : noun) + ' kept for ' + keepDays + ' days. Restored items come back exactly as they were' + (kind === 'product' ? ', in their old place in the shop' : '') + '.</p>' +
+            '<ul class="rs-list">' + items.map(function (it) {
+              return '<li><div class="rs-info"><b>' + esc(it.title) + '</b>' + (it.sub ? '<span class="muted small">' + esc(it.sub) + '</span>' : '') + '<span class="muted small">Deleted ' + esc(fmt(it.deletedAt)) + '</span></div>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-rs="' + esc(it.id) + '">Restore</button></li>';
+            }).join('') + '</ul>' +
+            '<p class="form-error" id="rs-err" role="alert"></p>' +
+            '<div class="sub-actions rs-actions"><button type="button" class="btn btn-ghost btn-danger" id="rs-empty">Remove for good</button><button type="button" class="btn btn-solid" id="rs-all">Restore all (' + items.length + ')</button></div>';
+          var err = wrap.querySelector('#rs-err');
+          async function run(body, okMsg) {
+            err.textContent = '';
+            wrap.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+            try {
+              var r = await api('/api/staff/trash/restore', { method: 'POST', body: Object.assign({ kind: kind }, body), timeout: 60000 });
+              toast((r.restored || 0) + ' restored.' + (r.skipped ? ' ' + r.skipped + ' skipped (already there).' : ''));
+              inst.close(); onDone();
+            } catch (ex) { err.textContent = ex.message; wrap.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); }
+          }
+          wrap.querySelector('#rs-all').addEventListener('click', function () { run({ all: true }); });
+          wrap.querySelectorAll('[data-rs]').forEach(function (b) { b.addEventListener('click', function () { run({ ids: [b.getAttribute('data-rs')] }); }); });
+          wrap.querySelector('#rs-empty').addEventListener('click', async function () {
+            if (!window.confirm('Remove these ' + items.length + ' ' + noun + ' for good? They can no longer be restored.')) return;
+            try { await api('/api/staff/trash?kind=' + kind + '&confirm=EMPTY-BIN', { method: 'DELETE' }); toast('Removed for good.'); inst.close(); onDone(); }
+            catch (ex) { err.textContent = ex.message; }
+          });
+        }
+        api('/api/staff/trash?kind=' + kind).then(function (r) { draw(r.items || [], r.keepDays || 90); })
+          .catch(function (ex) { wrap.innerHTML = '<p class="form-error">' + esc(ex.message) + '</p>'; });
+      } });
+  }
+  function binCount(kind) { return api('/api/staff/trash?kind=' + kind).then(function (r) { return (r.items || []).length; }).catch(function () { return 0; }); }
+
   /* ---------- Announcements (admin) ---------- */
   async function renderAnnounce() {
     if (!isAdmin()) return denied();
     crumb.textContent = 'Announcements';
-    var r = await api('/api/staff/announcements');
+    var both = await Promise.all([api('/api/staff/announcements'), binCount('announcement')]);
+    var r = both[0], binned = both[1];
     var list = r.announcements || [];
     var TRASH = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
     setView(head('News', 'Announcements', 'Post news to every student dashboard.') +
@@ -846,7 +889,7 @@
         '<div class="field"><label>Message</label><textarea class="input" name="body" maxlength="500"></textarea></div>' +
         '<div><button class="btn btn-solid" type="submit">Post announcement</button></div></form></section>' +
       '<div class="dt-tools" style="margin-top:22px"><span class="muted">' + list.length + ' posted announcement' + (list.length === 1 ? '' : 's') + '</span>' +
-        (list.length ? '<button class="btn btn-ghost btn-danger" type="button" id="ann-delall">Delete all</button>' : '') + '</div>' +
+        '<span class="dt-tools-btns">' + restoreButton('ann-restore', binned) + (list.length ? '<button class="btn btn-ghost btn-danger" type="button" id="ann-delall">Delete all</button>' : '') + '</span></div>' +
       '<section class="ann-list">' + (list.length ? list.map(function (a, i) {
         return '<article class="ann-item" style="--i:' + Math.min(i, 12) + '"><div class="ann-main"><b>' + esc(a.title) + '</b>' + (a.body ? '<p>' + esc(a.body) + '</p>' : '') +
           '<span class="muted small">' + (a.createdAt ? esc(fmt(a.createdAt)) : '') + '</span></div>' +
@@ -858,16 +901,17 @@
     });
     view.querySelectorAll('[data-ann-del]').forEach(function (b) {
       b.addEventListener('click', async function () {
-        if (!window.confirm('Delete this announcement? Students will no longer see it.')) return;
+        if (!window.confirm('Delete this announcement? Students will no longer see it. You can restore it later.')) return;
         b.disabled = true;
-        try { await api('/api/staff/announcements/' + encodeURIComponent(b.getAttribute('data-ann-del')), { method: 'DELETE' }); toast('Announcement deleted.'); renderAnnounce(); }
+        try { await api('/api/staff/announcements/' + encodeURIComponent(b.getAttribute('data-ann-del')), { method: 'DELETE' }); toast('Announcement deleted. You can restore it from Restore deleted.'); renderAnnounce(); }
         catch (e) { toast(e.message, 'err'); b.disabled = false; }
       });
     });
+    document.getElementById('ann-restore').addEventListener('click', function () { openRestore('announcement', 'announcements', renderAnnounce); });
     var all = document.getElementById('ann-delall');
     if (all) all.addEventListener('click', function () {
       DModal.open({ size: 'sm', eyebrow: 'Danger zone', title: 'Delete all ' + list.length + ' announcements?', body:
-        '<form class="sub-form" id="aa-form" novalidate><p class="da-warn">Every announcement will disappear from all student dashboards. This cannot be undone.</p>' +
+        '<form class="sub-form" id="aa-form" novalidate><p class="da-warn">Every announcement will disappear from all student dashboards. You can bring them back with the Restore deleted button.</p>' +
         '<div class="field"><label>Type <b>DELETE</b> to confirm</label><input class="input" id="aa-input" autocomplete="off" spellcheck="false" placeholder="DELETE"></div>' +
         '<p class="form-error" id="aa-err" role="alert"></p>' +
         '<div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid btn-danger-solid" id="aa-go" disabled>Delete all announcements</button></div></form>',
@@ -880,7 +924,7 @@
             e.preventDefault();
             if (input.value.trim() !== 'DELETE') return;
             go.disabled = true; go.textContent = 'Deleting…'; err.textContent = '';
-            try { var d = await api('/api/staff/announcements?confirm=DELETE-ALL', { method: 'DELETE' }); inst.close(); toast(d.deleted + ' announcements deleted.'); renderAnnounce(); }
+            try { var d = await api('/api/staff/announcements?confirm=DELETE-ALL', { method: 'DELETE' }); inst.close(); toast(d.deleted + ' announcements deleted. Use Restore deleted to bring them back.'); renderAnnounce(); }
             catch (ex) { err.textContent = ex.message; go.disabled = false; go.textContent = 'Delete all announcements'; }
           });
         } });
@@ -978,11 +1022,13 @@
 
   async function renderProducts() {
     crumb.textContent = 'Shop products';
-    var d = await api('/api/products');
+    var both = await Promise.all([api('/api/products'), binCount('product')]);
+    var d = both[0], binned = both[1];
     var cats = d.categories;
     var catLabel = function (id) { var c = cats.find(function (x) { return x.id === id; }); return c ? c.label : id; };
     setView(head('Shop', 'Shop products', 'Add, edit and remove the products customers see in the shop.') +
       '<div class="dt-tools"><span class="muted">' + d.products.length + ' products <span class="ord-hint">· Drag the handle, type a position, or use the arrows to choose the order customers see in the shop.</span> <b class="ord-state" id="ord-state" aria-live="polite"></b></span><span class="dt-tools-btns">' +
+      restoreButton('p-undo', binned) +
       (d.products.length ? '<button class="btn btn-ghost btn-danger" type="button" id="p-delall">Delete all</button>' : '<button class="btn btn-ghost" type="button" id="p-restore">Restore the original catalogue</button>') +
       '<button class="btn btn-solid" type="button" id="p-new">Add product</button></span></div>' +
       '<section class="box"><div class="dt-wrap"><table class="dt"><thead><tr><th class="ord-h">Order</th><th>Product</th><th>Category</th><th>Price</th><th>Photo</th><th></th></tr></thead><tbody>' +
@@ -994,10 +1040,11 @@
           '<td class="dt-act"><button class="btn btn-ghost btn-sm" type="button" data-edit="' + esc(p.id) + '">Edit</button> <button class="btn btn-ghost btn-sm" type="button" data-del="' + esc(p.id) + '">Delete</button></td></tr>';
       }).join('') + (d.products.length ? '' : '<tr><td colspan="6" class="muted">The shop has no products.</td></tr>') + '</tbody></table></div></section>');
     document.getElementById('p-new').addEventListener('click', function () { productForm(cats, null); });
+    document.getElementById('p-undo').addEventListener('click', function () { openRestore('product', 'products', renderProducts); });
     var delAll = document.getElementById('p-delall');
     if (delAll) delAll.addEventListener('click', function () {
       DModal.open({ size: 'sm', eyebrow: 'Danger zone', title: 'Delete all ' + d.products.length + ' products?', body:
-        '<form class="sub-form" id="da-form" novalidate><p class="da-warn">This removes every product from the shop, together with the photos you uploaded. It cannot be undone. Customers will see an empty shop until you add products again.</p>' +
+        '<form class="sub-form" id="da-form" novalidate><p class="da-warn">This removes every product from the shop. Customers will see an empty shop until you add products again or press Restore deleted, which brings every product back with its photo and its place in the order.</p>' +
         '<div class="field"><label>Type <b>DELETE</b> to confirm</label><input class="input" id="da-input" autocomplete="off" spellcheck="false" placeholder="DELETE"></div>' +
         '<p class="form-error" id="da-err" role="alert"></p>' +
         '<div class="sub-actions"><button type="button" class="btn btn-ghost" data-cancel>Cancel</button><button type="submit" class="btn btn-solid btn-danger-solid" id="da-go" disabled>Delete all products</button></div></form>',
@@ -1012,7 +1059,7 @@
             go.disabled = true; go.textContent = 'Deleting…'; err.textContent = '';
             try {
               var r = await api('/api/staff/products?confirm=DELETE-ALL', { method: 'DELETE', timeout: 60000 });
-              inst.close(); toast(r.deleted + ' products deleted.'); renderProducts();
+              inst.close(); toast(r.deleted + ' products deleted. Use Restore deleted to bring them back.'); renderProducts();
             } catch (ex) { err.textContent = ex.message; go.disabled = false; go.textContent = 'Delete all products'; }
           });
         } });
@@ -1094,8 +1141,8 @@
     });
     view.querySelectorAll('[data-del]').forEach(function (b) {
       b.addEventListener('click', async function () {
-        if (!window.confirm('Delete this product from the shop?')) return;
-        try { await api('/api/staff/products/' + encodeURIComponent(b.getAttribute('data-del')), { method: 'DELETE' }); toast('Product deleted.'); renderProducts(); }
+        if (!window.confirm('Delete this product from the shop? You can restore it later with Restore deleted.')) return;
+        try { await api('/api/staff/products/' + encodeURIComponent(b.getAttribute('data-del')), { method: 'DELETE' }); toast('Product deleted. You can restore it from Restore deleted.'); renderProducts(); }
         catch (e) { toast(e.message, 'err'); }
       });
     });
