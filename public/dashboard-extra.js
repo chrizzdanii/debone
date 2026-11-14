@@ -183,11 +183,15 @@
     if (nearBottom || replace) log.scrollTop = log.scrollHeight;
   }
 
+  var chatPolling = false;
   async function pollChat(sessionId) {
+    if (chatPolling || document.hidden || !document.getElementById('chat-log')) return;
+    chatPolling = true;
     try {
       var r = await api('/api/sessions/' + encodeURIComponent(sessionId) + '/chat' + (lastStamp ? '?after=' + encodeURIComponent(lastStamp) : ''));
       if (r.messages.length) drawMessages(r.messages, false);
     } catch (e) { /* keep polling */ }
+    finally { chatPolling = false; }
   }
 
   function startChat(sessionId) {
@@ -196,7 +200,8 @@
     api('/api/sessions/' + encodeURIComponent(sessionId) + '/chat').then(function (r) {
       drawMessages(r.messages, true);
     }).catch(function (e) { if (log) log.innerHTML = '<p class="muted">' + esc(e.message) + '</p>'; });
-    chatTimer = setInterval(function () { pollChat(sessionId); }, 1000);
+    chatTimer = setInterval(function () { pollChat(sessionId); }, 3500);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && chatTimer) pollChat(sessionId); });
 
     var form = document.getElementById('chat-form');
     if (!form) return;

@@ -2191,11 +2191,14 @@
     var st = document.getElementById('lv-stamp'); if (st) { st.setAttribute('data-at', d.at); st.textContent = 'Updated just now'; }
     root.classList.add('lv-ready');
   }
+  var rpBusy = false;
   async function rpPoll() {
     if (!document.getElementById('lv-root')) { rpStop(); return; }
-    if (document.hidden) return;
-    try { var d = await api('/api/staff/live-stats'); rpPaint(d); var dot = document.getElementById('lv-dot'); if (dot) dot.classList.remove('off'); }
+    if (document.hidden || rpBusy) return;
+    rpBusy = true;
+    try { var d = await api('/api/staff/live-stats'); if (document.getElementById('lv-root')) rpPaint(d); var dot = document.getElementById('lv-dot'); if (dot) dot.classList.remove('off'); }
     catch (e) { var dot2 = document.getElementById('lv-dot'); if (dot2) dot2.classList.add('off'); }
+    finally { rpBusy = false; }
   }
   // QR codes for adverts: make a code per advert, then see scans, signups and buyers for each.
   function qrCard(d) {
@@ -2231,7 +2234,7 @@
         list.map(function (q) { return '<tr><td><b>' + esc(q.src) + '</b></td><td>' + q.scans + '</td><td>' + q.signups + '</td><td>' + q.buyers + '</td><td>' + (q.lastScanAt ? new Date(q.lastScanAt).toLocaleString() : '-') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="muted">No scans yet. Print the code on your advert and results will show here.</p>';
     }
     table(d.qr || []);
-    var t = setInterval(function () { if (!document.getElementById('qr-card')) return clearInterval(t); api('/api/staff/live-stats').then(function (x) { table(x.qr || []); }).catch(function () {}); }, 8000);
+    var t = setInterval(function () { if (!document.getElementById('qr-card')) return clearInterval(t); if (document.hidden) return; api('/api/staff/live-stats').then(function (x) { table(x.qr || []); }).catch(function () {}); }, 30000);
   }
   async function renderReports() {
     crumb.textContent = 'Reports and analytics';
@@ -2267,7 +2270,7 @@
       if (b || rg) { RP.chartSig = null; rpPaint(RP.data); }
     });
     rpPaint(d, true);
-    RP.timer = setInterval(rpPoll, 4000);
+    RP.timer = setInterval(rpPoll, 12000);
     window.addEventListener('debone:refresh', function onR() { if (!document.getElementById('lv-root')) return window.removeEventListener('debone:refresh', onR); rpPoll(); });
     var tick = setInterval(function () { var st = document.getElementById('lv-stamp'); if (!st) return clearInterval(tick); var at = st.getAttribute('data-at'); if (at) { var s = Math.round((Date.now() - new Date(at).getTime()) / 1000); st.textContent = s < 5 ? 'Updated just now' : 'Updated ' + s + 's ago'; } }, 1000);
   }

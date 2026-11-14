@@ -65,7 +65,7 @@
     if (polling) return;
     polling = true;
     check();
-    setInterval(check, 1500);
+    setInterval(check, 5000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
     window.addEventListener('focus', check);
     window.addEventListener('online', check);

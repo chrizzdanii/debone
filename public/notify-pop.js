@@ -263,7 +263,7 @@
   }
   function initNotices() {
     checkNotices();
-    setInterval(checkNotices, 2000);
+    setInterval(checkNotices, 12000);
     window.addEventListener('debone:refresh', checkNotices);
     window.addEventListener('debone:notice', function (e) {
       if (e.detail && e.detail.id) delivered[e.detail.id] = true;

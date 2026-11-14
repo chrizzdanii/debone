@@ -71,12 +71,16 @@
     }).join('');
   }
 
+  var bellBusy = false;
   function load() {
+    if (document.hidden || bellBusy) return Promise.resolve();
+    bellBusy = true;
     syncName();
     return fetch('/api/notifications', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { if (d) render(d); })
-      .catch(function () {});
+      .catch(function () {})
+      .finally(function () { bellBusy = false; });
   }
   function markRead() {
     return fetch('/api/notifications/read', { method: 'POST', credentials: 'same-origin' })
@@ -147,6 +151,7 @@
   syncPhoto();
   load();
   setInterval(load, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) load(); });
   /* A new notice arrived (or the pop-up marked things read): refresh the bell straight away */
   window.addEventListener('debone:notice', function () { setTimeout(load, 400); });
   var lastBell = 0;

@@ -275,7 +275,7 @@
     });
 
     // Live: a new message from anyone appears within a moment
-    chat.timer = setInterval(function () { if (!document.getElementById('wa-log')) return stopChat(); if (!document.hidden) pollChat(); }, 2500);
+    chat.timer = setInterval(function () { if (!document.getElementById('wa-log')) return stopChat(); if (!document.hidden) pollChat(); }, 3500);
     window.addEventListener('focus', pollChat);
     document.addEventListener('visibilitychange', function () { if (!document.hidden && document.getElementById('wa-log')) pollChat(); });
     var onEvt = function () { if (!document.getElementById('wa-log')) { window.removeEventListener('debone:community', onEvt); return; } pollChat(); };
