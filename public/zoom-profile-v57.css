@@ -1,0 +1,46 @@
+/* Zoom display-name pop-up (v57): lives inside the standard animated pop-up (DModal), so it opens, closes and staggers like every other pop-up. */
+.dm-box .zoom-pop{display:grid;gap:14px}
+.dm-box .zoom-hero{display:flex;align-items:center;gap:16px;margin:0}
+.dm-box .zoom-hero .zoom-ico{width:60px;height:60px;border-radius:20px;flex:none;animation:zpFloat 3.4s ease-in-out infinite}
+.dm-box .zoom-hero .zoom-modal-kicker{margin:0;font:600 .72rem Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#E0A800}
+.dm-box .zoom-lead{margin:0;line-height:1.6;color:rgba(244,244,240,.82)}
+.dm-box .zoom-steps{margin:2px 0}
+.dm-box .zoom-pop details{border:1px solid rgba(244,244,240,.12);border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.03);transition:border-color .3s,background .3s}
+.dm-box .zoom-pop details:hover{border-color:rgba(224,168,0,.5)}
+.dm-box .zoom-pop details[open]{border-color:#E0A800;background:rgba(224,168,0,.06)}
+.dm-box .zoom-pop summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.dm-box .zoom-pop summary::-webkit-details-marker{display:none}
+.dm-box .zoom-pop summary::after{content:"+";color:#E0A800;font-size:1.2rem;line-height:1;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.dm-box .zoom-pop details[open] summary::after{transform:rotate(45deg)}
+.dm-box .zoom-pop details ol{margin:10px 0 0;padding-left:20px;line-height:1.65;color:rgba(244,244,240,.8)}
+.dm-box .zoom-pop a{color:#E0A800}
+.dm-box .zoom-pop form{display:grid;gap:12px;margin-top:4px}
+.dm-box .zoom-field{position:relative;display:grid;gap:8px}
+.dm-box .zoom-field label{font:600 .84rem Inter,sans-serif}
+.dm-box .zoom-field svg{position:absolute;left:15px;bottom:15px;width:20px;height:20px;color:#E0A800;pointer-events:none}
+.dm-box .zoom-field input{padding:14px 16px 14px 46px;border-radius:14px;background:#0E0E0E;color:inherit;border:1px solid rgba(244,244,240,.18);font:inherit;transition:border-color .25s,box-shadow .25s}
+.dm-box .zoom-field input:focus{outline:none;border-color:#E0A800;box-shadow:0 0 0 4px rgba(224,168,0,.2)}
+.dm-box .zoom-hint{margin:0;font-size:.82rem;opacity:.72;line-height:1.5}
+.dm-box .zoom-error{margin:0;color:#ff8b8b;font-size:.9rem}
+.dm-box .zoom-save{width:100%;min-height:50px;border-radius:999px;position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s,background .3s}
+.dm-box .zoom-save:not(:disabled):hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(224,168,0,.35)}
+.dm-box .zoom-save.is-busy{opacity:.85;cursor:progress}
+.dm-box .zoom-save.is-busy::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.45),transparent 70%);transform:translateX(-100%);animation:zpSweep 1s linear infinite}
+.dm-box .zoom-save.is-done{background:linear-gradient(135deg,#6ee7a8,#16a369)!important;color:#06231a!important;animation:zpPop .5s cubic-bezier(.2,.9,.3,1.4)}
+.dm-box.zoom-shake{animation:zpShake .45s}
+.dm-box .zoom-note{border-top:1px solid rgba(244,244,240,.1);padding-top:12px}
+@keyframes zpFloat{50%{transform:translateY(-5px)}}
+@keyframes zpSweep{to{transform:translateX(100%)}}
+@keyframes zpPop{0%{transform:scale(.94)}100%{transform:none}}
+@keyframes zpShake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@media (prefers-reduced-motion:reduce){.dm-box .zoom-hero .zoom-ico,.dm-box.zoom-shake,.dm-box .zoom-save.is-busy::after{animation:none}}
+
+/* Certificate gate pop-up */
+.dm-box .pg-wrap{display:grid;gap:16px}
+.dm-box .pg-ico{width:64px;height:64px;border-radius:22px;display:grid;place-items:center;color:#141414;background:linear-gradient(135deg,#F5C94C,#E0A800);box-shadow:0 14px 34px rgba(224,168,0,.3);animation:zpFloat 3.4s ease-in-out infinite}
+.dm-box .pg-lead{margin:0;line-height:1.6;color:rgba(244,244,240,.85)}
+.dm-box .pg-miss{display:flex;flex-wrap:wrap;gap:8px}
+.dm-box .pg-miss span{padding:6px 12px;border-radius:999px;border:1px solid rgba(224,168,0,.4);background:rgba(224,168,0,.1);font-size:.8rem;animation:zpPop .5s cubic-bezier(.2,.9,.3,1.4) both}
+.dm-box .pg-miss span:nth-child(2){animation-delay:.06s}.dm-box .pg-miss span:nth-child(3){animation-delay:.12s}.dm-box .pg-miss span:nth-child(n+4){animation-delay:.18s}
+.dm-box .pg-wrap .sub-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.dm-box .pg-ico,.dm-box .pg-miss span{animation:none}}
