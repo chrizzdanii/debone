@@ -205,7 +205,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   function enrolledCard(c) {
     var label = c.completed === c.total && c.total > 0 ? 'Review' : (c.completed > 0 ? 'Continue' : 'Start');
     return '<article class="dcourse">' + thumb(c) +
-      '<span class="tag ' + (c.free ? 'free' : 'paid') + '">' + (c.free ? 'Free intro' : 'Unlocked') + '</span>' +
+      '<span class="tag ' + (c.comingSoon ? 'soon' : (c.free ? 'free' : 'paid')) + '">' + (c.comingSoon ? 'Coming soon' : (c.free ? 'Free intro' : 'Unlocked')) + '</span>' +
       '<h3>' + esc(c.title) + '</h3>' +
       '<p>' + esc(c.summary) + '</p>' +
       '<div><div class="meta-row"><span>' + c.completed + ' of ' + c.total + ' lessons</span><span>' + c.progress + '%</span></div>' +
@@ -990,11 +990,30 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
 
     if (name === 'live' || name === 'assignments' || name === 'performance' || name === 'certificates' || name === 'reviews' || name === 'downloads' || name === 'recordings' || name === 'requests' || name === 'referrals' || name === 'community' || name === 'portfolio' || name === 'bundles' || name === 'bundle') return window.DashExtras.render(name, arg);
     if (name === 'overview') return renderOverview();
-    if (name === 'courses') return renderCourses();
-    if (name === 'browse') return renderBrowse();
+    if (name === 'courses') { renderCourses(); refreshCatalogueStatus(); return; }
+    if (name === 'browse') { renderBrowse(); refreshCatalogueStatus(); return; }
     if (name === 'payments') return renderPayments();
     if (name === 'profile') return renderProfile();
     if (name === 'course') return renderCourse(arg ? decodeURIComponent(arg) : null);
+  }
+
+  /* Refresh course status from the server when entering course listings.
+     Academy and student pages must use the same database-backed comingSoon flag.
+     Render cached data immediately, then replace it only if the view is still open. */
+  var catalogueRefresh = null;
+  var catalogueRefreshAt = 0;
+  function refreshCatalogueStatus() {
+    var now = Date.now();
+    if (catalogueRefresh || now - catalogueRefreshAt < 1500) return;
+    catalogueRefreshAt = now;
+    catalogueRefresh = api('/api/dashboard').then(function (fresh) {
+      state.d = fresh;
+      var section = (location.hash || '#overview').slice(1).split('/')[0];
+      if (section === 'courses') renderCourses();
+      else if (section === 'browse') renderBrowse();
+    }).catch(function () {
+      // Retain the last successfully loaded catalogue if the network is unavailable.
+    }).finally(function () { catalogueRefresh = null; });
   }
 
   /* ---------- Global events ---------- */
