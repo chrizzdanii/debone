@@ -1816,3 +1816,25 @@ html.fx-cursor .app a,html.fx-cursor .app button,html.fx-cursor .app .btn{cursor
 .theme-brand .wa-preview-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 .theme-brand .wa-preview-info small{color:#b8c4c9}
 .theme-brand .wa-preview-remove{flex:none;border:0;border-radius:50%;background:#42525b;color:white;width:30px;height:30px;font-size:23px;cursor:pointer}
+
+/* Mobile referral dashboard repair: overrides late v37 desktop grid rule. */
+.theme-brand .rf2-stats,.theme-brand .rf2-link,.theme-brand .rf2-list{min-width:0;max-width:100%;box-sizing:border-box}
+.theme-brand .rf2-stat{min-width:0;box-sizing:border-box}
+.theme-brand .rf2-stat b{overflow-wrap:anywhere;min-width:0}
+.theme-brand .rf2-row code{min-width:0;overflow-wrap:anywhere;white-space:normal}
+.theme-brand .rf2-who{min-width:0;overflow-wrap:anywhere}
+.theme-brand .rf2-friend .gpill{flex-shrink:0;max-width:100%;white-space:normal;text-align:center}
+@media(max-width:760px){
+  .theme-brand .rf2-stats{grid-template-columns:minmax(0,1fr)!important;gap:12px}
+  .theme-brand .rf2-stat{padding:20px;gap:10px}
+  .theme-brand .rf2-stat b,.theme-brand .rf2-hero b{font-size:clamp(2rem,8vw,3rem);line-height:1.15}
+  .theme-brand .rf2-row{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  .theme-brand .rf2-row .btn{width:100%;justify-content:center}
+  .theme-brand .rf2-link,.theme-brand .rf2-list{padding:18px}
+  .theme-brand .rf2-friend{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px 12px;align-items:center}
+  .theme-brand .rf2-friend .gpill{grid-column:2;justify-self:start}
+}
+@media(min-width:520px) and (max-width:760px){
+  .theme-brand .rf2-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .theme-brand .rf2-hero{grid-column:1/-1}
+}
