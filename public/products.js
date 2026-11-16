@@ -47,10 +47,10 @@
       : placeholder(p);
     return '' +
       '<article class="pc">' +
-        '<a class="pc-media" href="product.html?id=' + encodeURIComponent(p.id) + '" aria-label="View ' + esc(p.name) + '">' + media +
+        '<a class="pc-media" href="/shop/' + encodeURIComponent(p.id) + '" aria-label="View ' + esc(p.name) + '">' + media +
           '<span class="pc-tag">' + esc(catLabel(p.cat)) + '</span></a>' +
         '<div class="pc-body">' +
-          '<a class="pc-title" href="product.html?id=' + encodeURIComponent(p.id) + '"><h3>' + esc(p.name) + '</h3></a>' +
+          '<a class="pc-title" href="/shop/' + encodeURIComponent(p.id) + '"><h3>' + esc(p.name) + '</h3></a>' +
           '<p class="pc-sum">' + esc(p.summary) + '</p>' +
           '<div class="pc-foot">' +
             '<span class="pc-price">' + (p.price ? '₦' + Number(p.price).toLocaleString('en-US') : 'Price on request') + '</span>' +

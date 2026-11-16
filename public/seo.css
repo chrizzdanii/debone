@@ -1,0 +1,8 @@
+/* FAQ blocks added for search (plain details/summary, no scripts needed) */
+.seo-faq-list{max-width:820px;margin-top:28px;border-top:1px solid rgba(127,127,127,.28)}
+.seo-faq-list details{border-bottom:1px solid rgba(127,127,127,.28);padding:0}
+.seo-faq-list summary{cursor:pointer;list-style:none;padding:20px 40px 20px 0;font-weight:600;font-size:1.05rem;position:relative}
+.seo-faq-list summary::-webkit-details-marker{display:none}
+.seo-faq-list summary::after{content:"+";position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:1.5rem;line-height:1;transition:transform .2s}
+.seo-faq-list details[open] summary::after{transform:translateY(-50%) rotate(45deg)}
+.seo-faq-list p{margin:0 0 22px;max-width:68ch;opacity:.82;line-height:1.65}

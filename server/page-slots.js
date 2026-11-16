@@ -40,7 +40,7 @@ text('stat-since', 'shared', 'Numbers', 'Year DEBONE started', '1997', { hint: '
 
 /* ---------- Studio ---------- */
 text('studio-hero-kicker', 'studio', 'Top of the page', 'Small line above the title', 'Photography · Film · Drone · Editing');
-text('studio-hero-title', 'studio', 'Top of the page', 'Main title', 'The DEBONE Studio.');
+text('studio-hero-title', 'studio', 'Top of the page', 'Main title', 'The DEBONE photo and video studio in Port Harcourt.');
 text('studio-hero-lead', 'studio', 'Top of the page', 'Short introduction', 'Photography, film, drone and editing, made by people who also teach it.', { long: true });
 image('studio-hero-bg', 'studio', 'Top of the page', 'Big background photo', IMG.studioShoot, 'Lights and camera set up for a shoot at the DEBONE studio', 'Wide photo. Landscape works best.');
 image('studio-hero-a', 'studio', 'Top of the page', 'Floating photo 1 (tall)', IMG.portrait, 'Photographer working with a model', 'Portrait (tall) photo.');
@@ -63,7 +63,7 @@ image('studio-visit-img', 'studio', 'Visit', 'Visit section photo', IMG.editSuit
 image('studio-cta-bg', 'studio', 'Visit', 'Bottom banner background', IMG.story, 'DEBONE studio atmosphere', 'Wide, darker photos look best here.');
 
 /* ---------- About ---------- */
-text('about-hero-title', 'about', 'Top of the page', 'Main title', 'About DEBONE.');
+text('about-hero-title', 'about', 'Top of the page', 'Main title', 'About DEBONE, a Port Harcourt photo and video studio.');
 text('about-hero-lead', 'about', 'Top of the page', 'Short introduction', 'A Port Harcourt studio that shoots it, edits it, prints it and teaches it, since 1997.', { long: true });
 image('about-hero-bg', 'about', 'Top of the page', 'Big background photo', IMG.story, 'DEBONE studio atmosphere', 'Wide photo. Landscape works best.');
 image('about-hero-a', 'about', 'Top of the page', 'Floating photo 1 (tall)', IMG.setCamera, 'Setting up a camera on set', 'Portrait (tall) photo.');
@@ -105,7 +105,7 @@ image('about-visit-img', 'about', 'Visit', 'Visit section photo', IMG.dslr, 'The
 image('about-cta-bg', 'about', 'Visit', 'Bottom banner background', IMG.studioShoot, 'DEBONE studio atmosphere', 'Wide, darker photos look best here.');
 
 /* ---------- Services ---------- */
-text('services-hero-title', 'services', 'Top of the page', 'Main title', 'Everything creative, under one roof.');
+text('services-hero-title', 'services', 'Top of the page', 'Main title', 'Photography, video and print services in Port Harcourt.');
 text('services-hero-lead', 'services', 'Top of the page', 'Short introduction', 'From the first photo of the day to the last edit of the campaign, and a team that teaches what it does.', { long: true });
 image('services-hero-a', 'services', 'Top of the page', 'Floating photo 1 (tall)', IMG.portrait, 'Photographer working with a model', 'Portrait (tall) photo.');
 image('services-hero-b', 'services', 'Top of the page', 'Floating photo 2', IMG.editHands, 'Hands editing video on a computer', 'Landscape or square photo.');

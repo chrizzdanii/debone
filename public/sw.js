@@ -1,5 +1,5 @@
 /* DEBONE service worker: shows /offline.html when a page cannot be reached. Nothing else is cached. */
-var VERSION = 'debone-offline-v1';
+var VERSION = 'debone-offline-v2';
 var CORE = ['/offline.html', '/error-pages.css?v=2', '/error-pages.js?v=2', '/favicon.svg'];
 
 self.addEventListener('install', function (e) {

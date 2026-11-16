@@ -12,7 +12,7 @@
     var box = document.getElementById('home-services');
     if (!box) return;
     box.innerHTML = list.slice(0, 6).map(function (s) {
-      return '<article class="card"><a class="card-link" href="service.html?id=' + encodeURIComponent(s.id) + '" aria-label="' + esc(s.title) + '">' +
+      return '<article class="card"><a class="card-link" href="/services/' + encodeURIComponent(s.id) + '" aria-label="' + esc(s.title) + '">' +
         '<div class="card-media">' + (s.image ? '<img src="' + esc(s.image) + '" alt="' + esc(s.title) + '" loading="lazy">' : '') + '</div>' +
         '<h3>' + esc(s.title) + '</h3><p>' + esc(s.summary) + '</p><span class="card-go">Read more ' + arrow() + '</span></a></article>';
     }).join('');
@@ -28,12 +28,12 @@
     if (!box) return;
     box.innerHTML = list.map(function (s, i) {
       return '<article class="sv-row' + (i % 2 ? ' flip' : '') + '" data-reveal>' +
-        '<a class="sv-img" href="service.html?id=' + encodeURIComponent(s.id) + '" aria-label="' + esc(s.title) + '">' +
+        '<a class="sv-img" href="/services/' + encodeURIComponent(s.id) + '" aria-label="' + esc(s.title) + '">' +
           (s.image ? '<img src="' + esc(s.image) + '" alt="' + esc(s.title) + '" loading="lazy">' : '<span class="sv-noimg">' + esc(s.title) + '</span>') +
         '</a>' +
         '<div class="sv-copy"><span class="sv-num" aria-hidden="true">' + pad(s.number) + '</span>' +
           '<h2>' + esc(s.title) + '</h2><p>' + esc(s.summary) + '</p>' +
-          '<a class="sv-link" href="service.html?id=' + encodeURIComponent(s.id) + '">View this service ' + arrow() + '</a></div>' +
+          '<a class="sv-link" href="/services/' + encodeURIComponent(s.id) + '">View this service ' + arrow() + '</a></div>' +
       '</article>';
     }).join('') || '<div class="empty-state">Our services will appear here soon.</div>';
     var count = document.getElementById('sv-count');
@@ -64,7 +64,7 @@
   }
 
   function detail(list) {
-    var id = new URLSearchParams(location.search).get('id');
+    var id = window.__SEO_ID || new URLSearchParams(location.search).get('id');
     var box = document.getElementById('sv-detail');
     var idx = list.findIndex(function (x) { return x.id === id; });
     var s = list[idx];
@@ -77,7 +77,7 @@
     }
     if (more) more.style.display = '';
     if (after) after.style.display = '';
-    document.title = s.title + ' | DEBONE Photos & Video Editing Studio';
+    if (!window.__SEO_ID) document.title = s.title + ' | DEBONE Photos & Video Editing Studio';
     var d = parseDescription(s.description);
     var lead = s.summary || d.paras.shift() || '';
     var body = d.paras.filter(function (p) { return p !== lead; });
@@ -93,7 +93,7 @@
         '<div class="container svd-grid">' +
           '<figure class="svd-media" id="svd-media">' +
             '<div class="svd-frame">' +
-              (s.image ? '<img src="' + esc(s.image) + '" alt="" onerror="this.style.display=\'none\'">' : '<span class="svd-noimg">' + esc(s.title) + '</span>') +
+              (s.image ? '<img src="' + esc(s.image) + '" alt="' + esc(s.title) + ' in Port Harcourt by DEBONE" onerror="this.style.display=\'none\'">' : '<span class="svd-noimg">' + esc(s.title) + '</span>') +
               '<span class="svd-sheen"></span>' +
             '</div>' +
             '<i class="svd-corner c1"></i><i class="svd-corner c2"></i><i class="svd-corner c3"></i><i class="svd-corner c4"></i>' +
@@ -103,7 +103,7 @@
           '<div class="svd-copy">' +
             '<a class="svd-back" href="services.html">' + back() + ' All services</a>' +
             '<p class="svd-eyebrow"><span>Service ' + pad(idx + 1) + '</span><i></i><span>of ' + pad(list.length) + '</span></p>' +
-            '<h1 class="svd-title" style="--fs:' + scale + '">' + words + '</h1>' +
+            '<h1 class="svd-title" style="--fs:' + scale + '">' + words + (/port harcourt/i.test(s.title) ? '' : ' <span class="svd-loc" style="display:block;font-size:.34em;letter-spacing:.04em;margin-top:.35em">in Port Harcourt</span>') + '</h1>' +
             '<p class="svd-lead">' + esc(lead) + '</p>' +
             '<span class="svd-rule"></span>' +
             body.map(function (p) { return '<p class="svd-body">' + esc(p) + '</p>'; }).join('') +
@@ -122,14 +122,14 @@
     if (nav) {
       var prev = list[(idx - 1 + list.length) % list.length], next = list[(idx + 1) % list.length];
       nav.innerHTML = list.length < 2 ? '' :
-        '<a class="svn svn-prev" href="service.html?id=' + encodeURIComponent(prev.id) + '"><span class="svn-dir">' + back() + ' Previous</span><b>' + esc(prev.title) + '</b></a>' +
-        '<a class="svn svn-next" href="service.html?id=' + encodeURIComponent(next.id) + '"><span class="svn-dir">Next ' + arrow() + '</span><b>' + esc(next.title) + '</b></a>';
+        '<a class="svn svn-prev" href="/services/' + encodeURIComponent(prev.id) + '"><span class="svn-dir">' + back() + ' Previous</span><b>' + esc(prev.title) + '</b></a>' +
+        '<a class="svn svn-next" href="/services/' + encodeURIComponent(next.id) + '"><span class="svn-dir">Next ' + arrow() + '</span><b>' + esc(next.title) + '</b></a>';
     }
 
     var rel = list.filter(function (x) { return x.id !== s.id; }).slice(0, 3);
     var rbox = document.getElementById('sv-related');
     if (rbox) rbox.innerHTML = rel.map(function (x) {
-      return '<a class="sv-mini" data-reveal href="service.html?id=' + encodeURIComponent(x.id) + '"><span class="sv-mini-img">' + (x.image ? '<img src="' + esc(x.image) + '" alt="" loading="lazy">' : '') + '</span><b>' + esc(x.title) + '</b><span class="sv-mini-go">' + arrow() + '</span></a>';
+      return '<a class="sv-mini" data-reveal href="/services/' + encodeURIComponent(x.id) + '"><span class="sv-mini-img">' + (x.image ? '<img src="' + esc(x.image) + '" alt="' + esc(x.title) + '" loading="lazy">' : '') + '</span><b>' + esc(x.title) + '</b><span class="sv-mini-go">' + arrow() + '</span></a>';
     }).join('');
 
     reveal(document.querySelectorAll('[data-reveal]'));

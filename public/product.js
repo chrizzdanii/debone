@@ -27,7 +27,7 @@
     flush();
     return { paras: paras, bullets: bullets };
   }
-  var id = new URLSearchParams(location.search).get('id');
+  var id = window.__SEO_ID || new URLSearchParams(location.search).get('id');
   var box = document.getElementById('product');
   var related = document.getElementById('related');
 
@@ -44,7 +44,7 @@
       return;
     }
     var cat = data.categories.find(function (c) { return c.id === p.cat; });
-    document.title = p.name + ' | DEBONE Shop';
+    if (!window.__SEO_ID) document.title = p.name + ' | DEBONE Shop';
 
     box.classList.toggle('pv-still', !first);
     var doc = parseDescription(p.description);
@@ -99,8 +99,8 @@
       });
     }
     related.innerHTML = others.map(function (x) {
-      return '<article class="prod"><a class="prod-link" href="product.html?id=' + encodeURIComponent(x.id) + '">' +
-        (x.image ? '<div class="prod-art"><img src="' + esc(x.image) + '" alt="" loading="lazy"></div>' : '<div class="prod-art" aria-hidden="true"><span>' + esc(x.name.split(' ')[0]) + '</span></div>') +
+      return '<article class="prod"><a class="prod-link" href="/shop/' + encodeURIComponent(x.id) + '">' +
+        (x.image ? '<div class="prod-art"><img src="' + esc(x.image) + '" alt="' + esc(x.name) + '" loading="lazy"></div>' : '<div class="prod-art" aria-hidden="true"><span>' + esc(x.name.split(' ')[0]) + '</span></div>') +
         '<div class="prod-body"><p class="prod-cat">' + esc((data.categories.find(function (c) { return c.id === x.cat; }) || {}).label || '') + '</p>' +
         '<h3>' + esc(x.name) + '</h3><p>' + esc(x.summary) + '</p></div></a></article>';
     }).join('');

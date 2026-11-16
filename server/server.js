@@ -17,6 +17,7 @@ const ROOT = path.join(__dirname, '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const PRIVATE_DIR = path.join(__dirname, 'private');
 const { createStore, SUPABASE, DATA_DIR } = require('./store');
+const seo = require('./seo');
 const { SLOTS: PAGE_SLOTS, PAGES: PAGE_LIST, SLOT_MAP: PAGE_SLOT_MAP, LIMITS: PAGE_LIMITS } = require('./page-slots');
 const SECRET_FILE = path.join(DATA_DIR, 'session.secret');
 const ON_VERCEL = !!process.env.VERCEL;
@@ -4121,15 +4122,36 @@ async function handler(req, res) {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const pathname = url.pathname;
     if (pathname === '/robots.txt') {
-      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' });
-      return res.end(`User-agent: *\nDisallow: /api/\nDisallow: /dashboard.html\nDisallow: /admin.html\nDisallow: /staff-login.html\nDisallow: /reset-password.html\nDisallow: /forgot-password.html\n\nSitemap: ${PUBLIC_URL}/sitemap.xml\n`);
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
+      return res.end(seo.robotsTxt(PUBLIC_URL));
     }
     if (pathname === '/sitemap.xml') {
-      const pages = ['', 'works.html', 'services.html', 'products.html', 'nin.html', 'academy.html', 'privacy.html', 'terms.html', 'refund-policy.html'];
-      const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-        pages.map(p => `  <url><loc>${PUBLIC_URL}/${p}</loc></url>`).join('\n') + '\n</urlset>\n';
-      res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-cache' });
+      // Built from the live data, so services and products added in the admin appear here by themselves.
+      await ensureReady();
+      db = await store.refresh(db);
+      const xml = seo.sitemapXml(PUBLIC_URL, orderedServices().map(sv => serviceView(sv, 0)).map((v, i) => Object.assign(v, { updatedAt: orderedServices()[i].updatedAt })),
+        orderedProducts().map(p => Object.assign(productView(p), { updatedAt: p.updatedAt })));
+      res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
       return res.end(xml);
+    }
+    // Real, crawlable pages for every service and product: /services/<id> and /shop/<id>
+    {
+      const m = pathname.match(/^\/(services|shop)\/([A-Za-z0-9_-]+)\/?$/);
+      if (m && (req.method === 'GET' || req.method === 'HEAD')) {
+        await ensureReady();
+        db = await store.refresh(db);
+        const isService = m[1] === 'services';
+        const list = isService ? orderedServices() : orderedProducts();
+        const item = list.find(x => x.id === m[2]);
+        if (!item) return sendErrorPage(res, 404);
+        const tpl = fs.readFileSync(path.join(PUBLIC_DIR, isService ? 'service.html' : 'product.html'), 'utf8');
+        const html = isService
+          ? seo.renderService(tpl, serviceView(item, list.indexOf(item)), list, PUBLIC_URL)
+          : seo.renderProduct(tpl, productView(item), categoriesOf().find(c => c.id === item.cat), PUBLIC_URL);
+        const buf = Buffer.from(html, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400', 'Content-Length': buf.length });
+        return res.end(req.method === 'HEAD' ? undefined : buf);
+      }
     }
     if (pathname === '/api/events' && ON_VERCEL) {
       // Serverless functions cannot hold a connection open. 204 tells the browser to stop; the page then checks for updates every few seconds instead.
