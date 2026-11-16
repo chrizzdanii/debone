@@ -154,7 +154,7 @@ function renderService(tpl, sv, all, base) {
 function renderProduct(tpl, p, cat, base) {
   const canonical = base + '/shop/' + encodeURIComponent(p.id);
   const name = String(p.name || '');
-  const title = clip(name, 46) + ' | Buy in Port Harcourt | DEBONE';
+  const title = clip(name, 36) + ' | Buy in Port Harcourt | DEBONE';
   const d = parseDescription(p.description);
   let description = clip(p.summary || d.paras[0] || name, 112);
   description = clip(description + ' Order on WhatsApp from DEBONE, Port Harcourt.', 158);
