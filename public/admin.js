@@ -631,7 +631,7 @@
     setView(head('Catalogue', 'Courses & lessons', 'Create courses, set prices, and write the lessons students see.') +
       '<section class="box"><h2>New course</h2><form class="form-grid" id="course-form">' +
         '<div class="grid-2"><div class="field"><label>Title</label><input class="input" name="title" required maxlength="120"></div>' +
-        '<div class="field"><label>Subtitle</label><input class="input" name="subtitle" maxlength="80" placeholder="e.g. Full course · One-time payment"></div></div>' +
+        '<div class="field"><label>Subtitle</label><input class="input" name="subtitle" maxlength="80" placeholder="e.g. Full course · Pay once or in installments"></div></div>' +
         '<div class="field"><label>Summary</label><textarea class="input" name="summary" maxlength="500"></textarea></div>' +
         '<div class="grid-3"><div class="field"><label>Level</label><input class="input" name="level" value="Beginner" maxlength="30"></div>' +
         '<div class="field"><label>Price (' + 'NGN' + ', 0 = free)</label><input class="input" type="number" name="price" min="0" value="0"></div>' +
@@ -688,6 +688,9 @@
         (c.comingSoon ? '<div class="soon-banner"><div><b>' + (c.waitlistCount || 0) + '</b> ' + ((c.waitlistCount || 0) === 1 ? 'person is' : 'people are') + ' on the waiting list for this course.' +
           (c.minStudents ? ' Minimum to run: <b>' + c.minStudents + '</b>.' : '') + '</div>' +
           '<div class="row-actions"><a class="btn btn-ghost btn-sm" href="#waitlist">See who is waiting</a><button class="btn btn-solid btn-sm" type="button" id="launch-course">Launch course now</button></div></div>' : '') +
+        '<div class="field"><label>Payment options for this course</label><div class="row-actions"><label class="muted"><input type="checkbox" name="inst2"' + ((c.installmentPlans || [2, 3]).indexOf(2) >= 0 ? ' checked' : '') + '> Allow 2 installments</label>' +
+          '<label class="muted"><input type="checkbox" name="inst3"' + ((c.installmentPlans || [2, 3]).indexOf(3) >= 0 ? ' checked' : '') + '> Allow 3 installments</label></div>' +
+          '<p class="muted small" style="margin:6px 0 0">Students can always pay in full. Installments are only shown above the minimum price in Business rules, and only while there is enough time before the course ends.</p></div>' +
         offerFields(c.originalPrice, c.offerEnds) +
         '<div class="grid-2"><div class="field"><label>Category</label><select class="input" name="category"><option value="">Not set</option>' + CATS.map(function (x) { return opt(x.id, x.label + (x.comingSoon ? ' (coming soon)' : ''), c.category); }).join('') + '</select></div>' +
         '<div class="field"><label>Instructor</label><input class="input" name="instructor" maxlength="120" value="' + esc(c.instructor || '') + '" placeholder="Name of the qualified instructor"></div></div>' +
@@ -740,7 +743,8 @@
       var det = { title: fv(f, 'title'), subtitle: fv(f, 'subtitle'), summary: fv(f, 'summary'), level: fv(f, 'level'), price: Number(fv(f, 'price')) || 0,
         category: fv(f, 'category'), instructor: fv(f, 'instructor'), startDate: fv(f, 'startDate'), duration: fv(f, 'duration'), schedule: fv(f, 'schedule'),
         classesPerWeek: fv(f, 'classesPerWeek'), sessionsTotal: fv(f, 'sessionsTotal'), minStudents: fv(f, 'minStudents'),
-        comingSoon: fv(f, 'comingSoon') === 'true', originalPrice: Number(fv(f, 'originalPrice')) || 0, offerEnds: fv(f, 'offerEnds') };
+        comingSoon: fv(f, 'comingSoon') === 'true', originalPrice: Number(fv(f, 'originalPrice')) || 0, offerEnds: fv(f, 'offerEnds'),
+        installmentPlans: [f.elements.inst2.checked ? 2 : 0, f.elements.inst3.checked ? 3 : 0].filter(Boolean) };
       try { await api('/api/staff/courses/' + encodeURIComponent(id), { method: 'PATCH', body: det }); }
       catch (e) { toast(e.message, 'err'); return; }
       toast('Course saved.');
@@ -796,22 +800,81 @@
   }
 
   /* ---------- Users and roles (admin) ---------- */
+  /* WhatsApp chat link with a friendly opening message the admin can edit before sending */
+  function waLink(u, text) {
+    var n = String(u.whatsapp || '').replace(/\D/g, '');
+    if (!n) return '';
+    var first = String(u.name || '').trim().split(/\s+/)[0] || 'there';
+    var msg = text || ('Hello ' + first + ', this is DEBONE Academy. We saw you created an account with us. Is there anything we can help you with, or any question about our courses?');
+    return 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
+  }
+  var userFilter = 'all';
   async function renderUsers() {
     if (!isAdmin()) return denied();
     crumb.textContent = 'Users & roles';
     var r = await api('/api/staff/users');
-    setView(head('People', 'Users & roles', 'Make instructors, promote admins, and see who is enrolled.') +
-      '<section class="box"><div class="table-wrap"><table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Enrolled</th><th>Role</th></tr></thead><tbody>' +
-      r.users.map(function (u) {
-        return '<tr><td><b>' + esc(u.name) + '</b></td><td>' + esc(u.email) + '</td><td>' + esc(fmt(u.createdAt)) + '</td><td>' + u.enrolled + '</td>' +
+    var shown = r.users.filter(function (u) {
+      if (userFilter === 'idle') return (u.role || 'student') === 'student' && !u.paid && !u.enrolled;
+      if (userFilter === 'late') return u.plansLate;
+      return true;
+    });
+    var idle = r.users.filter(function (u) { return (u.role || 'student') === 'student' && !u.paid && !u.enrolled; }).length;
+    var chip = function (k, label) { return '<button type="button" class="btn ' + (userFilter === k ? 'btn-solid' : 'btn-ghost') + ' btn-sm" data-ufilter="' + k + '">' + label + '</button>'; };
+    setView(head('People', 'Users & roles', 'Make instructors, promote admins, see who is enrolled, and message students on WhatsApp.') +
+      '<div class="row-actions" style="margin-bottom:14px">' + chip('all', 'Everyone (' + r.users.length + ')') + chip('idle', 'Signed up, no course yet (' + idle + ')') + chip('late', 'Late installment') + '</div>' +
+      '<section class="box"><div class="table-wrap"><table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>WhatsApp</th><th>Joined</th><th>Enrolled</th><th>Role</th></tr></thead><tbody>' +
+      (shown.length ? shown.map(function (u) {
+        var link = waLink(u);
+        return '<tr><td><b>' + esc(u.name) + '</b>' + ((u.role || 'student') === 'student' && !u.paid && !u.enrolled ? '<div class="muted" style="font-size:.8rem">No course yet</div>' : '') + '</td><td>' + esc(u.email) + '</td>' +
+          '<td>' + (link ? '<a class="btn btn-ghost btn-sm" href="' + esc(link) + '" target="_blank" rel="noopener">Message ' + esc(u.whatsapp) + '</a>' : '<span class="muted">Not given</span>') + '</td>' +
+          '<td>' + esc(fmt(u.createdAt)) + '</td><td>' + u.enrolled + '</td>' +
           '<td><select class="input role-select" data-user="' + esc(u.id) + '" style="min-width:150px">' +
           ['student', 'instructor', 'admin'].map(function (x) { return '<option value="' + x + '"' + (u.role === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') +
           '</select></td></tr>';
-      }).join('') + '</tbody></table></div></section>');
+      }).join('') : '<tr><td colspan="6" class="muted">Nobody here.</td></tr>') + '</tbody></table></div></section>');
+    view.querySelectorAll('[data-ufilter]').forEach(function (b) { b.addEventListener('click', function () { userFilter = b.getAttribute('data-ufilter'); renderUsers(); }); });
     view.querySelectorAll('.role-select').forEach(function (s) {
       s.addEventListener('change', async function () {
         try { await api('/api/staff/users/' + encodeURIComponent(s.getAttribute('data-user')), { method: 'PATCH', body: { role: s.value } }); toast('Role updated.'); }
         catch (e) { toast(e.message, 'err'); renderUsers(); }
+      });
+    });
+  }
+
+  /* ---------- Installment plans (admin) ---------- */
+  var planFilter = 'attention';
+  var PLAN_WORDS = { on_track: 'On track', due_soon: 'Due soon', overdue: 'Overdue', paused: 'Access paused', defaulted: 'Needs your decision', completed: 'Fully paid', cancelled: 'Closed', refund_review: 'Refund review', pending: 'First payment not made' };
+  async function renderInstallments() {
+    if (!isAdmin()) return denied();
+    crumb.textContent = 'Installments';
+    var r = await api('/api/staff/plans?status=' + encodeURIComponent(planFilter)), s = r.summary;
+    var chip = function (k, label) { return '<button type="button" class="btn ' + (planFilter === k ? 'btn-solid' : 'btn-ghost') + ' btn-sm" data-pfilter="' + k + '">' + label + '</button>'; };
+    setView(head('Money', 'Installments', 'Students paying in parts. Late students are listed first. Access pauses by itself when a payment is overdue, and opens again when you approve their payment.') +
+      '<section class="kpis"><div class="stat-card"><span>Open plans</span><b>' + s.active + '</b></div><div class="stat-card"><span>Late</span><b>' + s.attention + '</b></div><div class="stat-card"><span>Access paused</span><b>' + s.paused + '</b></div>' +
+      '<div class="stat-card"><span>Still to collect</span><b>' + naira(s.outstandingNaira) + '</b></div><div class="stat-card"><span>Overdue now</span><b>' + naira(s.overdueNaira) + '</b></div></section>' +
+      '<div class="row-actions" style="margin-bottom:14px">' + chip('attention', 'Needs attention') + chip('active', 'All open') + chip('completed', 'Fully paid') + chip('cancelled', 'Closed') + chip('all', 'Everything') + '</div>' +
+      '<section class="box"><div class="table-wrap"><table class="tbl"><thead><tr><th>Student</th><th>Course</th><th>Paid</th><th>Next payment</th><th>Status</th><th></th></tr></thead><tbody>' +
+      (r.plans.length ? r.plans.map(function (p) {
+        var msg = 'Hello ' + (p.student.name || '').split(' ')[0] + ', this is DEBONE Academy. A reminder that your payment of ' + (p.next ? naira(p.next.amountNaira) : '') + ' for ' + p.title + (p.next ? ' was due on ' + p.next.dueLabel : '') + '. You can pay from Payments in your dashboard. Please tell us if you need any help.';
+        var link = waLink(p.student, msg), open = p.status === 'active';
+        return '<tr data-id="' + esc(p.id) + '"><td><b>' + esc(p.student.name) + '</b><div class="muted" style="font-size:.8rem">' + esc(p.student.email) + '</div></td>' +
+          '<td>' + esc(p.title) + '<div class="muted" style="font-size:.8rem">' + (p.kind === 'bundle' ? 'Bundle · ' : '') + p.count + ' installments · ' + naira(p.totalNaira) + '</div></td>' +
+          '<td>' + p.paidCount + ' of ' + p.count + '<div class="muted" style="font-size:.8rem">' + naira(p.paidNaira) + ' paid · ' + naira(p.balanceNaira) + ' left</div></td>' +
+          '<td>' + (p.next ? naira(p.next.amountNaira) + '<div class="muted" style="font-size:.8rem">' + esc(p.next.dueLabel) + (p.daysLate > 0 ? ' · ' + p.daysLate + ' day(s) late' : '') + '</div>' : '<span class="muted">None</span>') + '</td>' +
+          '<td><span class="pl-pill ' + esc(p.health) + '">' + esc(PLAN_WORDS[p.health] || p.health) + '</span>' + (p.receiptWaiting ? '<div class="muted" style="font-size:.8rem">Receipt waiting in Payments</div>' : '') + (p.note ? '<div class="muted" style="font-size:.8rem">' + esc(p.note) + '</div>' : '') + '</td>' +
+          '<td><div class="row-actions">' + (link ? '<a class="btn btn-ghost btn-sm" href="' + esc(link) + '" target="_blank" rel="noopener">WhatsApp</a>' : '') +
+          (open ? '<button class="btn btn-ghost btn-sm" type="button" data-act="record">Record payment</button><button class="btn btn-ghost btn-sm" type="button" data-act="extend">More time</button><button class="btn btn-ghost btn-sm btn-danger" type="button" data-act="cancel">Close plan</button>' : '') + '</div></td></tr>';
+      }).join('') : '<tr><td colspan="6" class="muted">Nothing here. When a student is late, they appear in this list.</td></tr>') + '</tbody></table></div></section>');
+    view.querySelectorAll('[data-pfilter]').forEach(function (b) { b.addEventListener('click', function () { planFilter = b.getAttribute('data-pfilter'); renderInstallments(); }); });
+    view.querySelectorAll('[data-act]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var id = b.closest('tr').getAttribute('data-id'), act = b.getAttribute('data-act'), body = { action: act };
+        if (act === 'record') { if (!window.confirm('Record the next installment as paid? Use this for cash or a transfer you have already confirmed outside the website.')) return; }
+        if (act === 'extend') { var d = window.prompt('Give how many more days to pay (1 to 30)?', '7'); if (!d) return; body.days = Number(d); }
+        if (act === 'cancel') { var why = window.prompt('Close this plan and remove the student’s access. Money already paid is not refunded automatically. Reason:', ''); if (!why) return; body.reason = why; }
+        b.disabled = true;
+        try { await api('/api/staff/plans/' + encodeURIComponent(id), { method: 'PATCH', body: body }); toast('Done.'); renderInstallments(); }
+        catch (e) { toast(e.message, 'err'); b.disabled = false; }
       });
     });
   }
@@ -827,7 +890,7 @@
       '<section class="kpis"><div class="stat-card"><span>Confirmed</span><b>' + ok.length + '</b></div><div class="stat-card"><span>Total received</span><b>' + naira(total) + '</b></div></section>' +
       '<section class="box"><div class="table-wrap"><table class="tbl"><thead><tr><th>Student</th><th>Course</th><th>Amount</th><th>Status</th><th>Reference</th><th>Date</th></tr></thead><tbody>' +
       (r.payments.length ? r.payments.map(function (p) {
-        return '<tr><td><b>' + esc(p.studentName) + '</b><div class="muted" style="font-size:.8rem">' + esc(p.studentEmail) + '</div></td><td>' + esc(p.courseTitle) + '</td><td>' + naira(p.amount) + '</td>' +
+        return '<tr><td><b>' + esc(p.studentName) + '</b><div class="muted" style="font-size:.8rem">' + esc(p.studentEmail) + '</div></td><td>' + esc(p.courseTitle) + (p.installment ? '<div class="muted" style="font-size:.8rem">' + esc(p.installment) + '</div>' : '') + '</td><td>' + naira(p.amount) + '</td>' +
           '<td><span class="status ' + esc(p.status) + '">' + esc(p.status) + '</span></td><td style="font-size:.8rem">' + esc(p.reference) + '</td><td>' + esc(fmt(p.createdAt)) + '</td></tr>';
       }).join('') : '<tr><td colspan="6" class="muted">No payments yet.</td></tr>') +
       '</tbody></table></div></section>');
@@ -2204,7 +2267,7 @@
     if (s < 10) return 'just now'; if (s < 60) return s + 's ago'; if (s < 3600) return Math.floor(s / 60) + ' min ago'; if (s < 86400) return Math.floor(s / 3600) + ' h ago'; return Math.floor(s / 86400) + ' d ago';
   }
   function rpTasks(k) {
-    var t = [['Assignments to mark', k.pendingGrading, '#assignments'], ['Payments to review', k.pendingOrders, '#payments'], ['Refund requests', k.pendingRefunds, '#refunds'], ['Certificate requests', k.pendingCerts, '#certificates']];
+    var t = [['Assignments to mark', k.pendingGrading, '#assignments'], ['Payments to review', k.pendingOrders, '#payments'], ['Refund requests', k.pendingRefunds, '#refunds'], ['Certificate requests', k.pendingCerts, '#certificates'], ['Late installments', k.plansLate || 0, '#installments']];
     return t.map(function (x) { return '<a class="lv-task' + (x[1] ? ' hot' : '') + '" href="' + x[2] + '"><span>' + x[0] + '</span><b>' + x[1] + '</b></a>'; }).join('');
   }
   var RP_KPIS = [
@@ -2450,6 +2513,10 @@
         '<div class="grid-3">' + f('replayDays','Replay available for (days after the course ends)') + f('downloadLimit','Downloads allowed per product') + f('downloadDays','Download access lasts (days)') + '</div>' +
         '<div class="grid-3">' + f('depositPercent','Studio deposit (% of quotation)') + f('refundWindowDays','Refund window (days after payment)') + f('noticeDays','Notice before a course that is short of students (days)') + '</div>' +
         '<div class="grid-3">' + f('referralDiscountPercent','Friend discount on first course (%)') + f('referrerRewardPercent','Your reward: % of every amount your friend pays') + f('withdrawMinReferrals','Paying friends needed to withdraw') + f('certMinPercent','Minimum % to pass an assignment for a certificate') + '</div>' +
+        '<div class="bank-edit"><p class="rf2-label">Installment payments (courses and bundles)</p><p class="muted small">Students may pay in 2 or 3 installments (60/40 or 50/30/20). The first payment opens the course and every payment falls due before the course ends. Late payments: reminder, then a grace period, then access is paused until they pay.</p>' +
+        '<div class="set-announce"><label class="set-toggle"><input type="checkbox" name="installmentsOn"' + (s.installmentsOn !== false ? ' checked' : '') + '><span class="set-slider"></span><b>Offer installment payments</b></label></div>' +
+        '<div class="grid-3">' + f('installmentMinPrice','Only offer installments above this price (₦)') + f('installmentIntervalDays','Days between installments (shorter if the course is short)') + f('installmentGraceDays','Grace period after the due date (days) before access pauses') + '</div>' +
+        '<div class="grid-3">' + f('installmentDefaultDays','Days overdue before the plan is flagged for your decision') + '</div></div>' +
         '<div class="set-announce"><label class="set-toggle"><input type="checkbox" name="allowResubmission"' + (s.allowResubmission !== false ? ' checked' : '') + '><span class="set-slider"></span><b>Students may resubmit work the team asks them to improve</b></label></div>' +
         '<div class="bank-edit"><p class="rf2-label">Bank accounts students transfer to</p><p class="muted small">These accounts appear on every payment page. Students see the account name and number exactly as you type them here.</p>' +
         '<div class="grid-3">' + f('bankOneBank','Account 1: bank name','text') + f('bankOneName','Account 1: account name','text') + f('bankOneNumber','Account 1: account number','text') + '</div>' +
@@ -2458,8 +2525,9 @@
     document.getElementById('rules-form').addEventListener('submit', async function (e) {
       e.preventDefault();
       var fm = e.target, body = {};
-      ['replayDays','downloadLimit','downloadDays','depositPercent','refundWindowDays','noticeDays','referralDiscountPercent','referrerRewardPercent','withdrawMinReferrals','certMinPercent','bankOneBank','bankOneName','bankOneNumber','bankTwoBank','bankTwoName','bankTwoNumber'].forEach(function (k) { body[k] = fv(fm, k); });
+      ['replayDays','downloadLimit','downloadDays','depositPercent','refundWindowDays','noticeDays','referralDiscountPercent','referrerRewardPercent','withdrawMinReferrals','certMinPercent','installmentMinPrice','installmentIntervalDays','installmentGraceDays','installmentDefaultDays','bankOneBank','bankOneName','bankOneNumber','bankTwoBank','bankTwoName','bankTwoNumber'].forEach(function (k) { body[k] = fv(fm, k); });
       body.allowResubmission = !!fm.elements.allowResubmission.checked;
+      body.installmentsOn = !!fm.elements.installmentsOn.checked;
       try { await api('/api/staff/settings', { method: 'PUT', body: body }); toast('Business rules saved.'); }
       catch (ex) { document.getElementById('rules-err').textContent = ex.message; }
     });
@@ -2587,7 +2655,7 @@
     silent = silent === true;
     var parts = (location.hash || '#overview').replace(/^#/, '').split('/');
     var name = parts[0] || 'overview', arg = parts[1] ? decodeURIComponent(parts[1]) : null;
-    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'waitlist', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification', 'pages'].includes(name)) name = 'overview';
+    if (!['overview', 'live', 'assignments', 'courses', 'users', 'payments', 'announce', 'newsletter', 'products', 'works', 'settings', 'setup', 'services', 'feedback', 'applications', 'webinars', 'reviews', 'certificates', 'digital', 'bundles', 'waitlist', 'bookings', 'refunds', 'reports', 'community', 'talent', 'challenges', 'referrals', 'rules', 'transfers', 'zoom-verification', 'pages', 'installments'].includes(name)) name = 'overview';
     document.querySelectorAll('.side-nav a[data-view]').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('data-view') === name);
     });
@@ -2624,6 +2692,7 @@
       if (name === 'challenges') return await renderChallenges();
       if (name === 'referrals') return await renderReferrals();
       if (name === 'rules') return await renderRules();
+      if (name === 'installments') return await renderInstallments();
       if (name === 'transfers') return await renderTransfers();
     } catch (e) { if (!silent) setView(head('Error', 'Something went wrong') + '<div class="empty-state">' + esc(e.message) + '</div>'); }
   }

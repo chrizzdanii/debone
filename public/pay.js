@@ -97,10 +97,23 @@
     });
   }
 
+  /* Installment plans: show every payment of the plan and what happens if one is late */
+  function paintPlan(o) {
+    var host = document.getElementById('pay-plan'), pl = o.plan;
+    if (!host) return;
+    if (!pl) { host.hidden = true; return; }
+    host.hidden = false;
+    host.innerHTML = '<p class="eyebrow">Your payment plan</p><table class="ins-plan-tbl" style="width:100%;font-size:.9rem"><tbody>' + pl.schedule.map(function (s) {
+      return '<tr><td>' + (s.status === 'paid' ? '✓ ' : '') + 'Installment ' + s.no + ' of ' + pl.count + '</td><td>' + esc(s.status === 'paid' ? 'Paid' : s.dueLabel) + '</td><td style="text-align:right"><b>' + naira(s.amountNaira) + '</b></td></tr>';
+    }).join('') + '</tbody></table>' +
+      '<p class="plan-info">If a payment is more than ' + pl.graceDays + ' day(s) late, access to the course pauses until it is paid. Your progress is saved, and the course opens again once we confirm your payment.</p>';
+  }
+
   function render(o) {
     lastStatus = o.status;
     box.amount.textContent = naira(o.amount);
-    box.item.textContent = o.item;
+    box.item.textContent = o.item + (o.planLabel ? ' · ' + o.planLabel : '');
+    paintPlan(o);
     box.ref.textContent = o.reference;
     box.crumb.textContent = o.item;
     paintSteps(o.status);
@@ -127,6 +140,7 @@
       var isProduct = o.kind === 'product';
       box.eyebrow.textContent = 'Step 4 of 4';
       box.lead.textContent = isProduct ? 'Payment confirmed. Your file is ready to download.' : 'Payment confirmed. Your course is now open.';
+      if (o.plan && o.plan.next && o.plan.status !== 'completed') box.lead.textContent = 'Payment confirmed. ' + o.plan.message;
       var go = isProduct ? 'dashboard.html#downloads' : (o.courseId ? 'dashboard.html#course/' + encodeURIComponent(o.courseId) : 'dashboard.html#payments');
       a.innerHTML = '<div class="pay-done"><span class="pay-tick"></span><h2>' + (isProduct ? 'Payment confirmed' : 'You are in') + '</h2><p class="muted">' + (isProduct ? 'Taking you to your downloads.' : 'Welcome to DEBONE. Your access is ready.') + '</p><a class="btn btn-solid btn-lg" href="' + go + '">' + (isProduct ? 'Go to my downloads' : 'Open my course') + '</a></div>';
       if (isProduct) productSuccess(o); else burst();

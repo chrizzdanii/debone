@@ -21,6 +21,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   var grid = document.getElementById('course-grid');
   if (!grid) return;
 
+  function insHint(c, naira) { var l = c.installments || []; if (!l.length) return ''; var f = Math.min.apply(null, l.map(function (o) { return o.first; })); return 'or from ' + naira(f) + ' to start, in installments'; }
   function fmtDate(iso) {
     if (!iso) return '';
     var d = new Date(iso + 'T00:00:00');
@@ -50,7 +51,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     var price = c.comingSoon ? '<span class="price">Coming soon' + (c.waitlistCount ? '<small>' + c.waitlistCount + ' on the waiting list</small>' : '') + '</span>'
       : (c.free ? '<span class="price">Free<small>No payment</small></span>'
         : o ? '<span class="price">' + naira(c.price) + '' + window.DeboneIllustrativePrice(c.price) + '<small><s>' + naira(o.originalPrice) + '</s> · ✓ Save ' + naira(o.save) + ' (' + o.percent + '% OFF)</small></span>'
-        : '<span class="price">' + naira(c.price) + '' + window.DeboneIllustrativePrice(c.price) + '<small>One-time</small></span>');
+        : '<span class="price">' + naira(c.price) + '' + window.DeboneIllustrativePrice(c.price) + '<small>' + ((c.installments || []).length ? 'One-time, ' + insHint(c, naira) : 'One-time') + '</small></span>');
     var live = c.liveLabel ? '<p class="course-live">' + esc(c.liveLabel) + '</p>' : '';
     var rate = (c.rating && c.rating.count) ? '<p class="course-rating">★ ' + c.rating.avg + ' <span>(' + c.rating.count + (c.rating.count === 1 ? ' review' : ' reviews') + ')</span></p>' : '';
     var img = c.hasImage ? '<div class="course-img"><img src="/api/courses/' + encodeURIComponent(c.id) + '/image" alt="' + esc(c.title) + '" loading="lazy"></div>' : '';

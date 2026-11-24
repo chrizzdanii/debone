@@ -95,6 +95,13 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   async function buy(id, btn) {
     btn.disabled = true; var label = btn.textContent; btn.textContent = 'Opening secure payment…';
     try {
+      var po = window.DInstall ? await api('/api/bundles/' + encodeURIComponent(id) + '/payment-options') : { installments: [] };
+      if (po.installments && po.installments.length) {
+        btn.disabled = false; btn.textContent = label;
+        var title = ((document.querySelector('[data-bundle="' + id + '"]') || {}).textContent || 'Course bundle');
+        return DInstall.ask({ title: 'Pay for this bundle', load: function () { return Promise.resolve(po); },
+          go: function (n) { return api('/api/bundles/' + encodeURIComponent(id) + '/buy', { method: 'POST', body: { plan: n } }).then(function (r) { if (r.order) location.href = 'pay.html?order=' + encodeURIComponent(r.order.id); }); } });
+      }
       var res = await api('/api/bundles/' + encodeURIComponent(id) + '/buy', { method: 'POST', body: {} });
       if (res.order) { location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); return; }
       toast(res.credited ? 'Your previous payments covered this bundle. All included courses are unlocked.' : 'You already have all these courses.'); location.hash = '#courses';

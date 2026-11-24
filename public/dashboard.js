@@ -108,11 +108,23 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
 
   function setView(html) {
     if (window.DLive && DLive.silent && /class="skeleton"/.test(html)) return;
-    view.innerHTML = html;
+    view.innerHTML = planBanner() + html;
     view.classList.remove('enter');
     void view.offsetWidth;
     view.classList.add('enter');
     if (!(window.DLive && DLive.silent)) window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  /* Installment reminder strip: shown on every page while a payment is close, late or has paused a course */
+  function planBanner() {
+    var plans = (state.d && state.d.plans) || [], out = '';
+    plans.forEach(function (pl) {
+      if (['due_soon', 'overdue', 'paused', 'defaulted'].indexOf(pl.health) < 0) return;
+      var bad = pl.health === 'paused' || pl.health === 'defaulted';
+      out += '<div class="plan-banner' + (bad ? ' is-bad' : '') + '" role="status"><p><b>' + esc(pl.title) + '</b> · ' + esc(pl.message) + '</p>' +
+        '<a class="btn btn-solid btn-sm" href="#payments">' + (bad ? 'Pay now to continue' : 'See my payment plan') + '</a></div>';
+    });
+    return out;
   }
 
   function viewHead(eyebrow, title, sub) {
@@ -132,7 +144,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
           ? '<button class="btn btn-ghost btn-sm" type="button" data-check="' + esc(p.reference) + '">Check status</button>'
           : '';
         return '<tr>' +
-          '<td data-label="Course">' + esc(p.courseTitle) + '</td>' +
+          '<td data-label="Course">' + esc(p.courseTitle) + (p.installment ? '<div class="muted small">' + esc(p.installment) + '</div>' : '') + '</td>' +
           '<td data-label="Amount">' + naira(p.amount) + '</td>' +
           '<td data-label="Status"><span class="status ' + esc(p.status) + '">' + esc(p.status) + '</span></td>' +
           '<td data-label="Date">' + fmtDate(p.createdAt) + '</td>' +
@@ -205,7 +217,8 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   function enrolledCard(c, i) {
     var label = c.completed === c.total && c.total > 0 ? 'Review' : (c.completed > 0 ? 'Continue' : 'Start');
     var tagCls = c.comingSoon ? 'soon' : (c.free ? 'free' : 'paid');
-    var tagTxt = c.comingSoon ? 'Coming soon' : (c.free ? 'Free intro' : 'Unlocked');
+    var tagTxt = c.comingSoon ? 'Coming soon' : (c.free ? 'Free intro' : (c.paused ? 'Access paused' : 'Unlocked'));
+    if (c.paused) tagCls = 'soon';
     return '<article class="dcourse" style="--i:' + (i || 0) + '">' + thumb(c) +
       '<div class="dc-body">' +
         '<div class="dc-top"><span class="tag ' + tagCls + '">' + tagTxt + '</span><span class="dc-count">' + c.total + (c.total === 1 ? ' lesson' : ' lessons') + '</span></div>' +
@@ -213,13 +226,13 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
         '<p class="dc-sum">' + esc(c.summary) + '</p>' +
         '<div class="dc-prog"><div class="meta-row"><span>' + c.completed + ' of ' + c.total + ' done</span><span>' + c.progress + '%</span></div>' +
           '<div class="meter teal"><i data-w="' + c.progress + '"></i></div></div>' +
-        (c.comingSoon ? waitlistBlock(c) : '<div class="foot"><a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">' + label + '</a></div>') +
+        (c.comingSoon ? waitlistBlock(c) : c.paused ? '<p class="plan-info">' + esc((c.plan && c.plan.message) || 'A payment is overdue.') + '</p><div class="foot"><a class="btn btn-solid btn-sm" href="#payments">Pay now to continue</a></div>' : '<div class="foot"><a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">' + label + '</a></div>') +
       '</div>' +
     '</article>';
   }
 
   function renderCourses() {
-    var list = state.d.courses.filter(function (c) { return c.enrolled; });
+    var list = state.d.courses.filter(function (c) { return c.enrolled || c.paused; });
     var head = viewHead('Your learning', 'My courses', 'Everything you have unlocked, with your progress.');
     if (!list.length) {
       setView(head + emptyState('You have not unlocked a course yet.') +
@@ -234,7 +247,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
   /* Price with the crossed-out normal price, the saving and a live countdown (the offer is set by the admin) */
   function offerBlock(c, big) {
     var o = c.offer;
-    if (!o) return '<p class="pr-line' + (big ? ' pr-big' : '') + '"><b>' + naira(c.price) + '</b><span>one-time</span>' + window.DeboneIllustrativePrice(c.price) + '</p>';
+    if (!o) return '<p class="pr-line' + (big ? ' pr-big' : '') + '"><b>' + naira(c.price) + '</b><span>' + (c.installments && c.installments.length ? 'one-time, or in installments' : 'one-time') + '</span>' + window.DeboneIllustrativePrice(c.price) + '</p>';
     return '<div class="offer' + (big ? ' offer-big' : '') + '">' +
       '<div class="offer-top"><span class="offer-pct">' + o.percent + '% OFF</span>' +
         (o.endsAt ? '<span class="offer-cd" data-cd="' + esc(o.endsAt) + '"><i></i><em>…</em></span>' : '<span class="offer-cd static"><i></i><em>Limited-time price</em></span>') + '</div>' +
@@ -255,6 +268,9 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     if (c.comingSoon) {
       status = '<span class="tag soon">Coming soon</span>';
       extra = waitlistBlock(c);
+    } else if (c.paused) {
+      status = '<span class="tag soon">Access paused</span>';
+      action = '<a class="btn btn-solid btn-sm" href="#payments">Pay now to continue</a>';
     } else if (c.enrolled) {
       status = '<span class="tag ' + (c.free ? 'free' : 'paid') + '">' + (c.free ? 'Free intro' : 'Unlocked') + '</span>';
       action = '<a class="btn btn-solid btn-sm" href="#course/' + esc(c.id) + '">Open course</a>';
@@ -262,7 +278,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       status = '<span class="tag ' + (c.offer ? 'hot' : 'paid') + '">' + (c.offer ? 'Limited offer' : 'Locked') + '</span>';
       action = '<button class="btn btn-solid btn-sm' + (c.offer ? ' btn-hurry' : '') + '" type="button" data-enroll="' + esc(c.id) + '">' + (c.offer ? 'Grab the deal · ' : 'Enrol for ') + naira(c.price) + '</button>';
     }
-    var showPrice = !(c.free || c.comingSoon || c.enrolled);
+    var showPrice = !(c.free || c.comingSoon || c.enrolled || c.paused);
     var hasOffer = c.offer && !c.enrolled && !c.comingSoon;
     return '<article class="dcourse' + (hasOffer ? ' has-offer' : '') + (c.comingSoon ? ' is-soon' : '') + '" style="--i:' + (i || 0) + '">' +
       (hasOffer ? '<span class="corner-ribbon">' + c.offer.percent + '% OFF</span>' : '') + thumb(c) +
@@ -566,14 +582,18 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       pane.innerHTML = '<div class="paywall"><p class="eyebrow" style="justify-content:center">Coming soon</p><h2>' + esc(course.title) + '</h2><p>This course is not open for enrolment yet. Join the waiting list and we will tell you the moment it opens.</p>' + waitlistBlock(course, true) + '</div>';
       return;
     }
+    if (course.paused) {
+      pane.innerHTML = '<div class="paywall"><p class="eyebrow" style="justify-content:center">Access paused</p><h2>' + esc(course.title) + '</h2><p>' + esc((course.plan && course.plan.message) || 'A payment on your plan is overdue.') + '</p><a class="btn btn-solid" href="#payments">Pay now to continue</a><p class="muted" style="margin-top:18px;font-size:.9rem">Your progress is saved. The course opens again as soon as your payment is confirmed.</p></div>';
+      return;
+    }
     pane.innerHTML =
       '<div class="paywall done-pop' + (course.offer ? ' has-offer' : '') + '">' +
         '<p class="eyebrow" style="justify-content:center">' + (course.offer ? 'Limited-time offer' : 'Locked') + '</p>' +
         '<h2>Unlock ' + esc(course.title) + '</h2>' +
-        (course.offer ? offerBlock(course, true) : '<p class="price">' + naira(course.price) + '' + window.DeboneIllustrativePrice(course.price) + '<small>One-time</small></p>') +
-        '<p>Pay once through secure Paystack checkout to unlock every lesson in this course.</p>' +
+        (course.offer ? offerBlock(course, true) : '<p class="price">' + naira(course.price) + '' + window.DeboneIllustrativePrice(course.price) + '<small>' + (course.installments && course.installments.length ? 'One-time or installments' : 'One-time') + '</small></p>') +
+        '<p>Pay once' + (course.installments && course.installments.length ? ', or in 2 or 3 installments,' : '') + ' by bank transfer to unlock every lesson in this course.</p>' +
         '<button class="btn btn-solid' + (course.offer ? ' btn-hurry' : '') + '" type="button" data-enroll="' + esc(course.id) + '">' + (course.offer ? 'Grab the deal · ' : 'Enrol for ') + naira(course.price) + '</button>' +
-        '<p class="muted" style="margin-top:18px;font-size:.9rem">Your course unlocks automatically once the payment is confirmed.</p>' +
+        '<p class="muted" style="margin-top:18px;font-size:.9rem">Your course opens as soon as we confirm your payment.</p>' +
       '</div>';
     if (window.DOffers) DOffers.tick();
   }
@@ -668,12 +688,24 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       '<label class="enrol-label" for="enrol-code">Coupon code (optional)</label>' +
       '<input class="input" id="enrol-code" autocomplete="off" placeholder="Enter your coupon code" maxlength="20">' +
       '<p class="enrol-hint">Coupons work on the account registered with the email you subscribed with.</p>' +
-      '<div class="enrol-total"><span>You pay</span><b id="enrol-total" class="' + (qrOff ? 'discounted' : '') + '">' + money(qrOff ? fee * (100 - qrOff.percent) / 100 : fee) + '</b></div>' +
+      '<div id="enrol-plan"></div>' +
+      '<div class="enrol-total"><span id="enrol-total-label">You pay</span><b id="enrol-total" class="' + (qrOff ? 'discounted' : '') + '">' + money(qrOff ? fee * (100 - qrOff.percent) / 100 : fee) + '</b></div>' +
       '<p class="form-error" id="enrol-err" role="alert"></p>' +
       '<button type="button" class="btn btn-solid enrol-go" id="enrol-go">Continue to secure payment</button></div>',
       onMount: function (box, inst) {
         if (window.DOffers) DOffers.tick();
         var input = box.querySelector('#enrol-code'), total = box.querySelector('#enrol-total');
+        var plan = null, cur = function () { return input.value.trim().toUpperCase(); };
+        if (window.DInstall) plan = DInstall.panel(box.querySelector('#enrol-plan'), {
+          load: function () { return api('/api/courses/' + encodeURIComponent(courseId) + '/payment-options?coupon=' + encodeURIComponent(cur())); },
+          onChange: function (n, d) {
+            var go = box.querySelector('#enrol-go'), lbl = box.querySelector('#enrol-total-label');
+            var first = n && d ? d.installments.filter(function (o) { return o.count === n; })[0] : null;
+            if (go) go.textContent = first ? 'Continue · pay ' + money(first.first) + ' now' : 'Continue to secure payment';
+            if (lbl) lbl.textContent = first ? 'You pay today' : 'You pay';
+            if (first) total.textContent = money(first.first); else if (d && d.totalNaira) total.textContent = money(d.totalNaira);
+          }
+        });
         var preview = function () {
           var typed = input.value.trim().toUpperCase();
           var ok = coupon && typed === coupon.code;
@@ -682,10 +714,12 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
           total.classList.toggle('discounted', !!ok || !!qrOff);
         };
         input.addEventListener('input', preview);
+        var again = null;
+        input.addEventListener('input', function () { clearTimeout(again); again = setTimeout(function () { if (plan) plan.refresh(); }, 500); });
         var use = box.querySelector('[data-use]');
-        if (use) use.addEventListener('click', function () { input.value = coupon.code; preview(); input.focus(); });
+        if (use) use.addEventListener('click', function () { input.value = coupon.code; preview(); if (plan) plan.refresh(); input.focus(); });
         box.querySelector('#enrol-go').addEventListener('click', function () {
-          doEnroll(courseId, input.value.trim().toUpperCase(), this, inst, box.querySelector('#enrol-err'));
+          doEnroll(courseId, input.value.trim().toUpperCase(), this, inst, box.querySelector('#enrol-err'), plan ? plan.value() : 0);
         });
       } });
   }
@@ -704,10 +738,10 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     }
   }
 
-  async function doEnroll(courseId, code, btn, inst, errEl) {
+  async function doEnroll(courseId, code, btn, inst, errEl, planCount) {
     if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = 'Opening secure payment…'; }
     try {
-      var data = await api('/api/courses/' + encodeURIComponent(courseId) + '/enroll', { method: 'POST', body: { coupon: code || '' } });
+      var data = await api('/api/courses/' + encodeURIComponent(courseId) + '/enroll', { method: 'POST', body: { coupon: code || '', plan: planCount || 0 } });
       if (data.free || data.enrolled) {
         if (inst) inst.close();
         await loadDash(); route();
@@ -760,13 +794,50 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     }
   }
 
+  /* ---------- Installment plans (Payments page) ---------- */
+  var PLAN_LABEL = { on_track: 'On track', due_soon: 'Payment due soon', overdue: 'Overdue', paused: 'Access paused', defaulted: 'Access paused', completed: 'Fully paid', cancelled: 'Closed', refund_review: 'Refund under review' };
+  async function loadPlans() {
+    var box = document.getElementById('plans-panel');
+    if (!box) return;
+    try {
+      var d = await api('/api/me/plans'), list = (d.plans || []).filter(function (x) { return x.status !== 'cancelled'; });
+      if (!list.length) { box.hidden = true; return; }
+      box.hidden = false;
+      box.innerHTML = '<p class="rf2-label">My installment plans</p><div class="plan-list">' + list.map(function (pl) {
+        var pct = pl.totalNaira ? Math.round(pl.paidNaira / pl.totalNaira * 100) : 0, open = pl.status === 'active';
+        var cls = pl.blocked ? ' is-bad' : (pl.health === 'overdue' || pl.health === 'due_soon' ? ' is-warn' : '');
+        return '<article class="plan-card' + cls + '"><div class="plan-top"><b>' + esc(pl.title) + '</b><span class="pl-pill ' + esc(pl.health) + '">' + esc(PLAN_LABEL[pl.health] || pl.health) + '</span></div>' +
+          '<div class="plan-bar" aria-hidden="true"><i style="width:' + pct + '%"></i></div>' +
+          '<p class="muted small">' + naira(pl.paidNaira) + ' paid of ' + naira(pl.totalNaira) + (pl.balanceNaira ? ' · ' + naira(pl.balanceNaira) + ' left' : '') + '</p>' +
+          '<ul class="plan-rows">' + pl.schedule.map(function (s) {
+            return '<li><span>Installment ' + s.no + ' of ' + pl.count + ' · ' + esc(s.status === 'paid' ? 'paid ' + fmtDate(s.paidAt) : 'due ' + s.dueLabel) + '</span><span><b>' + naira(s.amountNaira) + '</b> <span class="pl-pill ' + esc(s.status) + '">' + (s.order && s.status !== 'paid' ? (s.order.status === 'proof_uploaded' ? 'Receipt under review' : 'Payment started') : s.status === 'paid' ? 'Paid' : s.status === 'overdue' ? 'Overdue' : 'Upcoming') + '</span></span></li>';
+          }).join('') + '</ul>' +
+          '<p class="plan-msg">' + esc(pl.message) + '</p>' +
+          (open && pl.next ? '<div class="plan-actions"><button class="btn btn-solid btn-sm" type="button" data-plan-pay="' + esc(pl.id) + '">Pay ' + naira(pl.next.amountNaira) + (pl.count > 1 ? ' (installment ' + pl.next.no + ')' : '') + '</button>' +
+            (pl.schedule.filter(function (s) { return s.status !== 'paid'; }).length > 1 ? '<button class="btn btn-ghost btn-sm" type="button" data-plan-settle="' + esc(pl.id) + '">Pay the full balance · ' + naira(pl.balanceNaira) + '</button>' : '') + '</div>' : '') +
+          '</article>';
+      }).join('') + '</div>';
+      box.querySelectorAll('[data-plan-pay],[data-plan-settle]').forEach(function (b) {
+        b.addEventListener('click', async function () {
+          var settle = b.hasAttribute('data-plan-settle'); b.disabled = true;
+          try {
+            var r = await api('/api/me/plans/' + encodeURIComponent(b.getAttribute(settle ? 'data-plan-settle' : 'data-plan-pay')) + '/pay', { method: 'POST', body: { settle: settle } });
+            location.href = 'pay.html?order=' + encodeURIComponent(r.order.id);
+          } catch (e) { toast(e.message, 'err'); b.disabled = false; }
+        });
+      });
+    } catch (e) { box.hidden = true; }
+  }
+
   /* ---------- Payments ---------- */
   var ORDER_LABEL = { awaiting_transfer: 'Waiting for your transfer', awaiting_proof: 'Upload your receipt', proof_uploaded: 'Receipt under review', rejected: 'Receipt needs attention', approved: 'Approved' };
   var ORDER_TONE = { awaiting_transfer: 'none', awaiting_proof: 'none', proof_uploaded: 'none', rejected: 'fail', approved: 'pass' };
   async function renderPayments() {
-    setView(viewHead('Billing', 'Payments', 'Your orders, receipts and payment status.') +
+    setView(viewHead('Billing', 'Payments', 'Your installment plans, orders, receipts and payment status.') +
+      '<section class="panel" id="plans-panel" hidden></section>' +
       '<section class="panel" id="orders-panel"><div class="skeleton" style="height:120px;border:0"></div></section>' +
       '<section class="panel" id="pay-panel"><div class="skeleton" style="height:120px;border:0"></div></section>');
+    loadPlans();
     try {
       var o = await api('/api/me/orders');
       var op = document.getElementById('orders-panel');
@@ -838,6 +909,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
           fieldText('pf-name', 'Full name', u.name, { req: true, max: 80, autocomplete: 'name' }) +
           fieldText('pf-email', 'Email address', u.email, { readonly: true, type: 'email' }) +
           fieldText('pf-phone', 'Phone number', u.phone, { req: true, max: 20, type: 'tel', autocomplete: 'tel', placeholder: 'e.g. 0803 000 0000' }) +
+          fieldText('pf-whatsapp', 'WhatsApp number', u.whatsapp, { req: true, max: 20, type: 'tel', placeholder: 'e.g. 0803 000 0000' }) +
           fieldText('pf-dob', 'Date of birth', p.dob, { req: true, type: 'date' }) +
           fieldSelect('pf-gender', 'Gender', OPTS.gender, p.gender, true) +
           fieldText('pf-state', 'State', p.state, { req: true, max: 60 }) +
@@ -902,14 +974,14 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       var err = document.getElementById('pf-error'); err.textContent = '';
       var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
       var body = {
-        name: v('pf-name'), phone: v('pf-phone'),
+        name: v('pf-name'), phone: v('pf-phone'), whatsapp: v('pf-whatsapp'),
         profile: {
           dob: v('pf-dob'), gender: v('pf-gender'), state: v('pf-state'), city: v('pf-city'), address: v('pf-address'),
           occupation: v('pf-occupation'), educationLevel: v('pf-education'), institution: v('pf-institution'), howHeard: v('pf-how'),
           goals: v('pf-goals'), nokName: v('pf-nokname'), nokPhone: v('pf-nokphone')
         }
       };
-      var required = [['pf-name', 'Full name'], ['pf-phone', 'Phone number'], ['pf-dob', 'Date of birth'], ['pf-gender', 'Gender'], ['pf-state', 'State'], ['pf-city', 'City or town'], ['pf-occupation', 'Current status'], ['pf-education', 'Highest education level'], ['pf-goals', 'Learning goals'], ['pf-nokname', 'Contact person’s name'], ['pf-nokphone', 'Contact person’s phone']];
+      var required = [['pf-name', 'Full name'], ['pf-phone', 'Phone number'], ['pf-whatsapp', 'WhatsApp number'], ['pf-dob', 'Date of birth'], ['pf-gender', 'Gender'], ['pf-state', 'State'], ['pf-city', 'City or town'], ['pf-occupation', 'Current status'], ['pf-education', 'Highest education level'], ['pf-goals', 'Learning goals'], ['pf-nokname', 'Contact person’s name'], ['pf-nokphone', 'Contact person’s phone']];
       for (var i = 0; i < required.length; i++) {
         if (!v(required[i][0])) { err.textContent = 'Please fill in: ' + required[i][1] + '.'; document.getElementById(required[i][0]).focus(); return; }
       }
@@ -1142,6 +1214,25 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       history.replaceState(null, '', 'dashboard.html#overview');
     }
     route();
+    askWhatsapp();
+  }
+
+  /* Accounts made with Google have no WhatsApp number yet: ask once per visit, in a pop-up that can be dismissed */
+  function askWhatsapp() {
+    var u = state.d && state.d.user;
+    if (!u || u.whatsapp || u.role !== 'student' || !window.DModal) return;
+    try { if (sessionStorage.getItem('debone-wa-asked')) return; sessionStorage.setItem('debone-wa-asked', '1'); } catch (e) {}
+    DModal.open({ size: 'sm', eyebrow: 'Almost done', title: 'Add your WhatsApp number',
+      body: '<label class="enrol-label" for="wa-num">WhatsApp number</label><input class="input" id="wa-num" type="tel" autocomplete="tel" maxlength="20" placeholder="e.g. 0803 123 4567"><p class="form-error" id="wa-err" role="alert"></p>' +
+        '<div class="btn-row" style="margin-top:14px"><button type="button" class="btn btn-solid" id="wa-save">Save</button><button type="button" class="btn btn-ghost" id="wa-later">Not now</button></div>',
+      onMount: function (box, inst) {
+        box.querySelector('#wa-later').addEventListener('click', inst.close);
+        box.querySelector('#wa-save').addEventListener('click', async function () {
+          var err = box.querySelector('#wa-err'); err.textContent = '';
+          try { await api('/api/me', { method: 'PATCH', body: { whatsapp: box.querySelector('#wa-num').value.trim() } }); await loadDash(); inst.close(); toast('Saved.'); }
+          catch (ex) { err.textContent = ex.message; }
+        });
+      } });
   }
 
   boot();

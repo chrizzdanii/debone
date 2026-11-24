@@ -1,0 +1,31 @@
+/* Installment payment choice, plan cards and status pills */
+.ins{border:0;margin:14px 0 4px;padding:0;display:grid;gap:8px}
+.ins legend{font-weight:600;margin-bottom:8px;padding:0}
+.ins-opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid rgba(255,255,255,.16);border-radius:12px;cursor:pointer;transition:border-color .2s,background .2s}
+.ins-opt input{margin-top:4px;accent-color:#E0A800}
+.ins-opt b{display:block}.ins-opt small{display:block;opacity:.75;margin-top:2px}
+.ins-opt.on{border-color:#E0A800;background:rgba(224,168,0,.09)}
+.ins-sched{margin-top:6px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.05)}
+.ins-sched table{width:100%;border-collapse:collapse;font-size:.92rem}
+.ins-sched td{padding:6px 4px}.ins-sched td:last-child{text-align:right;font-weight:600}
+.ins-tot td{border-top:1px solid rgba(255,255,255,.16);font-weight:700}
+.ins-rules{margin:10px 0 0;padding-left:18px;font-size:.85rem;opacity:.85;display:grid;gap:4px}
+/* student plan cards */
+.plan-list{display:grid;gap:14px}
+.plan-card{border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:18px;display:grid;gap:12px}
+.plan-card.is-bad{border-color:#e5534b}.plan-card.is-warn{border-color:#E0A800}
+.plan-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.plan-bar{height:8px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}.plan-bar i{display:block;height:100%;background:#6BCB77;border-radius:99px}
+.plan-rows{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.plan-rows li{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:.92rem}
+.plan-msg{margin:0;font-size:.92rem}
+.plan-actions{display:flex;gap:10px;flex-wrap:wrap}
+.pl-pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.78rem;font-weight:600;background:rgba(255,255,255,.12)}
+.pl-pill.paid,.pl-pill.completed,.pl-pill.on_track{background:rgba(107,203,119,.2);color:#6BCB77}
+.pl-pill.due_soon,.pl-pill.overdue,.pl-pill.upcoming{background:rgba(224,168,0,.2);color:#E0A800}
+.pl-pill.paused,.pl-pill.defaulted,.pl-pill.cancelled{background:rgba(229,83,75,.2);color:#e5534b}
+.plan-banner{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 18px;margin-bottom:18px;border-radius:14px;border:1px solid #E0A800;background:rgba(224,168,0,.1)}
+.plan-banner.is-bad{border-color:#e5534b;background:rgba(229,83,75,.12)}
+.plan-banner p{margin:0}
+.plan-info{margin:10px 0 0;font-size:.85rem;opacity:.85}
+.ins-hint{display:block;margin:4px 0 0;font-size:.82rem;opacity:.8;font-weight:500}

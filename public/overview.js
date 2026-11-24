@@ -179,7 +179,8 @@
       { n: k.pendingOrders, label: 'Payments to approve', href: '#transfers', icon: IC.card },
       { n: k.pendingGrading, label: 'Assignments to mark', href: '#assignments', icon: IC.pen },
       { n: k.pendingRefunds, label: 'Refund requests', href: '#refunds', icon: IC.undo },
-      { n: k.pendingCerts, label: 'Certificate requests', href: '#certificates', icon: IC.cert }
+      { n: k.pendingCerts, label: 'Certificate requests', href: '#certificates', icon: IC.cert },
+      { n: k.plansLate, label: 'Late installments', href: '#installments', icon: IC.card }
     ].filter(function (x) { return x.n > 0; });
     if (!items.length) return '<div class="ov-clear"><span>' + IC.check + '</span><div><b>All clear</b><small>Nothing is waiting for you right now.</small></div></div>';
     return items.map(function (x, i) {

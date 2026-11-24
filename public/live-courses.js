@@ -67,7 +67,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
       '</dl>' +
       (o && !c.comingSoon ? '<p class="lc-deal"><s>' + naira(o.originalPrice) + '</s> Save ' + naira(o.save) + ' · ' + o.percent + '% off</p>' : '') +
       (c.comingSoon && c.waitlistCount ? '<p class="lc-deal">' + c.waitlistCount + ' people on the waiting list</p>' : '') +
-      '<div class="lc-foot"><b>' + (c.price > 0 ? naira(c.price) : 'Free') + '</b>' + (c.price > 0 ? window.DeboneIllustrativePrice(c.price) : '') +
+      '<div class="lc-foot"><b>' + (c.price > 0 ? naira(c.price) : 'Free') + '</b>' + (c.price > 0 ? window.DeboneIllustrativePrice(c.price) : '') + ((c.installments || []).length ? '<small class="ins-hint">Pay in full or in installments</small>' : '') +
         (c.comingSoon ? '<a class="btn btn-ghost btn-sm" href="login.html?next=dashboard">Join waiting list</a>' : '<a class="btn btn-solid btn-sm" href="login.html?next=dashboard">' + (c.price > 0 ? 'Enrol now' : 'Start free') + '</a>') +
       '</div></article>';
   }

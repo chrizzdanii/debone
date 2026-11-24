@@ -87,13 +87,23 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
     return '<article class="bw-card' + (b.comingSoon ? ' is-soon' : '') + '" style="--i:' + (i % 6) + '"><div class="bw-img">' + img + badge + '<span class="bw-count">' + b.courses.length + ' courses</span></div>' +
       '<div class="bw-body"><p class="eyebrow">Course bundle</p><h3>' + esc(b.title) + '</h3>' + (b.description ? '<p>' + esc(b.description) + '</p>' : '') +
       '<ul class="bw-courses">' + b.courses.map(function (c, j) { return '<li style="--j:' + j + '"><b>' + esc(c.title) + '</b><span>' + (c.comingSoon ? 'Coming soon' : esc(c.startDate ? 'Starts ' + c.startDate : 'Start date to be announced')) + (c.schedule ? ' · ' + esc(c.schedule) : '') + '</span></li>'; }).join('') + '</ul>' +
-      offer + cta + (b.comingSoon && b.waitlistCount ? '<p class="bw-wl-count">' + b.waitlistCount + (b.waitlistCount === 1 ? ' person is' : ' people are') + ' already on the waiting list</p>' : '') + '</div></article>';
+      offer + ((b.installments || []).length && !b.comingSoon ? '<p class="ins-hint">Or pay in installments, from ' + naira(Math.min.apply(null, b.installments.map(function (o) { return o.first; }))) + ' to start.</p>' : '') + cta + (b.comingSoon && b.waitlistCount ? '<p class="bw-wl-count">' + b.waitlistCount + (b.waitlistCount === 1 ? ' person is' : ' people are') + ' already on the waiting list</p>' : '') + '</div></article>';
   }
   function bundleBind(root) {
     root.querySelectorAll('[data-bundle]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var label = btn.textContent; btn.disabled = true; btn.textContent = 'Opening…';
-        req('/api/bundles/' + encodeURIComponent(btn.getAttribute('data-bundle')) + '/buy', { method: 'POST', body: {} }).then(function (res) {
+        var label = btn.textContent, bid = btn.getAttribute('data-bundle'); btn.disabled = true; btn.textContent = 'Opening…';
+        var opts = window.DInstall ? req('/api/bundles/' + encodeURIComponent(bid) + '/payment-options') : Promise.resolve({ installments: [] });
+        opts.then(function (po) {
+          if (po.installments && po.installments.length) {
+            btn.disabled = false; btn.textContent = label;
+            DInstall.ask({ title: 'Pay for this bundle', load: function () { return Promise.resolve(po); },
+              go: function (n) { return req('/api/bundles/' + encodeURIComponent(bid) + '/buy', { method: 'POST', body: { plan: n } }).then(function (r) { if (r.order) location.href = 'pay.html?order=' + encodeURIComponent(r.order.id); }); } });
+            return null;
+          }
+          return req('/api/bundles/' + encodeURIComponent(bid) + '/buy', { method: 'POST', body: {} });
+        }).then(function (res) {
+          if (!res) return;
           if (res.order) { location.href = 'pay.html?order=' + encodeURIComponent(res.order.id); return; }
           toast('You already have these courses.'); location.href = 'dashboard.html#courses';
         }).catch(function (e) { if (e.status === 401) return goLogin('bundles.html'); toast(e.message, 'err'); btn.disabled = false; btn.textContent = label; });
