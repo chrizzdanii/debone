@@ -77,7 +77,7 @@ const SESSION_SECRET = (() => {
 const DB_DEFAULT = () => ({
   users: [], enrollments: [], progress: [], payments: [],
   courses: null, announcements: [], trash: [],
-  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], communityMsgs: [], waitlist: [], communityMigrated: false, qrStats: {}, pageSlots: []
+  sessions: [], chat: [], assignments: [], submissions: [], passwordResets: [], newsletter: [], feedback: [], applications: [], webinars: [], webinarRegistrations: [], reviews: [], certificates: [], digitalProducts: [], purchases: [], bundles: [], threads: [], replies: [], portfolios: [], challenges: [], challengeEntries: [], bookings: [], refunds: [], scheduleNotices: [], pageViews: {}, referralEvents: [], withdrawals: [], certRequests: [], attendance: [], notes: [], orders: [], plans: [], communityMsgs: [], waitlist: [], communityMigrated: false, qrStats: {}, pageSlots: []
 });
 const store = createStore(DB_DEFAULT);
 let db = DB_DEFAULT();
@@ -110,6 +110,8 @@ const SETTINGS_DEFAULTS = {
   replayDays: 14, downloadLimit: 3, downloadDays: 365, depositPercent: 50,
   referralDiscountPercent: 10, referrerRewardPercent: 10, withdrawMinReferrals: 5, noticeDays: 7, refundWindowDays: 7,
   certMinPercent: 50, allowResubmission: true,
+  // Installment payments (courses and bundles only). See the installment engine below.
+  installmentsOn: true, installmentMinPrice: 30000, installmentIntervalDays: 14, installmentGraceDays: 3, installmentDefaultDays: 14,
   bankOneBank: 'OPay', bankOneName: 'Godwin Chidi Ugwuala', bankOneNumber: '8035988889',
   bankTwoBank: 'First Bank', bankTwoName: 'Godwin Chidi Ugwuala', bankTwoNumber: '3196941733'
 };
@@ -384,8 +386,24 @@ function recordQrSignup(user, src) {
   user.qrSource = src; user.qrUntil = new Date(Date.now() + QR_DAYS * 86400000).toISOString();
   const st = db.qrStats[src] = db.qrStats[src] || { scans: 0 }; st.lastSignupAt = now();
 }
+// WhatsApp number: stored as digits with the country code (for example 2348035988889) so a chat link can be opened straight from the admin.
+const WHATSAPP_REQUIRED = true;   // set to false to make the WhatsApp number optional when creating an account
+function normalizeWhatsapp(raw) {
+  const text = String(raw == null ? '' : raw).trim();
+  if (!text) return '';
+  const intl = text.startsWith('+') || text.startsWith('00');
+  let d = text.replace(/\D/g, '');
+  if (text.startsWith('00')) d = d.slice(2);
+  if (!intl) {
+    if (d.startsWith('0') && d.length === 11) d = '234' + d.slice(1);          // 0803 598 8889
+    else if (d.length === 10 && /^[789]/.test(d)) d = '234' + d;               // 803 598 8889
+  }
+  if (!/^\d{10,15}$/.test(d)) return null;
+  if (d.startsWith('234') && d.length !== 13) return null;
+  return d;
+}
 function publicUser(u) {
-  return { id: u.id, name: u.name, email: u.email, phone: u.phone || '', role: u.role || 'student', createdAt: u.createdAt,
+  return { id: u.id, name: u.name, email: u.email, phone: u.phone || '', whatsapp: u.whatsapp || '', role: u.role || 'student', createdAt: u.createdAt,
     zoomName: u.zoomName || '', profile: u.profile || {}, hasAvatar: !!u.avatar, completion: completion(u), coupon: couponFor(u), qrOffer: qrOffer(u) };
 }
 const isAdmin = u => !!u && u.role === 'admin';
@@ -396,12 +414,230 @@ function enrollmentFor(userId, courseId) {
 }
 function courseAccess(user, course) {
   if (!user) return false;
-  return course.price === 0 || !!enrollmentFor(user.id, course.id);
+  if (course.price === 0) return true;
+  return !!enrollmentFor(user.id, course.id) && !planBlocks(user.id, course.id);
 }
 // Everyone who can open a course: all students for a free course, enrolled students for a paid one
 function studentsWithAccess(course) {
   return db.users.filter(u => !isStaff(u) && courseAccess(u, course));
 }
+/* ============ Installment plans ============
+   A student can pay for a course (or a course bundle) once, or in 2 or 3 instalments.
+   - The first payment secures the seat and opens the course. Later payments fall due on fixed dates, always before the course ends.
+   - Late payments follow a fixed ladder: reminder, due day, grace period, then access to new lessons / live classes / recordings
+     is paused (progress is kept). Paying opens it again straight away. Certificates are only issued once the plan is fully paid.
+   - Not offered for the shop, digital products, studio deposits or webinars: those are small, instant or already staged.
+   The numbers (minimum price, spacing, grace period) can be changed in Admin > Business rules. */
+const INSTALLMENT_SPLITS = { 2: [60, 40], 3: [50, 30, 20] };   // % of the total paid at each step
+const INSTALLMENT_END_BUFFER_DAYS = 3;   // the last payment falls due at least this many days before the course ends
+const INSTALLMENT_MIN_GAP_DAYS = 5;      // two payments are never squeezed closer than this
+const DAY_MS = 86400000;
+const OPEN_ORDER_STATES = ['awaiting_transfer', 'awaiting_proof', 'proof_uploaded', 'rejected'];
+const addDays = (key, n) => new Date(Date.parse(key + 'T00:00:00Z') + n * DAY_MS).toISOString().slice(0, 10);
+const dayDiff = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / DAY_MS);   // days from a to b
+const fmtDue = key => key ? new Date(key + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
+const naira0 = n => '₦' + Math.round(Number(n) || 0).toLocaleString('en-US');
+function parseDurationDays(text) {
+  const m = /(\d+(?:\.\d+)?)\s*(day|week|wk|month)/i.exec(String(text || ''));
+  if (!m) return 0;
+  const n = parseFloat(m[1]), u = m[2].toLowerCase();
+  return Math.round(n * (u.startsWith('d') ? 1 : u.startsWith('m') ? 30 : 7));
+}
+// When a course finishes: its last scheduled live class, or its start date plus its duration (4 weeks if no duration is set)
+function courseEndDate(course) {
+  const times = db.sessions.filter(s => s.courseId === course.id && s.startsAt).map(s => new Date(s.startsAt).getTime());
+  if (course.startDate) times.push(new Date(course.startDate + 'T00:00:00').getTime() + (parseDurationDays(course.duration) || 28) * DAY_MS);
+  return times.length ? Math.max(...times) : null;
+}
+function buildSchedule(total, count, gapDays) {
+  const pct = INSTALLMENT_SPLITS[count], today = dayKey(Date.now());
+  let left = total;
+  return pct.map((p, i) => {
+    const amount = i === count - 1 ? left : Math.round(total * p / 10000) * 100;
+    left -= amount;
+    return { no: i + 1, amountNaira: amount, dueOn: addDays(today, i * gapDays), status: 'pending', paidAt: null, reference: null, reminded: {} };
+  });
+}
+// The instalment options a student can choose for these courses at this price, today. Empty when none are allowed.
+function installmentOffer(courses, totalNaira) {
+  if (!cfgBool('installmentsOn') || !courses.length || !(totalNaira >= cfg('installmentMinPrice'))) return [];
+  let allowed = [2, 3];
+  courses.forEach(c => { if (Array.isArray(c.installmentPlans)) allowed = allowed.filter(n => c.installmentPlans.includes(n)); });
+  const ends = courses.map(courseEndDate).filter(Boolean);
+  const deadline = ends.length ? Math.min(...ends) - INSTALLMENT_END_BUFFER_DAYS * DAY_MS : null;
+  const out = [];
+  for (const count of allowed) {
+    let gap = Math.max(INSTALLMENT_MIN_GAP_DAYS, cfg('installmentIntervalDays'));
+    if (deadline !== null) {
+      const room = Math.floor((deadline - Date.now()) / DAY_MS);
+      gap = Math.min(gap, Math.floor(room / (count - 1)));
+      if (gap < INSTALLMENT_MIN_GAP_DAYS) continue;
+    }
+    const schedule = buildSchedule(Math.round(totalNaira), count, gap);
+    if (schedule.some(s => s.amountNaira <= 0)) continue;
+    out.push({ count, gapDays: gap, schedule });
+  }
+  return out;
+}
+const offerView = o => ({ count: o.count, gapDays: o.gapDays, first: o.schedule[0].amountNaira,
+  schedule: o.schedule.map(s => ({ no: s.no, amountNaira: s.amountNaira, dueOn: s.dueOn, dueLabel: fmtDue(s.dueOn) })) });
+
+// Where a plan stands today. 'paused' and 'defaulted' are the two states that close the course.
+function planState(plan) {
+  if (plan.status === 'completed') return { health: 'completed', blocked: false };
+  if (plan.status !== 'active') return { health: plan.status, blocked: false };
+  const next = plan.schedule.find(s => s.status !== 'paid');
+  if (!next) return { health: 'completed', blocked: false };
+  if (plan.refundPending) return { health: 'refund_review', blocked: false, next, daysLate: 0 };
+  const daysLate = dayDiff(next.dueOn, dayKey(Date.now()));
+  const grace = cfg('installmentGraceDays'), limit = cfg('installmentDefaultDays');
+  let health = 'on_track';
+  if (daysLate > limit) health = 'defaulted';
+  else if (daysLate > grace) health = 'paused';
+  else if (daysLate > 0) health = 'overdue';
+  else if (daysLate >= -3) health = 'due_soon';
+  return { health, blocked: health === 'paused' || health === 'defaulted', next, daysLate };
+}
+function planBlocks(userId, courseId) {
+  return db.plans.some(p => p.userId === userId && p.status === 'active' && p.courseIds.includes(courseId) && planState(p).blocked);
+}
+// A student who still owes money on a plan covering this course
+function planOwing(userId, courseId) {
+  return db.plans.some(p => p.userId === userId && p.status === 'active' && p.courseIds.includes(courseId) && p.schedule.some(s => s.status !== 'paid'));
+}
+const planPaidNaira = plan => plan.schedule.filter(s => s.status === 'paid').reduce((t, s) => t + s.amountNaira, 0);
+function planMessage(plan, st) {
+  const n = st.next, amt = n ? naira0(n.amountNaira) : '', due = n ? fmtDue(n.dueOn) : '', grace = cfg('installmentGraceDays');
+  switch (st.health) {
+    case 'completed': return 'Fully paid. Thank you.';
+    case 'refund_review': return 'Your refund request is being reviewed. No payment is needed while it is open.';
+    case 'on_track': return `Next payment: ${amt} on ${due}.`;
+    case 'due_soon': return st.daysLate === 0 ? `Your payment of ${amt} is due today.` : `Your payment of ${amt} is due on ${due}.`;
+    case 'overdue': return `Your payment of ${amt} was due on ${due}. Please pay by ${fmtDue(addDays(n.dueOn, grace))} to keep your access.`;
+    case 'paused': return `Your access is paused because ${amt} was due on ${due}. Pay it and your course opens again straight away. Your progress is saved.`;
+    case 'defaulted': return `Your payment of ${amt} is long overdue (due ${due}) and your access is paused. Please pay it or message us on WhatsApp so we can help.`;
+    case 'cancelled': return 'This plan was cancelled.';
+    default: return '';
+  }
+}
+function planView(plan) {
+  const st = planState(plan), today = dayKey(Date.now());
+  const orders = db.orders.filter(o => o.planId === plan.id && OPEN_ORDER_STATES.includes(o.status));
+  const paid = planPaidNaira(plan);
+  return { id: plan.id, kind: plan.kind, courseId: plan.courseId || null, bundleId: plan.bundleId || null, title: plan.title, status: plan.status,
+    totalNaira: plan.totalNaira, count: plan.count, paidNaira: paid, balanceNaira: plan.totalNaira - paid,
+    health: st.health, blocked: st.blocked, daysLate: st.daysLate || 0, message: planMessage(plan, st), graceDays: cfg('installmentGraceDays'),
+    next: st.next ? { no: st.next.no, amountNaira: st.next.amountNaira, dueOn: st.next.dueOn, dueLabel: fmtDue(st.next.dueOn) } : null,
+    schedule: plan.schedule.map(s => {
+      const order = orders.find(o => !o.settlePlan && o.installmentNo === s.no) || (s.status !== 'paid' ? orders.find(o => o.settlePlan) : null);
+      const late = s.status !== 'paid' && dayDiff(s.dueOn, today) > 0;
+      return { no: s.no, amountNaira: s.amountNaira, dueOn: s.dueOn, dueLabel: fmtDue(s.dueOn), paidAt: s.paidAt,
+        status: s.status === 'paid' ? 'paid' : late ? 'overdue' : 'upcoming', order: order ? { id: order.id, status: order.status } : null };
+    }), createdAt: plan.createdAt };
+}
+const planBrief = (userId, courseId) => {
+  const plan = db.plans.find(p => p.userId === userId && p.courseIds.includes(courseId) && (p.status === 'active' || p.status === 'completed'));
+  if (!plan) return null;
+  const v = planView(plan);
+  return { id: v.id, status: v.status, health: v.health, blocked: v.blocked, message: v.message, paidNaira: v.paidNaira, totalNaira: v.totalNaira, next: v.next, count: v.count };
+};
+function createPlan(user, o) {
+  // An earlier attempt at the same item that never got its first payment is dropped, so the student never has two open plans.
+  db.plans.filter(p => p.userId === user.id && p.status === 'pending' && p.kind === o.kind && (p.courseId || null) === (o.courseId || null) && (p.bundleId || null) === (o.bundleId || null))
+    .forEach(p => { p.status = 'cancelled'; p.note = 'Replaced by a newer attempt'; p.updatedAt = now(); });
+  const plan = { id: uid(8), userId: user.id, kind: o.kind, courseId: o.courseId || null, bundleId: o.bundleId || null, courseIds: o.courseIds, title: o.title,
+    totalNaira: Math.round(o.totalNaira), count: o.offer.count, gapDays: o.offer.gapDays, status: 'pending', schedule: o.offer.schedule, note: '', createdAt: now(), updatedAt: now() };
+  db.plans.push(plan);
+  return plan;
+}
+// The bank-transfer order for the next instalment (or for the whole remaining balance). An open one is reused.
+function planOrderFor(user, plan, settle) {
+  if (plan.status !== 'active' && plan.status !== 'pending') throw httpError(400, 'This payment plan is not open for payment.');
+  const unpaid = plan.schedule.filter(s => s.status !== 'paid');
+  if (!unpaid.length) throw httpError(400, 'Nothing is left to pay on this plan.');
+  const target = settle ? null : unpaid[0];
+  const open = db.orders.find(o => o.planId === plan.id && OPEN_ORDER_STATES.includes(o.status) && (settle ? o.settlePlan : (!o.settlePlan && o.installmentNo === target.no)));
+  if (open) return open;
+  return createOrder(user, { kind: plan.kind, courseId: plan.courseId, bundleId: plan.bundleId, planId: plan.id,
+    amountNaira: settle ? unpaid.reduce((t, s) => t + s.amountNaira, 0) : target.amountNaira, installmentNo: settle ? null : target.no, settlePlan: !!settle });
+}
+// A confirmed instalment payment (bank transfer approved, or recorded by the team): mark it paid and open the course on the first one
+function applyPlanPayment(o, pay) {
+  const plan = db.plans.find(p => p.id === o.planId);
+  if (!plan || plan.status === 'cancelled') throw httpError(409, 'This payment plan was cancelled, so this transfer cannot be applied. Contact the student.');
+  const nos = (o.settlePlan ? plan.schedule.filter(s => s.status !== 'paid').map(s => s.no) : [o.installmentNo]).filter(no => plan.schedule.some(s => s.no === no && s.status !== 'paid'));
+  if (!nos.length) throw httpError(409, 'These instalments are already paid. Do not approve this receipt twice.');
+  const firstPayment = plan.status === 'pending';
+  pay.planId = plan.id; pay.installmentNo = o.settlePlan ? 'balance' : o.installmentNo;
+  pay.status = 'success'; pay.paidAt = now();
+  nos.forEach(no => { const s = plan.schedule.find(x => x.no === no); s.status = 'paid'; s.paidAt = pay.paidAt; s.reference = pay.reference; });
+  plan.updatedAt = now();
+  plan.status = plan.schedule.every(s => s.status === 'paid') ? 'completed' : 'active';
+  if (firstPayment) { grantPaid(pay, pay.reference); return plan; }     // enrols the student and says the course is open
+  recordReferralReward(pay);
+  if (plan.status === 'completed') notify(plan.userId, 'Payment plan complete', `${plan.title} is now fully paid. Thank you.`, '#payments', { kind: 'payment' });
+  else notify(plan.userId, 'Installment received', `Thank you. ${naira0(pay.amountKobo / 100)} received. ${planMessage(plan, planState(plan))}`, '#payments', { kind: 'payment' });
+  sendEvent(plan.userId, 'unlock', { courseId: plan.courseId });
+  save();
+  return plan;
+}
+function cancelPlan(planId, why, revokeAccess) {
+  const plan = db.plans.find(p => p.id === planId);
+  if (!plan || plan.status === 'cancelled') return plan;
+  plan.status = 'cancelled'; plan.note = why || ''; plan.updatedAt = now();
+  db.orders.filter(o => o.planId === plan.id && OPEN_ORDER_STATES.includes(o.status) && o.status !== 'proof_uploaded').forEach(o => { o.status = 'cancelled'; o.updatedAt = now(); });
+  if (revokeAccess) db.enrollments.filter(e => e.userId === plan.userId && e.status === 'active' && plan.courseIds.includes(e.courseId)).forEach(e => { e.status = 'plan_cancelled'; });
+  return plan;
+}
+// What a refund covers. For a plan it is everything paid so far, and the 7-day window counts from the first payment.
+function refundBasis(pay) {
+  const plan = pay.planId ? db.plans.find(x => x.id === pay.planId) : null;
+  if (!plan) return { amountKobo: pay.amountKobo, planId: null, at: pay.paidAt || pay.createdAt };
+  const all = db.payments.filter(x => x.planId === plan.id && x.status === 'success').sort((a, b) => String(a.paidAt || a.createdAt).localeCompare(String(b.paidAt || b.createdAt)));
+  return { amountKobo: all.reduce((t, x) => t + x.amountKobo, 0), planId: plan.id, at: (all[0] || pay).paidAt || pay.createdAt };
+}
+
+/* Reminders. The newest step reached is sent once per instalment: 3 days before, on the day, the day after, when access pauses, and a final notice.
+   Students see the same information as a banner in their dashboard whenever they log in; emails go out when an email key is set. */
+function planReminderSteps() {
+  const grace = cfg('installmentGraceDays'), limit = cfg('installmentDefaultDays');
+  return [{ key: 'before', at: -3 }, { key: 'due', at: 0 }, { key: 'late', at: 1 }, { key: 'paused', at: grace + 1 }, { key: 'final', at: limit + 1 }];
+}
+function planReminderText(key, plan, s, user) {
+  const first = (user.name || 'there').split(' ')[0], amt = naira0(s.amountNaira), due = fmtDue(s.dueOn), grace = cfg('installmentGraceDays');
+  const t = {
+    before: ['Payment reminder: ' + amt + ' due on ' + due, `Hello ${first}, your next payment of ${amt} for ${plan.title} is due on ${due}.`],
+    due: ['Your payment is due today', `Hello ${first}, your payment of ${amt} for ${plan.title} is due today.`],
+    late: ['Your payment is overdue', `Hello ${first}, your payment of ${amt} for ${plan.title} was due on ${due}. Please pay by ${fmtDue(addDays(s.dueOn, grace))} to keep your access.`],
+    paused: ['Your course access is paused', `Hello ${first}, ${amt} for ${plan.title} was due on ${due}, so your access is paused. Pay it and your course opens again straight away. Your progress is saved.`],
+    final: ['Final notice: payment overdue', `Hello ${first}, ${amt} for ${plan.title} (due ${due}) is still unpaid and your access remains paused. Please pay it or message us on WhatsApp so we can help.`]
+  }[key];
+  return { title: t[0], body: t[1] };
+}
+function runInstallmentChecks() {
+  const sends = [];
+  db.plans.forEach(plan => {
+    if (plan.status !== 'active' || plan.refundPending) return;
+    const s = plan.schedule.find(x => x.status !== 'paid');
+    if (!s) return;
+    const late = dayDiff(s.dueOn, dayKey(Date.now()));
+    const reached = planReminderSteps().filter(st => late >= st.at);
+    if (!reached.length) return;
+    s.reminded = s.reminded || {};
+    const latest = reached[reached.length - 1];
+    if (s.reminded[latest.key]) return;
+    reached.forEach(st => { s.reminded[st.key] = now(); });
+    const user = db.users.find(u => u.id === plan.userId);
+    if (!user) return;
+    const text = planReminderText(latest.key, plan, s, user);
+    notify(user.id, text.title, text.body, '#payments', { kind: 'payment' });
+    const link = PUBLIC_URL.replace(/\/$/, '') + '/dashboard.html#payments';
+    sends.push(sendEmail(user.email, text.title + ' | DEBONE Academy', `<p>${htmlEsc(text.body)}</p><p><a href="${htmlEsc(link)}">Open your payments</a></p>`, text.body + '\n' + link).catch(() => {}));
+  });
+  if (sends.length) save();
+  return Promise.all(sends);
+}
+
 // Resources are typed as one per line: "Title | https://link"
 function parseResources(text) {
   return String(text || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
@@ -442,6 +678,11 @@ function courseDetailInput(b, c) {
   if (b.classesPerWeek !== undefined) out.classesPerWeek = num(b.classesPerWeek, 7);
   if (b.sessionsTotal !== undefined) out.sessionsTotal = num(b.sessionsTotal, 60);
   if (b.minStudents !== undefined) out.minStudents = num(b.minStudents, 5000);
+  // Which instalment plans this course allows: [2, 3] (default), [2], [3], or [] for one-time payment only
+  if (b.installmentPlans !== undefined) {
+    const list = (Array.isArray(b.installmentPlans) ? b.installmentPlans : []).map(Number).filter(n => n === 2 || n === 3);
+    out.installmentPlans = [...new Set(list)].sort();
+  }
   // Coming soon: the course is shown but cannot be bought. Students join a waiting list instead.
   if (b.comingSoon !== undefined) out.comingSoon = b.comingSoon === true || b.comingSoon === 'true';
   // Offer: the "normal" price shown crossed out, and an optional last day for the discount
@@ -542,6 +783,9 @@ function courseView(course, user) {
   return {
     id: course.id, title: course.title, subtitle: course.subtitle, summary: course.summary, level: course.level,
     price: course.price, free: course.price === 0, enrolled, lessons, completed, total: lessons.length,
+    paused: !!user && !enrolled && course.price > 0 && !!enrollmentFor(user.id, course.id), plan: user && course.price > 0 ? planBrief(user.id, course.id) : null,
+    installments: course.price > 0 && !course.comingSoon ? installmentOffer([course], course.price).map(o => ({ count: o.count, first: o.schedule[0].amountNaira, gapDays: o.gapDays })) : [],
+    installmentPlans: Array.isArray(course.installmentPlans) ? course.installmentPlans : [2, 3],
     comingSoon: !!course.comingSoon, liveStart: course.liveStart || null, liveLabel: course.liveLabel || null, hasImage: !!course.image,
     category: course.category || null, categoryLabel: (COURSE_CATEGORIES.find(c => c.id === course.category) || {}).label || null,
     instructor: course.instructor || null, startDate: course.startDate || null, duration: course.duration || null,
@@ -693,8 +937,16 @@ function orderItem(o) {
   if (o.kind === 'deposit') return 'Studio deposit';
   return (db.courses.find(x => x.id === o.courseId) || {}).title || 'Course';
 }
+// "Installment 2 of 3" or "Remaining balance" for orders that belong to a payment plan
+function orderPlanLabel(o) {
+  const plan = o.planId ? db.plans.find(x => x.id === o.planId) : null;
+  if (!plan) return '';
+  return o.settlePlan ? 'Remaining balance' : `Installment ${o.installmentNo} of ${plan.count}`;
+}
 function orderView(o) {
+  const plan = o.planId ? db.plans.find(x => x.id === o.planId) : null;
   return { id: o.id, reference: o.reference, kind: o.kind || 'course', item: orderItem(o), amount: o.amountNaira, status: o.status,
+    planLabel: orderPlanLabel(o), plan: plan ? planView(plan) : null,
     rejectReason: o.rejectReason || '', proofName: o.proof ? o.proof.name : '', createdAt: o.createdAt, updatedAt: o.updatedAt,
     student: o.contactName || '', email: o.contactEmail || '', bankAccounts: bankAccounts(), courseId: o.courseId || null, productId: o.productId || null, bundleId: o.bundleId || null };
 }
@@ -703,9 +955,14 @@ function approveOrder(o) {
   const pay = { id: uid(), reference: o.reference, userId: o.userId, kind: o.kind || 'course', courseId: o.courseId || null,
     productId: o.productId || null, bundleId: o.bundleId || null, bookingId: o.bookingId || null,
     amountKobo: Math.round(o.amountNaira * 100), status: 'pending', createdAt: o.createdAt, channel: 'bank transfer' };
+  if (o.channel) pay.channel = o.channel;
   db.payments.push(pay);
-  pay.status = 'success'; pay.paidAt = now();
-  grantPaid(pay, pay.reference);
+  if (o.planId) {
+    try { applyPlanPayment(o, pay); } catch (e) { db.payments.pop(); throw e; }   // a refused plan payment is not left in the books
+  } else {
+    pay.status = 'success'; pay.paidAt = now();
+    grantPaid(pay, pay.reference);
+  }
   o.status = 'approved'; o.updatedAt = now();
 }
 // Gives access once a payment is confirmed: enrolment, product download, bundle courses or studio deposit
@@ -815,14 +1072,16 @@ route('POST', '/api/auth/signup', async ctx => {
   if (limited('signup:' + clientIp(ctx.req), 8)) throw httpError(429, 'Too many attempts. Please wait a minute and try again.');
   const b = ctx.body;
   const name = clean(b.name, 80), email = clean(b.email, 120).toLowerCase(), phone = clean(b.phone, 20);
+  const whatsapp = normalizeWhatsapp(b.whatsapp);
   const refCode = clean(b.referralCode, 20).toUpperCase();
   const password = String(b.password || '');
   if (name.length < 2) throw httpError(400, 'Please enter your full name.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw httpError(400, 'Please enter a valid email address.');
+  if (whatsapp === null || (WHATSAPP_REQUIRED && !whatsapp)) throw httpError(400, 'Please enter a valid WhatsApp number, for example 0803 123 4567.');
   if (password.length < 8) throw httpError(400, 'Password must be at least 8 characters.');
   if (db.users.some(u => u.email === email)) throw httpError(409, 'An account with this email already exists. Try logging in.');
   const referrer = refCode ? db.users.find(u => u.referralCode === refCode && u.email !== email) : null;
-  const user = { id: uid(), name, email, phone, role: 'student', passHash: hashPassword(password), createdAt: now(), referralCode: genReferralCode(), referredBy: referrer ? referrer.referralCode : null };
+  const user = { id: uid(), name, email, phone, whatsapp, role: 'student', passHash: hashPassword(password), createdAt: now(), referralCode: genReferralCode(), referredBy: referrer ? referrer.referralCode : null };
   recordQrSignup(user, qrSourceOf(b.qr));
   db.users.push(user);
   save();
@@ -876,10 +1135,12 @@ route('PATCH', '/api/me', async ctx => {
   const b = ctx.body;
   const name = b.name !== undefined ? clean(b.name, 80) : user.name;
   const phone = b.phone !== undefined ? clean(b.phone, 20) : user.phone;
+  const whatsapp = b.whatsapp !== undefined ? normalizeWhatsapp(b.whatsapp) : (user.whatsapp || '');
+  if (whatsapp === null || (b.whatsapp !== undefined && WHATSAPP_REQUIRED && !whatsapp)) throw httpError(400, 'Please enter a valid WhatsApp number, for example 0803 123 4567.');
   if (name.length < 2) throw httpError(400, 'Please enter your full name.');
   if (phone && !/^[+0-9 ()-]{7,20}$/.test(phone)) throw httpError(400, 'Please enter a valid phone number.');
   if (b.profile && typeof b.profile === 'object') user.profile = cleanProfile(b.profile, user.profile);
-  user.name = name; user.phone = phone;
+  user.name = name; user.phone = phone; user.whatsapp = whatsapp;
   save();
   json(ctx.res, 200, { user: publicUser(user) });
 });
@@ -1296,8 +1557,11 @@ route('DELETE', '/api/staff/page-content/:key', async ctx => {
 /* ---------- Assistant: answers questions in the student dashboard ---------- */
 const GUIDES = [
   { id: 'enrol', q: ['enrol', 'enroll', 'register for', 'sign up for a course', 'join a course', 'buy a course', 'pay for a course', 'how do i get a course', 'take a course', 'start a course', 'apply for a course', 'enrolling', 'enrolment', 'enrollment in'],
-    a: 'To enrol: open Browse courses in the menu, choose a course and press Enrol. Free courses open straight away. Paid courses take you to Paystack’s secure payment page, and the course unlocks on your account by itself once the payment succeeds.',
-    next: ['How much do courses cost?', 'Do you have a coupon?', 'Can I buy a bundle?'] },
+    a: 'To enrol: open Browse courses in the menu, choose a course and press Enrol. Free courses open straight away. For a paid course you choose to pay once or in 2 or 3 installments, then you get our bank details, send the transfer and upload your receipt. The course opens as soon as we confirm it.',
+    next: ['Can I pay in installments?', 'How much do courses cost?', 'Do you have a coupon?'] },
+  { id: 'installments', q: ['installment', 'instalment', 'installments', 'instalments', 'pay small small', 'pay in parts', 'part payment', 'pay later', 'two payments', 'three payments', 'payment plan', 'pay in 2', 'pay in 3', 'what if i do not pay', 'miss a payment', 'late payment', 'overdue'],
+    a: 'Yes. Courses and bundles can be paid once or in 2 or 3 installments (shown when you press Enrol, with the exact amounts and dates). Your first payment opens the course. Each later payment is due on its date, always before the course ends. If one is late you get reminders, then a short grace period, then your access pauses (your progress is kept) until you pay. It opens again straight away once the payment is confirmed. Certificates are issued after the last installment. Open Payments in the menu to see your plan and pay the next one.',
+    next: ['How do I enrol?', 'How do refunds work?'] },
   { id: 'payment', q: ['payment', 'paid', 'paystack', 'unlock', 'locked', 'not unlocked', 'money deducted', 'debited', 'payment failed', 'transaction', 'receipt', 'reference', 'charged'],
     a: 'Payments are confirmed on our server, so a course unlocks as soon as Paystack confirms it, even if you close the page. Open Payments in the menu to see the status of each one. If you were debited and the course is still locked after a few minutes, send us the payment reference on WhatsApp and we will fix it.',
     next: ['How do refunds work?', 'How do I contact the studio?'] },
@@ -1356,7 +1620,7 @@ const GUIDES = [
     a: 'Each course shows its price on the Browse courses page. Free courses show Free, and courses marked Coming soon are not open yet. Bundles are cheaper than buying courses separately, and newsletter subscribers get a 30% coupon.',
     next: ['Do you have a coupon?', 'Can I buy a bundle?'] },
   { id: 'refund', q: ['refund', 'money back', 'cancel', 'cancellation', 'reimburse'],
-    a: 'Refunds follow our refund policy, linked in the footer of the website. To request one, message us on WhatsApp with your name, account email and payment reference.',
+    a: 'Refunds follow our refund policy, linked in the footer of the website. If you pay in installments, a refund covers everything you have paid so far, counted from your first payment. To request one, open Requests and refunds in the menu, or message us on WhatsApp with your name, account email and payment reference.',
     next: ['How do I contact the studio?'] },
   { id: 'webinar', q: ['webinar', 'webinars', 'free class', 'free session', 'introduction session'],
     a: 'Free webinars are short live introductions. Open Free webinars (Academy menu), pick one and press Register free. You get a reminder before it starts and a join link when it is time.',
@@ -1979,7 +2243,7 @@ route('PATCH', '/api/staff/orders/:id', async ctx => {
   if (o.status !== 'proof_uploaded') throw httpError(400, 'This order is not waiting for approval.');
   if (ctx.body.status === 'approved') {
     approveOrder(o); save();
-    if (o.userId) notify(o.userId, 'Payment confirmed', o.kind === 'product' ? 'Your transfer has been confirmed. Your file is ready in Downloads.' : 'Your transfer has been confirmed. Your course, product or bundle is now open.', o.kind === 'product' ? '#downloads' : '#courses', { kind: 'payment' });
+    if (o.userId && !o.planId) notify(o.userId, 'Payment confirmed', o.kind === 'product' ? 'Your transfer has been confirmed. Your file is ready in Downloads.' : 'Your transfer has been confirmed. Your course, product or bundle is now open.', o.kind === 'product' ? '#downloads' : '#courses', { kind: 'payment' });
     return json(ctx.res, 200, { ok: true, status: 'approved' });
   }
   if (ctx.body.status === 'rejected') {
@@ -2222,6 +2486,25 @@ function bundleInput(b) {
   if (image.length > 700000) throw httpError(400, 'Bundle image is too large (maximum 500 KB).');
   return { title, image, description: clean(b.description, 1000), price, originalPrice: originalPrice || null, offerEnds: offerEnds || null, comingSoon, courseIds: ids, active: b.active !== false && b.active !== 'false' };
 }
+// Instalment options for a bundle: every course in it must be paid for before the earliest of them ends
+function bundleOffer(b, price) {
+  const courses = (b.courseIds || []).map(id => db.courses.find(c => c.id === id)).filter(Boolean);
+  if (b.comingSoon || courses.length !== (b.courseIds || []).length) return [];
+  return installmentOffer(courses, price);
+}
+// What this student pays for a bundle today (QR discount and credit for courses already paid)
+function bundlePriceFor(user, b) {
+  const credit = bundleCredit(user.id, b), qr = qrOffer(user);
+  const discounted = qr ? Math.round(b.price * (100 - qr.percent) / 100) : b.price;
+  return { credit, price: Math.max(0, discounted - credit.total) };
+}
+route('GET', '/api/bundles/:id/payment-options', async ctx => {
+  const user = requireUser(ctx);
+  const b = db.bundles.find(x => x.id === ctx.params.id && x.active !== false);
+  if (!b) throw httpError(404, 'Bundle not found');
+  const { price } = bundlePriceFor(user, b);
+  json(ctx.res, 200, { totalNaira: price, installments: bundleOffer(b, price).map(offerView), rules: { graceDays: cfg('installmentGraceDays'), defaultDays: cfg('installmentDefaultDays') } });
+});
 // Credit only verified successful individual-course payments, not catalogue prices or pending transfers.
 function bundleCredit(userId, b) {
   const owned = (b.courseIds || []).filter(cid => !!enrollmentFor(userId, cid));
@@ -2236,6 +2519,7 @@ function bundleCredit(userId, b) {
 route('GET', '/api/bundles', async ctx => json(ctx.res, 200, { bundles: db.bundles.filter(b => b.active !== false).map(b => {
   const v = bundleView(b);
   // For a signed-in student: which courses of the bundle they already own
+  v.installments = bundleOffer(b, b.price).map(o => ({ count: o.count, first: o.schedule[0].amountNaira, gapDays: o.gapDays }));
   if (ctx.user) { v.courses.forEach(c => { c.owned = !!enrollmentFor(ctx.user.id, c.id); }); v.ownedCount = v.courses.filter(c => c.owned).length; v.owned = v.ownedCount === v.courses.length; v.paymentCredit = bundleCredit(ctx.user.id, b); v.onWaitlist = (db.waitlist || []).some(w => w.bundleId === b.id && w.userId === ctx.user.id); }
   return v;
 }) }));
@@ -2245,16 +2529,22 @@ route('POST', '/api/bundles/:id/buy', async ctx => {
   if (!b) throw httpError(404, 'Bundle not found');
   if (b.comingSoon) throw httpError(403, 'This bundle is coming soon. Join the waiting list and we will tell you the moment it opens.');
   if (b.courseIds.every(cid => enrollmentFor(user.id, cid))) return json(ctx.res, 200, { alreadyOwned: true });
-  const credit = bundleCredit(user.id, b);
-  const qr = qrOffer(user);
-  const discounted = qr ? Math.round(b.price * (100 - qr.percent) / 100) : b.price;
-  const price = Math.max(0, discounted - credit.total);
+  // Courses still being paid for in instalments cannot be swapped into a bundle: finish that plan first
+  if (db.plans.some(pl => pl.userId === user.id && pl.status === 'active' && pl.courseIds.some(cid => b.courseIds.includes(cid)))) throw httpError(409, 'You are still paying for one of these courses in installments. Please finish that plan first, then you can buy the bundle.');
+  const { credit, price } = bundlePriceFor(user, b);
   if (price === 0) {
     // A fully credited bundle is granted without creating a zero-naira bank transfer.
     const ref = 'DBC-' + uid(6).toUpperCase();
     for (const cid of b.courseIds) if (!enrollmentFor(user.id, cid)) db.enrollments.push({ id: uid(), userId: user.id, courseId: cid, status: 'active', enrolledAt: now(), via: 'bundle-credit', reference: ref, bundleId: b.id });
     db.orders.push({ id: uid(8), reference: ref, userId: user.id, contactEmail: user.email, contactName: user.name, kind: 'bundle', bundleId: b.id, amountNaira: 0, creditApplied: credit.total, status: 'approved', createdAt: now(), updatedAt: now() });
     save(); return json(ctx.res, 200, { alreadyOwned: true, credited: true });
+  }
+  const want = Number(ctx.body.plan) || 0;
+  if (want) {
+    const offer = bundleOffer(b, price).find(o => o.count === want);
+    if (!offer) throw httpError(400, 'That installment plan is not available for this bundle right now. Please pay in full or choose another option.');
+    const plan = createPlan(user, { kind: 'bundle', bundleId: b.id, courseIds: b.courseIds.slice(), title: b.title, totalNaira: price, offer });
+    return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: plan.schedule[0].amountNaira, creditApplied: credit.total, planId: plan.id, installmentNo: 1 })) });
   }
   return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'bundle', bundleId: b.id, amountNaira: price, creditApplied: credit.total })) });
 });
@@ -2412,7 +2702,9 @@ route('POST', '/api/me/schedule-notices/:id/choose', async ctx => {
   else if (choice === 'refund') {
     const pay = db.payments.find(p => p.userId === user.id && p.courseId === n.courseId && p.status === 'success');
     if (!pay) throw httpError(400, 'We could not find your payment for this course. Please contact us.');
-    db.refunds.push({ id: uid(8), paymentReference: pay.reference, userId: user.id, courseId: n.courseId, kind: 'course', amountKobo: pay.amountKobo, reason: 'Course did not reach its minimum number of students', status: 'requested', createdAt: now() });
+    const basis = refundBasis(pay);
+    db.refunds.push({ id: uid(8), paymentReference: pay.reference, userId: user.id, courseId: n.courseId, kind: 'course', amountKobo: basis.amountKobo, planId: basis.planId, reason: 'Course did not reach its minimum number of students', status: 'requested', createdAt: now() });
+    if (basis.planId) { const pl = db.plans.find(x => x.id === basis.planId); if (pl) pl.refundPending = true; }
     n.status = 'refund_requested'; n.choice = 'refund';
     notify(user.id, 'Refund requested', 'Your refund request is with our team.', '#notices', { kind: 'update' });
   } else throw httpError(400, 'Choose "new date" or "refund".');
@@ -2434,7 +2726,9 @@ route('POST', '/api/me/payments/:reference/refund', async ctx => {
   const reason = clean(ctx.body.reason, 500);
   if (reason.length < 5) throw httpError(400, 'Tell us briefly why you want a refund.');
   const kind = pay.kind || 'course';
-  const paidAt = new Date(pay.paidAt || pay.createdAt).getTime();
+  const basis = refundBasis(pay);   // for an installment plan: everything paid so far, counted from the first payment
+  if (basis.planId && db.refunds.some(r => r.planId === basis.planId && r.status !== 'declined')) throw httpError(400, 'A refund has already been requested for this payment plan.');
+  const paidAt = new Date(basis.at).getTime();
   if (Date.now() - paidAt > cfg('refundWindowDays') * 86400000) throw httpError(400, `Refunds can be requested within ${cfg('refundWindowDays')} days of payment.`);
   if (kind === 'course') {
     const c = db.courses.find(x => x.id === pay.courseId);
@@ -2442,8 +2736,9 @@ route('POST', '/api/me/payments/:reference/refund', async ctx => {
   }
   if (kind === 'product' && db.purchases.some(x => x.reference === pay.reference && (x.downloads || 0) > 0)) throw httpError(400, 'This product has already been downloaded, so a refund is not available.');
   db.refunds.push({ id: uid(8), paymentReference: pay.reference, userId: user.id, courseId: pay.courseId || null, productId: pay.productId || null, bundleId: pay.bundleId || null, kind,
-    amountKobo: pay.amountKobo, reason, status: 'requested', createdAt: now() });
-  save(); json(ctx.res, 201, { ok: true, message: 'Your refund request has been received. We will reply within a few working days.' });
+    amountKobo: basis.amountKobo, planId: basis.planId, reason, status: 'requested', createdAt: now() });
+  if (basis.planId) { const pl = db.plans.find(x => x.id === basis.planId); if (pl) pl.refundPending = true; }   // no reminders or pausing while the request is open
+  save(); json(ctx.res, 201, { ok: true, message: basis.planId ? 'Your refund request has been received. It covers everything you have paid so far on this plan. We will reply within a few working days.' : 'Your refund request has been received. We will reply within a few working days.' });
 });
 route('GET', '/api/me/refunds', async ctx => {
   const user = requireUser(ctx);
@@ -2463,7 +2758,11 @@ route('PATCH', '/api/staff/refunds/:id', async ctx => {
   const decision = ctx.body.status;
   if (!['approved', 'declined'].includes(decision)) throw httpError(400, 'Choose approved or declined.');
   if (r.status !== 'requested') throw httpError(400, 'This refund has already been decided.');
-  if (decision === 'declined') { r.status = 'declined'; r.decidedAt = now(); save(); return json(ctx.res, 200, { ok: true, status: 'declined' }); }
+  if (decision === 'declined') {
+    r.status = 'declined'; r.decidedAt = now();
+    const pl = r.planId ? db.plans.find(x => x.id === r.planId) : null; if (pl) pl.refundPending = false;
+    save(); return json(ctx.res, 200, { ok: true, status: 'declined' });
+  }
   let status = 'approved', note = 'Approved. Process the refund in your Paystack dashboard, then mark it paid here.';
   if (PAYSTACK_SECRET) {
     try { await paystack('POST', '/refund', { transaction: r.paymentReference, amount: r.amountKobo }); status = 'paid'; note = 'Refunded through Paystack.'; }
@@ -2473,6 +2772,7 @@ route('PATCH', '/api/staff/refunds/:id', async ctx => {
   if (status === 'paid') {
     if (r.kind === 'course' && r.courseId) db.enrollments.filter(e => e.userId === r.userId && e.courseId === r.courseId).forEach(e => { e.status = 'refunded'; });
     if (r.kind === 'product' && r.productId) db.purchases = db.purchases.filter(x => !(x.userId === r.userId && x.productId === r.productId && x.reference === r.paymentReference));
+    if (r.planId) cancelPlan(r.planId, 'Refunded', true);
   }
   notify(r.userId, 'Refund ' + (status === 'paid' ? 'paid' : 'approved'), 'Your refund of ₦' + (r.amountKobo / 100).toLocaleString('en-US') + ' is being processed.', '#payments', { kind: 'payment' });
   save(); json(ctx.res, 200, { ok: true, status, note });
@@ -2483,6 +2783,7 @@ route('PATCH', '/api/staff/refunds/:id/mark-paid', async ctx => {
   if (!r || r.status !== 'approved') throw httpError(400, 'Only approved refunds can be marked paid.');
   r.status = 'paid'; r.decidedAt = now(); r.note = 'Marked paid by the team.';
   if (r.kind === 'course' && r.courseId) db.enrollments.filter(e => e.userId === r.userId && e.courseId === r.courseId).forEach(e => { e.status = 'refunded'; });
+  if (r.planId) cancelPlan(r.planId, 'Refunded', true);
   save(); json(ctx.res, 200, { ok: true });
 });
 
@@ -2607,7 +2908,8 @@ route('GET', '/api/staff/live-stats', async ctx => {
       online: online.length, onlineStudents: online.filter(v => v.userId).length, liveNow: liveSessions.length,
       pendingGrading: db.submissions.filter(s => s.marks == null).length,
       pendingOrders: db.orders.filter(o => ['proof_uploaded', 'awaiting_proof'].includes(o.status)).length,
-      pendingRefunds: db.refunds.filter(r => r.status === 'pending').length,
+      pendingRefunds: db.refunds.filter(r => r.status === 'requested' || r.status === 'pending').length,
+      plansLate: db.plans.filter(x => x.status === 'active' && ['overdue', 'paused', 'defaulted'].includes(planState(x).health)).length,
       pendingCerts: (db.certRequests || []).filter(r => r.status === 'pending').length,
       liveShare: att ? Math.round((attLive / att) * 100) : 0, messagesToday: db.communityMsgs.filter(m => m.createdAt && dayKey(m.createdAt) === today && !m.deletedAt).length
     },
@@ -2883,6 +3185,7 @@ route('POST', '/api/me/certificates/request', async ctx => {
   if (db.certificates.some(c => c.userId === user.id && c.courseId === course.id)) throw httpError(400, 'You already have this certificate.');
   if (db.certRequests.some(r => r.userId === user.id && r.courseId === course.id && r.status === 'requested')) throw httpError(400, 'Your request is already waiting for approval.');
   if (!courseProgress(user, course).complete) throw httpError(400, 'Finish every lesson and pass every assignment (50% or more) before you request a certificate.');
+  if (planOwing(user.id, course.id)) throw httpError(400, 'Finish paying your installments to request your certificate. Open Payments to see what is left.');
   // The profile is only checked here, once the course is finished, so students are told at the moment it matters.
   const prof = completion(user);
   if (prof.missing.length) throw Object.assign(httpError(400, 'Please complete your profile before you request your certificate.'), { extra: { code: 'profile_incomplete', missing: prof.missing } });
@@ -2902,6 +3205,7 @@ route('POST', '/api/staff/cert-requests/:id/approve', async ctx => {
   if (!r || r.status !== 'requested') throw httpError(400, 'This request has already been decided.');
   const u = db.users.find(x => x.id === r.userId), c = db.courses.find(x => x.id === r.courseId);
   if (!u || !c) throw httpError(404, 'Student or course not found');
+  if (planOwing(u.id, c.id)) throw httpError(400, 'This student still has unpaid installments for this course. Issue the certificate after the plan is fully paid.');
   if (!db.certificates.some(x => x.userId === u.id && x.courseId === c.id)) {
     db.certificates.push({ id: uid(8), code: 'DBNC-' + uid(3).toUpperCase(), userId: u.id, courseId: c.id, courseTitle: c.title, studentName: u.name, issuedAt: now() });
   }
@@ -3329,7 +3633,8 @@ route('GET', '/api/dashboard', async ctx => {
       totalLessons: enrolled.reduce((s, c) => s + c.total, 0),
       avgProgress: enrolled.length ? Math.round(enrolled.reduce((s, c) => s + c.progress, 0) / enrolled.length) : 0
     },
-    next, courses, liveNow, announcements: db.announcements, payments
+    next, courses, liveNow, announcements: db.announcements, payments,
+    plans: db.plans.filter(p => p.userId === user.id && p.status === 'active').map(planView)
   });
 });
 
@@ -3343,15 +3648,9 @@ route('GET', '/api/courses/:id', async ctx => {
   json(ctx.res, 200, { course: courseView(course, ctx.user) });
 });
 
-route('POST', '/api/courses/:id/enroll', async ctx => {
-  const user = requireUser(ctx);
-  const course = db.courses.find(c => c.id === ctx.params.id);
-  if (!course) throw httpError(404, 'Course not found');
-  if (course.comingSoon) throw httpError(403, 'This course is coming soon. Enrolment will open later.');
-  if (course.price === 0) return json(ctx.res, 200, { free: true, courseId: course.id });
-  if (enrollmentFor(user.id, course.id)) return json(ctx.res, 200, { alreadyEnrolled: true, courseId: course.id });
+// The price a student pays for a course today: one discount only (coupon, referral or QR), whichever applies
+function enrolPrice(user, course, code) {
   let amountKobo = course.price * 100, couponCode = '';
-  const code = clean(ctx.body.coupon, 20).toUpperCase();
   if (code) {
     const sub = (db.newsletter || []).find(n => n.coupon === code);
     if (!sub || sub.email !== user.email || sub.couponUsed) throw httpError(400, 'That coupon code is not valid for your account.');
@@ -3363,13 +3662,61 @@ route('POST', '/api/courses/:id/enroll', async ctx => {
     const pct = Math.max(refPct, qrPct);   // one discount only: whichever is bigger
     if (pct > 0) { amountKobo = Math.round(course.price * 100 * (100 - pct) / 100); couponCode = qrPct >= refPct ? 'QR' + qr.source.toUpperCase().slice(0, 12) : 'REFERRAL'; }
   }
+  return { amountKobo, couponCode };
+}
+function enrollableCourse(user, id) {
+  const course = db.courses.find(c => c.id === id);
+  if (!course) throw httpError(404, 'Course not found');
+  if (course.comingSoon) throw httpError(403, 'This course is coming soon. Enrolment will open later.');
+  return course;
+}
+// What a student can pick at checkout for this course: pay once, or the instalment options with their dates
+route('GET', '/api/courses/:id/payment-options', async ctx => {
+  const user = requireUser(ctx);
+  const course = enrollableCourse(user, ctx.params.id);
+  if (course.price === 0) return json(ctx.res, 200, { free: true });
+  const { amountKobo } = enrolPrice(user, course, clean(ctx.query.get('coupon'), 20).toUpperCase());
+  const total = Math.round(amountKobo / 100);
+  json(ctx.res, 200, { totalNaira: total, installments: installmentOffer([course], total).map(offerView),
+    rules: { graceDays: cfg('installmentGraceDays'), defaultDays: cfg('installmentDefaultDays') } });
+});
+
+route('POST', '/api/courses/:id/enroll', async ctx => {
+  const user = requireUser(ctx);
+  const course = enrollableCourse(user, ctx.params.id);
+  if (course.price === 0) return json(ctx.res, 200, { free: true, courseId: course.id });
+  if (enrollmentFor(user.id, course.id)) return json(ctx.res, 200, { alreadyEnrolled: true, courseId: course.id });
+  const { amountKobo } = enrolPrice(user, course, clean(ctx.body.coupon, 20).toUpperCase());
+  const want = Number(ctx.body.plan) || 0;     // 0 = pay once, 2 or 3 = instalments
+  if (want) {
+    const offer = installmentOffer([course], Math.round(amountKobo / 100)).find(o => o.count === want);
+    if (!offer) throw httpError(400, 'That installment plan is not available for this course right now. Please pay in full or choose another option.');
+    const plan = createPlan(user, { kind: 'course', courseId: course.id, courseIds: [course.id], title: course.title, totalNaira: amountKobo / 100, offer });
+    const order = createOrder(user, { kind: 'course', courseId: course.id, amountNaira: plan.schedule[0].amountNaira, planId: plan.id, installmentNo: 1 });
+    return json(ctx.res, 200, { order: orderView(order) });
+  }
   return json(ctx.res, 200, { order: orderView(createOrder(user, { kind: 'course', courseId: course.id, amountNaira: amountKobo / 100 })) });
+});
+
+/* ---------- Installment plans: the student's side ---------- */
+route('GET', '/api/me/plans', async ctx => {
+  const user = requireUser(ctx);
+  json(ctx.res, 200, { plans: db.plans.filter(p => p.userId === user.id && p.status !== 'pending').sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(planView) });
+});
+// Opens the bank-transfer page for the next instalment, or for the whole remaining balance
+route('POST', '/api/me/plans/:id/pay', async ctx => {
+  const user = requireUser(ctx);
+  const plan = db.plans.find(p => p.id === ctx.params.id && p.userId === user.id);
+  if (!plan) throw httpError(404, 'Payment plan not found');
+  const order = planOrderFor(user, plan, ctx.body && ctx.body.settle === true);
+  save(); json(ctx.res, 200, { order: orderView(order) });
 });
 
 route('GET', '/api/payments', async ctx => {
   const user = requireUser(ctx);
   const list = db.payments.filter(p => p.userId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map(p => ({ reference: p.reference, courseId: p.courseId, courseTitle: (db.courses.find(c => c.id === p.courseId) || {}).title || 'Course', amount: p.amountKobo / 100, status: p.status, createdAt: p.createdAt, paidAt: p.paidAt || null }));
+    .map(p => ({ reference: p.reference, courseId: p.courseId, courseTitle: (db.courses.find(c => c.id === p.courseId) || db.bundles.find(b => b.id === p.bundleId) || {}).title || 'Course', amount: p.amountKobo / 100, status: p.status, createdAt: p.createdAt, paidAt: p.paidAt || null,
+      installment: p.planId ? (p.installmentNo === 'balance' ? 'Remaining balance' : `Installment ${p.installmentNo} of ${(db.plans.find(x => x.id === p.planId) || {}).count || ''}`) : '' }));
   json(ctx.res, 200, { payments: list });
 });
 
@@ -3387,7 +3734,7 @@ route('GET', '/api/lessons/:id', async ctx => {
   if (!entry) throw httpError(404, 'Lesson not found');
   const { course, lesson } = entry;
   if (!(lesson.free || courseAccess(user, course))) {
-    return json(ctx.res, 403, { error: 'locked', message: 'This lesson unlocks when you enrol in the course.', course: { id: course.id, title: course.title, price: course.price, comingSoon: !!course.comingSoon } });
+    return json(ctx.res, 403, { error: 'locked', message: 'This lesson unlocks when you enrol in the course.', course: { id: course.id, title: course.title, price: course.price, comingSoon: !!course.comingSoon, paused: !!enrollmentFor(user.id, course.id), plan: planBrief(user.id, course.id) } });
   }
   const idx = course.lessons.findIndex(l => l.id === lesson.id);
   const done = validLessonCompletion(user, course, lesson);
@@ -3694,13 +4041,15 @@ route('GET', '/api/staff/overview', async ctx => {
     payments: db.payments.length,
     liveNow: db.sessions.filter(s => s.status === 'live').length,
     pendingGrading: db.submissions.filter(s => s.marks == null).length,
+    plansLate: db.plans.filter(p => p.status === 'active' && ['overdue', 'paused', 'defaulted'].includes(planState(p).health)).length,
     currency: CURRENCY
   });
 });
 
 route('GET', '/api/staff/users', async ctx => {
   requireStaff(ctx, true);
-  json(ctx.res, 200, { users: db.users.map(u => ({ ...publicUser(u), enrolled: db.enrollments.filter(e => e.userId === u.id && e.status === 'active').length })) });
+  json(ctx.res, 200, { users: db.users.map(u => ({ ...publicUser(u), enrolled: db.enrollments.filter(e => e.userId === u.id && e.status === 'active').length,
+    paid: db.payments.some(x => x.userId === u.id && x.status === 'success'), plansLate: db.plans.some(x => x.userId === u.id && x.status === 'active' && ['overdue', 'paused', 'defaulted'].includes(planState(x).health)) })) });
 });
 
 route('PATCH', '/api/staff/users/:id', async ctx => {
@@ -3888,11 +4237,67 @@ route('DELETE', '/api/staff/announcements/:id', async ctx => {
   json(ctx.res, 200, { ok: true });
 });
 
+/* ---------- Installment plans: the admin's side ---------- */
+function staffPlanRow(plan) {
+  const u = db.users.find(x => x.id === plan.userId) || {};
+  return Object.assign(planView(plan), { student: { id: u.id, name: u.name || '', email: u.email || '', phone: u.phone || '', whatsapp: u.whatsapp || '' },
+    paidCount: plan.schedule.filter(s => s.status === 'paid').length, receiptWaiting: db.orders.some(o => o.planId === plan.id && o.status === 'proof_uploaded'), note: plan.note || '', refundPending: !!plan.refundPending });
+}
+route('GET', '/api/staff/plans', async ctx => {
+  requireStaff(ctx, true);
+  const f = clean(ctx.query.get('status'), 20) || 'attention';
+  const rows = db.plans.filter(p => p.status !== 'pending').map(staffPlanRow).filter(r => f === 'all' ? true
+    : f === 'attention' ? ['overdue', 'paused', 'defaulted'].includes(r.health) : f === 'active' ? r.status === 'active' : r.status === f)
+    .sort((a, b) => (b.daysLate - a.daysLate) || b.createdAt.localeCompare(a.createdAt));
+  const active = db.plans.filter(p => p.status === 'active').map(planView);
+  json(ctx.res, 200, { plans: rows, summary: {
+    active: active.length, attention: active.filter(v => ['overdue', 'paused', 'defaulted'].includes(v.health)).length,
+    paused: active.filter(v => v.blocked).length, outstandingNaira: active.reduce((t, v) => t + v.balanceNaira, 0),
+    overdueNaira: active.filter(v => v.daysLate > 0).reduce((t, v) => t + (v.next ? v.next.amountNaira : 0), 0) } });
+});
+route('PATCH', '/api/staff/plans/:id', async ctx => {
+  const admin = requireStaff(ctx, true);
+  const plan = db.plans.find(x => x.id === ctx.params.id);
+  if (!plan) throw httpError(404, 'Payment plan not found');
+  const b = ctx.body, student = db.users.find(u => u.id === plan.userId);
+  const next = plan.schedule.find(s => s.status !== 'paid');
+  if (b.action === 'extend') {
+    if (plan.status !== 'active' || !next) throw httpError(400, 'Only an open plan can be given more time.');
+    const days = Math.round(Number(b.days));
+    if (!(days >= 1 && days <= 30)) throw httpError(400, 'Choose between 1 and 30 days.');
+    const today = dayKey(Date.now());
+    next.dueOn = addDays(dayDiff(today, next.dueOn) < 0 ? today : next.dueOn, days);   // an overdue payment is counted from today
+    next.reminded = {};
+    plan.schedule.filter(s => s.status !== 'paid' && s.no > next.no).forEach(s => { if (dayDiff(next.dueOn, s.dueOn) < INSTALLMENT_MIN_GAP_DAYS) s.dueOn = addDays(next.dueOn, INSTALLMENT_MIN_GAP_DAYS * (s.no - next.no)); });
+    plan.note = `Extended by ${days} day(s) by ${admin.name}`; plan.updatedAt = now();
+    notify(plan.userId, 'More time to pay', `We have moved your payment date. ${planMessage(plan, planState(plan))}`, '#payments', { kind: 'payment' });
+    save(); return json(ctx.res, 200, { plan: staffPlanRow(plan) });
+  }
+  if (b.action === 'record') {
+    if (!student) throw httpError(404, 'Student not found');
+    // A payment received outside the website (cash at the studio, a transfer confirmed by phone): same effect as an approved receipt
+    const o = planOrderFor(student, plan, b.settle === true);
+    o.status = 'proof_uploaded'; o.channel = clean(b.channel, 40) || 'recorded by admin'; o.recordedBy = admin.id;
+    approveOrder(o); save();
+    return json(ctx.res, 200, { plan: staffPlanRow(plan) });
+  }
+  if (b.action === 'cancel') {
+    const reason = clean(b.reason, 300);
+    if (reason.length < 5) throw httpError(400, 'Write a short reason (it is kept on the plan).');
+    if (plan.status === 'cancelled' || plan.status === 'completed') throw httpError(400, 'This plan is already closed.');
+    cancelPlan(plan.id, reason, true);
+    notify(plan.userId, 'Payment plan closed', 'Your payment plan was closed. Please contact us on WhatsApp if you would like to continue.', '#payments', { kind: 'update' });
+    save(); return json(ctx.res, 200, { plan: staffPlanRow(plan) });
+  }
+  throw httpError(400, 'Choose extend, record or cancel.');
+});
+
 route('GET', '/api/staff/payments', async ctx => {
   requireStaff(ctx, true);
   const rows = db.payments.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(p => {
     const u = db.users.find(x => x.id === p.userId);
-    return { reference: p.reference, studentName: u ? u.name : '', studentEmail: u ? u.email : '', courseTitle: (db.courses.find(c => c.id === p.courseId) || {}).title || '', amount: p.amountKobo / 100, status: p.status, createdAt: p.createdAt, paidAt: p.paidAt || null };
+    return { reference: p.reference, studentName: u ? u.name : '', studentEmail: u ? u.email : '', courseTitle: (db.courses.find(c => c.id === p.courseId) || db.bundles.find(b => b.id === p.bundleId) || {}).title || '', amount: p.amountKobo / 100, status: p.status, createdAt: p.createdAt, paidAt: p.paidAt || null,
+      installment: p.planId ? (p.installmentNo === 'balance' ? 'Remaining balance' : `Installment ${p.installmentNo} of ${(db.plans.find(x => x.id === p.planId) || {}).count || ''}`) : '', channel: p.channel || '' };
   });
   json(ctx.res, 200, { payments: rows });
 });
@@ -4064,7 +4469,7 @@ function ensureReady() {
   })().catch(err => { readyPromise = null; throw err; });
   return readyPromise;
 }
-let lastPageViewSave = 0, lastReminderRun = 0, lastScheduleRun = 0;
+let lastPageViewSave = 0, lastReminderRun = 0, lastScheduleRun = 0, lastPlanRun = 0;
 function persist() {
   // Page-view counters change on almost every visit, so they are saved at most once a minute
   const skip = (pageViewsDirty && Date.now() - lastPageViewSave < 60000) ? ['pageViews'] : [];
@@ -4115,6 +4520,7 @@ function runDueTasks(force) {
   const t = Date.now();
   if (force || t - lastReminderRun > 60 * 1000) { lastReminderRun = t; runSessionReminders(); }
   if (force || t - lastScheduleRun > 60 * 60 * 1000) { lastScheduleRun = t; runScheduleChecks(); }
+  if (force || t - lastPlanRun > 60 * 60 * 1000) { lastPlanRun = t; try { return runInstallmentChecks(); } catch (e) { console.error('Installment check failed:', e.message); } }
 }
 
 async function handler(req, res) {
@@ -4186,8 +4592,8 @@ async function handler(req, res) {
     if (pathname === '/api/cron') {
       // Called once a day by Vercel Cron. Vercel sends the CRON_SECRET as a bearer token.
       if (!process.env.CRON_SECRET || req.headers.authorization !== 'Bearer ' + process.env.CRON_SECRET) return json(res, 401, { error: 'Not allowed' });
-      runDueTasks(true);
-      return json(res, 200, { ok: true, ran: ['reminders', 'schedule checks'] });
+      await runDueTasks(true);   // waits for the installment reminder emails so they are sent before the function stops
+      return json(res, 200, { ok: true, ran: ['reminders', 'schedule checks', 'installment reminders'] });
     }
     if (pathname.startsWith('/api/')) {
       if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
