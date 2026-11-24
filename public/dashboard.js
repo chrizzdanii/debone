@@ -810,7 +810,7 @@ window.DeboneIllustrativePrice = window.DeboneIllustrativePrice || function (pri
           '<div class="plan-bar" aria-hidden="true"><i style="width:' + pct + '%"></i></div>' +
           '<p class="muted small">' + naira(pl.paidNaira) + ' paid of ' + naira(pl.totalNaira) + (pl.balanceNaira ? ' · ' + naira(pl.balanceNaira) + ' left' : '') + '</p>' +
           '<ul class="plan-rows">' + pl.schedule.map(function (s) {
-            return '<li><span>Installment ' + s.no + ' of ' + pl.count + ' · ' + esc(s.status === 'paid' ? 'paid ' + fmtDate(s.paidAt) : 'due ' + s.dueLabel) + '</span><span><b>' + naira(s.amountNaira) + '</b> <span class="pl-pill ' + esc(s.status) + '">' + (s.order && s.status !== 'paid' ? (s.order.status === 'proof_uploaded' ? 'Receipt under review' : 'Payment started') : s.status === 'paid' ? 'Paid' : s.status === 'overdue' ? 'Overdue' : 'Upcoming') + '</span></span></li>';
+            return '<li><span>Installment ' + s.no + ' of ' + pl.count + ' · ' + esc(s.status === 'paid' ? 'paid ' + fmtDate(s.paidAt) : 'due ' + s.dueLabel + (s.note ? ' · ' + s.note : '')) + '</span><span><b>' + naira(s.amountNaira) + '</b> <span class="pl-pill ' + esc(s.status) + '">' + (s.order && s.status !== 'paid' ? (s.order.status === 'proof_uploaded' ? 'Receipt under review' : 'Payment started') : s.status === 'paid' ? 'Paid' : s.status === 'overdue' ? 'Overdue' : 'Upcoming') + '</span></span></li>';
           }).join('') + '</ul>' +
           '<p class="plan-msg">' + esc(pl.message) + '</p>' +
           (open && pl.next ? '<div class="plan-actions"><button class="btn btn-solid btn-sm" type="button" data-plan-pay="' + esc(pl.id) + '">Pay ' + naira(pl.next.amountNaira) + (pl.count > 1 ? ' (installment ' + pl.next.no + ')' : '') + '</button>' +

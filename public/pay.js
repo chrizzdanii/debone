@@ -104,7 +104,7 @@
     if (!pl) { host.hidden = true; return; }
     host.hidden = false;
     host.innerHTML = '<p class="eyebrow">Your payment plan</p><table class="ins-plan-tbl" style="width:100%;font-size:.9rem"><tbody>' + pl.schedule.map(function (s) {
-      return '<tr><td>' + (s.status === 'paid' ? '✓ ' : '') + 'Installment ' + s.no + ' of ' + pl.count + '</td><td>' + esc(s.status === 'paid' ? 'Paid' : s.dueLabel) + '</td><td style="text-align:right"><b>' + naira(s.amountNaira) + '</b></td></tr>';
+      return '<tr><td>' + (s.status === 'paid' ? '✓ ' : '') + 'Installment ' + s.no + ' of ' + pl.count + '</td><td>' + esc(s.status === 'paid' ? 'Paid' : s.dueLabel) + (s.status !== 'paid' && s.note ? '<div class="muted small">' + esc(s.note) + '</div>' : '') + '</td><td style="text-align:right"><b>' + naira(s.amountNaira) + '</b></td></tr>';
     }).join('') + '</tbody></table>' +
       '<p class="plan-info">If a payment is more than ' + pl.graceDays + ' day(s) late, access to the course pauses until it is paid. Your progress is saved, and the course opens again once we confirm your payment.</p>';
   }

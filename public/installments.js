@@ -30,7 +30,7 @@
       var sel = list.filter(function (o) { return o.count === choice; })[0];
       if (sel) {
         html += '<div class="ins-sched"><table><tbody>' + sel.schedule.map(function (s) {
-          return '<tr><td>' + (s.no === 1 ? 'Today' : esc(s.dueLabel)) + '</td><td>Installment ' + s.no + ' of ' + sel.count + '</td><td>' + naira(s.amountNaira) + '</td></tr>';
+          return '<tr><td>' + (s.no === 1 ? 'Today' : esc(s.dueLabel) + (s.note ? '<div class="muted small">' + esc(s.note) + '</div>' : '')) + '</td><td>Installment ' + s.no + ' of ' + sel.count + '</td><td>' + naira(s.amountNaira) + '</td></tr>';
         }).join('') + '<tr class="ins-tot"><td colspan="2">Total</td><td>' + naira(data.totalNaira) + '</td></tr></tbody></table>' + rulesText(data.rules) + '</div>';
       }
       host.innerHTML = html + '</fieldset>';

@@ -423,7 +423,10 @@ function studentsWithAccess(course) {
 }
 /* ============ Installment plans ============
    A student can pay for a course (or a course bundle) once, or in 2 or 3 instalments.
-   - The first payment secures the seat and opens the course. Later payments fall due on fixed dates, always before the course ends.
+   - The first payment secures the seat and opens the course. Later payments are tied to the live classes: each one falls due the day before the
+     class where the next part of the course begins (so 60/40 means the 2nd payment is due before the class at about 60% of the course).
+     A student who joins late is scheduled over the classes still ahead (missed ones are watched as recordings). With no class timeline
+     (no start date, duration or scheduled sessions) it falls back to a fixed gap in days from the day of payment.
    - Late payments follow a fixed ladder: reminder, due day, grace period, then access to new lessons / live classes / recordings
      is paused (progress is kept). Paying opens it again straight away. Certificates are only issued once the plan is fully paid.
    - Not offered for the shop, digital products, studio deposits or webinars: those are small, instant or already staged.
@@ -443,20 +446,67 @@ function parseDurationDays(text) {
   const n = parseFloat(m[1]), u = m[2].toLowerCase();
   return Math.round(n * (u.startsWith('d') ? 1 : u.startsWith('m') ? 30 : 7));
 }
+const courseStartKey = c => c.startDate || c.liveStart || null;   // 'YYYY-MM-DD'
 // When a course finishes: its last scheduled live class, or its start date plus its duration (4 weeks if no duration is set)
 function courseEndDate(course) {
   const times = db.sessions.filter(s => s.courseId === course.id && s.startsAt).map(s => new Date(s.startsAt).getTime());
-  if (course.startDate) times.push(new Date(course.startDate + 'T00:00:00').getTime() + (parseDurationDays(course.duration) || 28) * DAY_MS);
+  const start = courseStartKey(course);
+  if (start) times.push(new Date(start + 'T00:00:00').getTime() + (parseDurationDays(course.duration) || 28) * DAY_MS);
   return times.length ? Math.max(...times) : null;
 }
-function buildSchedule(total, count, gapDays) {
+// Every class day of a course, as sorted 'YYYY-MM-DD' keys. Real scheduled live classes when they cover the course;
+// otherwise one class a week from the start date for as many weeks as the course lasts. Fewer than 2 means "no timeline".
+function courseClassDays(course) {
+  const real = [...new Set(db.sessions.filter(s => s.courseId === course.id && s.startsAt).map(s => dayKey(s.startsAt)))].sort();
+  const start = courseStartKey(course), planned = Number(course.sessionsTotal) || 0;
+  if (real.length >= 2 && (!start || !planned || real.length >= planned)) return real;
+  if (!start) return [];
+  const weeks = Math.max(1, Math.ceil((parseDurationDays(course.duration) || 28) / 7));
+  const days = Array.from({ length: weeks }, (_, i) => addDays(start, i * 7));
+  return days.length >= 2 ? days : [];
+}
+const fmtClassDay = key => new Date(key + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+// dueDates (optional): one 'YYYY-MM-DD' per payment, the first being today. Without it payments are gapDays apart.
+function buildSchedule(total, count, gapDays, dueDates, notes) {
   const pct = INSTALLMENT_SPLITS[count], today = dayKey(Date.now());
   let left = total;
   return pct.map((p, i) => {
     const amount = i === count - 1 ? left : Math.round(total * p / 10000) * 100;
     left -= amount;
-    return { no: i + 1, amountNaira: amount, dueOn: addDays(today, i * gapDays), status: 'pending', paidAt: null, reference: null, reminded: {} };
+    return { no: i + 1, amountNaira: amount, dueOn: dueDates ? dueDates[i] : addDays(today, i * gapDays), status: 'pending', paidAt: null, reference: null, reminded: {}, note: (notes && notes[i]) || '' };
   });
+}
+// Due dates that follow the class timeline. Payment k (k >= 2) falls due the day before the class where the part of the course
+// not yet paid for begins: with a 60/40 split that is the class at 60% of the classes still ahead. Returns null when it cannot fit.
+function classAlignedDates(count, ahead, allDays, single, today, deadlineKey) {
+  const pct = INSTALLMENT_SPLITS[count], L = ahead.length;
+  const dates = [today], notes = [''];
+  let cum = 0, prevIdx = 0;
+  for (let k = 1; k < count; k++) {
+    cum += pct[k - 1] / 100;
+    const idx = Math.max(prevIdx + 1, Math.floor(cum * L));
+    if (idx > L - 1) return null;
+    let due = addDays(ahead[idx], -1);
+    if (deadlineKey && due > deadlineKey) due = deadlineKey;
+    if (dayDiff(dates[k - 1], due) < INSTALLMENT_MIN_GAP_DAYS) return null;
+    dates.push(due); prevIdx = idx;
+    notes.push(single ? `Before live class ${allDays.indexOf(ahead[idx]) + 1} of ${allDays.length} · ${fmtClassDay(ahead[idx])}` : `Before your live class on ${fmtClassDay(ahead[idx])}`);
+  }
+  return { dates, notes };
+}
+// Same idea when there are too few classes ahead to land on: spread the payments in proportion over the days left before the deadline.
+function proportionalDates(count, today, deadlineKey) {
+  const pct = INSTALLMENT_SPLITS[count], span = dayDiff(today, deadlineKey);
+  if (!(span > 0)) return null;
+  const dates = [today];
+  let cum = 0;
+  for (let k = 1; k < count; k++) {
+    cum += pct[k - 1] / 100;
+    const due = addDays(today, Math.floor(span * cum));
+    if (dayDiff(dates[k - 1], due) < INSTALLMENT_MIN_GAP_DAYS) return null;
+    dates.push(due);
+  }
+  return { dates, notes: dates.map(() => '') };
 }
 // The instalment options a student can choose for these courses at this price, today. Empty when none are allowed.
 function installmentOffer(courses, totalNaira) {
@@ -465,22 +515,29 @@ function installmentOffer(courses, totalNaira) {
   courses.forEach(c => { if (Array.isArray(c.installmentPlans)) allowed = allowed.filter(n => c.installmentPlans.includes(n)); });
   const ends = courses.map(courseEndDate).filter(Boolean);
   const deadline = ends.length ? Math.min(...ends) - INSTALLMENT_END_BUFFER_DAYS * DAY_MS : null;
+  const today = dayKey(Date.now());
+  const deadlineKey = deadline !== null ? dayKey(deadline) : null;
+  const allDays = [...new Set(courses.flatMap(courseClassDays))].sort();
+  const ahead = allDays.filter(d => d > today);          // classes a student enrolling now still attends live (earlier ones are recordings)
   const out = [];
   for (const count of allowed) {
-    let gap = Math.max(INSTALLMENT_MIN_GAP_DAYS, cfg('installmentIntervalDays'));
-    if (deadline !== null) {
-      const room = Math.floor((deadline - Date.now()) / DAY_MS);
-      gap = Math.min(gap, Math.floor(room / (count - 1)));
-      if (gap < INSTALLMENT_MIN_GAP_DAYS) continue;
+    let plan = null;
+    if (deadlineKey !== null) {
+      plan = classAlignedDates(count, ahead, allDays, courses.length === 1, today, deadlineKey) || proportionalDates(count, today, deadlineKey);
+      if (!plan) continue;
+    } else {
+      const gap = Math.max(INSTALLMENT_MIN_GAP_DAYS, cfg('installmentIntervalDays'));   // no timeline at all: fixed gap from today
+      plan = { dates: Array.from({ length: count }, (_, i) => addDays(today, i * gap)), notes: [] };
     }
-    const schedule = buildSchedule(Math.round(totalNaira), count, gap);
+    const gapDays = dayDiff(plan.dates[0], plan.dates[1]);
+    const schedule = buildSchedule(Math.round(totalNaira), count, gapDays, plan.dates, plan.notes);
     if (schedule.some(s => s.amountNaira <= 0)) continue;
-    out.push({ count, gapDays: gap, schedule });
+    out.push({ count, gapDays, schedule });
   }
   return out;
 }
 const offerView = o => ({ count: o.count, gapDays: o.gapDays, first: o.schedule[0].amountNaira,
-  schedule: o.schedule.map(s => ({ no: s.no, amountNaira: s.amountNaira, dueOn: s.dueOn, dueLabel: fmtDue(s.dueOn) })) });
+  schedule: o.schedule.map(s => ({ no: s.no, amountNaira: s.amountNaira, dueOn: s.dueOn, dueLabel: fmtDue(s.dueOn), note: s.note || '' })) });
 
 // Where a plan stands today. 'paused' and 'defaulted' are the two states that close the course.
 function planState(plan) {
@@ -531,7 +588,7 @@ function planView(plan) {
     schedule: plan.schedule.map(s => {
       const order = orders.find(o => !o.settlePlan && o.installmentNo === s.no) || (s.status !== 'paid' ? orders.find(o => o.settlePlan) : null);
       const late = s.status !== 'paid' && dayDiff(s.dueOn, today) > 0;
-      return { no: s.no, amountNaira: s.amountNaira, dueOn: s.dueOn, dueLabel: fmtDue(s.dueOn), paidAt: s.paidAt,
+      return { no: s.no, amountNaira: s.amountNaira, dueOn: s.dueOn, dueLabel: fmtDue(s.dueOn), note: s.note || '', paidAt: s.paidAt,
         status: s.status === 'paid' ? 'paid' : late ? 'overdue' : 'upcoming', order: order ? { id: order.id, status: order.status } : null };
     }), createdAt: plan.createdAt };
 }
@@ -4267,8 +4324,8 @@ route('PATCH', '/api/staff/plans/:id', async ctx => {
     if (!(days >= 1 && days <= 30)) throw httpError(400, 'Choose between 1 and 30 days.');
     const today = dayKey(Date.now());
     next.dueOn = addDays(dayDiff(today, next.dueOn) < 0 ? today : next.dueOn, days);   // an overdue payment is counted from today
-    next.reminded = {};
-    plan.schedule.filter(s => s.status !== 'paid' && s.no > next.no).forEach(s => { if (dayDiff(next.dueOn, s.dueOn) < INSTALLMENT_MIN_GAP_DAYS) s.dueOn = addDays(next.dueOn, INSTALLMENT_MIN_GAP_DAYS * (s.no - next.no)); });
+    next.reminded = {}; next.note = '';
+    plan.schedule.filter(s => s.status !== 'paid' && s.no > next.no).forEach(s => { if (dayDiff(next.dueOn, s.dueOn) < INSTALLMENT_MIN_GAP_DAYS) { s.dueOn = addDays(next.dueOn, INSTALLMENT_MIN_GAP_DAYS * (s.no - next.no)); s.note = ''; } });
     plan.note = `Extended by ${days} day(s) by ${admin.name}`; plan.updatedAt = now();
     notify(plan.userId, 'More time to pay', `We have moved your payment date. ${planMessage(plan, planState(plan))}`, '#payments', { kind: 'payment' });
     save(); return json(ctx.res, 200, { plan: staffPlanRow(plan) });

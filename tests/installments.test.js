@@ -72,4 +72,41 @@ const iso = ms => new Date(ms).toISOString().slice(0, 10);
   c.runInstallmentChecks(); c.runInstallmentChecks();
   assert.equal(sent.length, 1, 'one message even after two sweeps, not one per missed step'); assert.match(sent[0], /paused/i);
 }
+// 6. Due dates follow the live classes (weeks of training), not the checkout date
+{
+  const c = sandbox(S);
+  const today = iso(Date.now());
+  const at = (days, extra) => Object.assign({ id: 'a', startDate: iso(Date.now() + days * DAY), duration: '8 weeks' }, extra);
+  const due = (o, n) => o.schedule.map(s => s.dueOn);
+  // Student buys 10 days before an 8-week course starts (weekly classes on start + 0, 7, ... 49)
+  const pre = c.installmentOffer([at(10)], 100000);
+  const p2 = pre.find(o => o.count === 2), p3 = pre.find(o => o.count === 3);
+  assert.equal(p2.schedule[0].dueOn, today);
+  assert.equal(p2.schedule[1].dueOn, iso(Date.now() + (10 + 4 * 7 - 1) * DAY), '60/40: due the day before class 5 (after 4 of 8 classes)');
+  assert.match(p2.schedule[1].note, /Before live class 5 of 8/);
+  assert.deepEqual(Array.from(p3.schedule, s => s.dueOn), [today, iso(Date.now() + (10 + 4 * 7 - 1) * DAY), iso(Date.now() + (10 + 6 * 7 - 1) * DAY)], '50/30/20: before classes 5 and 7');
+  // Last payment is always at least 3 days before the course ends
+  const end = Date.now() + (10 + 56) * DAY;
+  for (const o of pre) assert.ok(c.dayDiff(o.schedule[o.count - 1].dueOn, iso(end)) >= 3);
+  // Late joiner: the course started 3 weeks ago, so only the classes still ahead are used
+  const late = c.installmentOffer([at(-21)], 100000);
+  const l2 = late.find(o => o.count === 2);
+  assert.ok(l2, 'late joiner still gets a plan');
+  const firstAhead = Date.now() + (-21 + 21 + 7) * DAY;   // class 4 (index 3) is the first one in the future
+  assert.ok(c.dayDiff(today, l2.schedule[1].dueOn) >= 5 && c.dayDiff(l2.schedule[1].dueOn, iso(end - 3 * DAY)) >= 0, 'compressed into the weeks that remain');
+  assert.ok(l2.schedule[1].dueOn > iso(firstAhead - DAY * 2), 'not due before the first class still ahead');
+  // Real scheduled sessions beat the calendar: the 2nd payment is due the day before the matching live class
+  const c2 = sandbox(S);
+  const day = n => new Date(Date.now() + n * DAY).toISOString();
+  c2.db.sessions = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30].map(n => ({ courseId: 'r', startsAt: day(n) }));
+  const real = c2.installmentOffer([{ id: 'r' }], 100000).find(o => o.count === 2);
+  assert.equal(real.schedule[1].dueOn, iso(Date.now() + (3 + 6 * 3 - 1) * DAY), '60% of 10 classes = 6 done, due before class 7');
+  assert.match(real.schedule[1].note, /class 7 of 10/);
+  // Too late for a plan: one class left
+  assert.equal(c.installmentOffer([at(-49)], 100000).length, 0);
+  // Bundle: dates land on the class days of all its courses, notes name the date only
+  c2.db.sessions.push(...[5, 10, 20, 40].map(n => ({ courseId: 'r2', startsAt: day(n) })));
+  const b = c2.installmentOffer([{ id: 'r' }, { id: 'r2' }], 100000);
+  assert.ok(b.length >= 1 && b[0].schedule[1].note.startsWith('Before your live class on'));
+}
 console.log('installment engine tests passed');
