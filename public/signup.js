@@ -18,6 +18,14 @@
   var form = $('lg-form'), alertBox = $('lg-alert'), submit = $('lg-submit');
   { var g = $('lg-google'); if (g && (ref || qr)) g.setAttribute('href', '/api/auth/google?' + (ref ? 'ref=' + encodeURIComponent(ref) + '&' : '') + (qr ? 'qr=' + encodeURIComponent(qr) : '')); }
 
+  // Same rule as the server: a Nigerian number (0803..., +234803...) or any international number with its country code
+  function validWhatsapp(v) {
+    var intl = v.charAt(0) === '+' || v.slice(0, 2) === '00', d = v.replace(/\D/g, '');
+    if (v.slice(0, 2) === '00') d = d.slice(2);
+    if (!intl) { if (d.charAt(0) === '0' && d.length === 11) d = '234' + d.slice(1); else if (d.length === 10 && /^[789]/.test(d)) d = '234' + d; }
+    if (!/^\d{10,15}$/.test(d)) return false;
+    return !(d.slice(0, 3) === '234' && d.length !== 13);
+  }
   function showAlert(msg, ok) {
     alertBox.textContent = msg;
     alertBox.className = 'lg-alert' + (ok ? ' ok' : '');
@@ -39,6 +47,8 @@
     var name = $('lg-name').value.trim();
     var email = $('lg-email').value.trim();
     var pass = $('lg-pass').value;
+    var wa = $('lg-whatsapp').value.trim();
+    if (!validWhatsapp(wa)) { showAlert('Please enter a valid WhatsApp number, for example 0803 123 4567.'); $('lg-whatsapp').focus(); return; }
     if (name.length < 2) { showAlert('Please enter your full name.'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert('Please enter a valid email address.'); return; }
     if (pass.length < 8) { showAlert('Your password must be at least 8 characters.'); return; }
@@ -46,7 +56,7 @@
     submit.disabled = true; submit.textContent = 'Creating your account…';
     try {
       var res = await fetch('/api/auth/signup', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: $('lg-name').value.trim(), email: email, phone: $('lg-phone').value.trim(), password: pass, referralCode: ref, qr: qr }) });
+        body: JSON.stringify({ name: $('lg-name').value.trim(), email: email, phone: $('lg-phone').value.trim(), whatsapp: wa, password: pass, referralCode: ref, qr: qr }) });
       var data = await res.json().catch(function () { return {}; });
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
       try { localStorage.removeItem(REF_KEY); localStorage.removeItem(QR_KEY); } catch (e) {}
