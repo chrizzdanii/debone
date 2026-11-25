@@ -1,0 +1,847 @@
+{
+  "audience": "staff",
+  "title": "DEBONE Admin and Instructor Guide",
+  "subtitle": "How to run the whole academy, studio and website from the admin panel",
+  "intro": [
+    "This guide teaches you to run DEBONE from the admin panel, even if you have never used a dashboard before. Every menu item is explained: what it is for, how to use it step by step, and what to watch out for.",
+    "There are two kinds of staff accounts. An instructor can teach: see the Overview, run Live classes, check Zoom Student Verification, and mark Assignments. An admin can do all of that and also manage courses, money, the website and the team. If you are an instructor, you will only see the pages that are yours. The sections that are only for admins are marked in this guide."
+  ],
+  "sections": [
+    {
+      "id": "start",
+      "group": "Start here",
+      "title": "Getting started: staff login and roles",
+      "view": null,
+      "adminOnly": false,
+      "summary": "How staff sign in and what each role can do.",
+      "what": "Staff do not use the student login. They use the staff login page, so that students can never reach the admin panel. Each staff member has a role that controls what they can see and change. The server checks the role on every action, so hiding a button is not the only protection.",
+      "steps": [
+        "Open the Staff login page of the website and sign in with your staff email and password.",
+        "The very first admin account is created by whoever installs the website, using the create admin command shown in the README file.",
+        "To give someone a role, an admin opens Users and roles and changes that person to Instructor or Admin.",
+        "The small tag at the top of the menu shows your role.",
+        "On a phone, tap the menu button at the top left to open the menu."
+      ],
+      "tips": [
+        "Give people the smallest role they need. Most teachers only need Instructor.",
+        "Always log out on shared computers."
+      ],
+      "mistakes": [
+        "If a menu item is missing, your role does not include it. Ask an admin."
+      ]
+    },
+    {
+      "id": "topbar",
+      "group": "Start here",
+      "title": "The top bar: tour, guide, notifications and log out",
+      "view": null,
+      "adminOnly": false,
+      "tourTarget": ".top-actions",
+      "tour": "The top bar holds your tour button, this guide, your notification bell and Log out.",
+      "summary": "The buttons across the top of every page.",
+      "what": "The top bar is on every page. It shows who is signed in and holds the buttons that help you learn the panel and stay informed.",
+      "steps": [
+        "Take a tour starts the guided walk through the whole panel.",
+        "Guide opens this written guide. You can read it, search it, listen to it, or download it as a PDF.",
+        "The bell shows a number for things that need you, such as new submissions to mark. Open it to see each one.",
+        "Log out signs you out safely."
+      ],
+      "tips": [
+        "Open the bell at the start of each day."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "overview",
+      "group": "Overview",
+      "title": "Overview: what needs your attention today",
+      "view": "overview",
+      "adminOnly": false,
+      "tour": "Your home page. It lists everything that needs your attention today.",
+      "summary": "A daily summary with numbers and a to do list.",
+      "what": "Overview shows the health of the business at a glance: sign ups, enrolments, revenue, page views, who is online, and which classes are live now. It also shows a list of things waiting for you, so nothing is forgotten.",
+      "steps": [
+        "Read the number cards at the top: students, active enrolments, total revenue and lessons done today.",
+        "Choose 14d or 30d to change the period of the charts.",
+        "Look at the to do items: Payments to approve, Assignments to mark, Refund requests, Certificate requests and Late installments. Choose one to go straight to that page.",
+        "Read What just happened to see the latest activity.",
+        "Check Top courses and Revenue mix to see what sells best."
+      ],
+      "tips": [
+        "Start every working day here. Clear the to do items first.",
+        "The numbers update by themselves. You do not need to refresh."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "live",
+      "group": "Academy",
+      "title": "Live classes",
+      "view": "live",
+      "adminOnly": false,
+      "tour": "Schedule classes, link them to lessons, go live, and add recordings.",
+      "summary": "Schedule classes, go live, and add recordings.",
+      "what": "Live classes is where you plan every class. Each class belongs to a course and to a lesson. When students finish the live class, or watch its recording, and submit the lesson assignment, the next lesson opens for them.",
+      "steps": [
+        "Choose Schedule a class.",
+        "Step one, what it is about: choose the course, the lesson it belongs to, and type a title, for example Week 3 reading charts.",
+        "Step two, when: pick the date and time, and choose the class length in minutes.",
+        "Choose the status: Scheduled, Live now, or Ended.",
+        "Step three, links: paste the video room link from Google Meet or Zoom. You may also add a YouTube live link.",
+        "Choose Save class. Students see the class in their dashboard and get a notice.",
+        "To make a class live, set its status to Live now. Students can then join.",
+        "After the class, add the recording. Paste a YouTube recording link, or use Upload MP4 and publish.",
+        "Use the class chat to answer students, and remove messages that break the rules."
+      ],
+      "tips": [
+        "Always link a class to a lesson. This is what makes lessons open on the right day.",
+        "Use the search box to find old classes quickly."
+      ],
+      "mistakes": [
+        "If students say they cannot see the video, check that the class status is Live now and that the link is saved."
+      ]
+    },
+    {
+      "id": "zoom-verification",
+      "group": "Academy",
+      "title": "Zoom Student Verification",
+      "view": "zoom-verification",
+      "adminOnly": false,
+      "tour": "Compare the names in your Zoom waiting room with paid, enrolled students.",
+      "summary": "Check who is allowed into a Zoom class.",
+      "what": "Students register their Zoom display name in their profile. This page compares the names waiting in your Zoom Waiting Room with the list of paid and enrolled students, so you can let in the right people and keep others out.",
+      "steps": [
+        "Open Zoom Student Verification.",
+        "Choose the course or class you are about to teach.",
+        "Look at the roster of paid students and the display name each one registered.",
+        "Compare it with the names in your Zoom Waiting Room. Admit people whose name matches a paid student.",
+        "If a name does not match, ask the person to say who they are before you admit them."
+      ],
+      "tips": [
+        "Ask students to register their Zoom name in their Profile before the first class."
+      ],
+      "mistakes": [
+        "A matching name is a strong sign, not proof of identity. Names alone do not prove who someone is."
+      ]
+    },
+    {
+      "id": "assignments",
+      "group": "Academy",
+      "title": "Assignments",
+      "view": "assignments",
+      "adminOnly": false,
+      "tour": "Set work, read submissions, and give marks and feedback.",
+      "summary": "Set homework, read what students send, and give marks.",
+      "what": "Assignments is where you set work for a course, read each submission, and give marks and feedback. Students see your marks in their Performance page and get a notice.",
+      "steps": [
+        "Choose Create assignment.",
+        "Choose the course and lesson. Write a clear title and instructions. Set the due date and the total marks.",
+        "Save it. Students see it in their dashboard.",
+        "When students submit, choose Submissions on that assignment to read each one.",
+        "Type the mark and write helpful feedback. Save.",
+        "If the work is not good enough, you can ask the student to resubmit. This works when resubmission is switched on in Business rules."
+      ],
+      "tips": [
+        "Good feedback names one thing done well and one thing to improve.",
+        "Marked work cannot be changed by the student."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "courses",
+      "group": "Academy",
+      "title": "Courses and lessons",
+      "view": "courses",
+      "adminOnly": true,
+      "tour": "Create courses, set prices and write the lessons students see.",
+      "summary": "Build and manage your courses.",
+      "what": "Courses and lessons is the catalogue. Here you create each course, set its price and dates, and write the lessons students learn from.",
+      "steps": [
+        "Choose Create course. Type the title and description.",
+        "Fill in the details: category, instructor, start date, duration, schedule, classes per week and the minimum number of students.",
+        "Set the price. To show a crossed out normal price, fill the original price and the offer end date.",
+        "In Payment options choose whether the course allows 2 installments, 3 installments, both, or none.",
+        "Choose Add lesson to write each lesson in order.",
+        "Save. The course appears on the academy page and in student dashboards.",
+        "A course marked Coming soon builds a waiting list instead of taking payments."
+      ],
+      "tips": [
+        "A course should have an instructor, a start date and scheduled classes before it takes payment.",
+        "Installments depend on the start date and duration, so fill them in."
+      ],
+      "mistakes": [
+        "Delete course removes the course for good. Think twice before using it."
+      ]
+    },
+    {
+      "id": "transfers",
+      "group": "Academy",
+      "title": "Payment approvals",
+      "view": "transfers",
+      "adminOnly": true,
+      "tour": "Check each bank transfer receipt. Approve it to open the course for the student.",
+      "summary": "Confirm bank transfers so students can start learning.",
+      "what": "Students pay by bank transfer and upload a receipt. Payment approvals lists every receipt waiting for you. When you approve one, the course opens for that student straight away.",
+      "steps": [
+        "Open Payment approvals.",
+        "Choose View receipt and look at the photo or PDF.",
+        "Check the amount, the date and the reference against your bank account.",
+        "If it is right, choose Approve. The student gets access and a notice.",
+        "If it is wrong or unclear, choose Reject receipt so the student can upload a better one."
+      ],
+      "tips": [
+        "Aim to approve within a few hours on working days. This is the promise students see.",
+        "Match the reference code, not only the amount."
+      ],
+      "mistakes": [
+        "Never approve a receipt you have not matched to your bank."
+      ]
+    },
+    {
+      "id": "certificates",
+      "group": "Academy",
+      "title": "Certificates",
+      "view": "certificates",
+      "adminOnly": true,
+      "tour": "Check each student's work and issue their certificates.",
+      "summary": "Review certificate requests and issue certificates.",
+      "what": "A certificate is issued only when you approve a student's request. Each certificate gets a verification code, and anyone can check it on the website.",
+      "steps": [
+        "Open Certificates and look at the requests.",
+        "Check that the student finished every lesson and reached the minimum mark of {{certMinPercent}} percent in each assignment.",
+        "Choose Approve and issue. The student gets a notice and can download the PDF.",
+        "If the work is not ready, choose Decline and tell the student what is missing.",
+        "Use Verify to check a certificate code when a customer asks if a certificate is real."
+      ],
+      "tips": [
+        "The minimum mark can be changed in Business rules."
+      ],
+      "mistakes": [
+        "For installment students, the certificate is released only after the last payment."
+      ]
+    },
+    {
+      "id": "community",
+      "group": "Academy",
+      "title": "Community moderation",
+      "view": "community",
+      "adminOnly": true,
+      "tour": "Hide or remove posts that break the rules. Suspend a student who keeps breaking them.",
+      "summary": "Keep the student chat friendly and safe.",
+      "what": "Every course has a student chat. Community moderation lets you keep it respectful.",
+      "steps": [
+        "Open Community moderation and look at the posts and replies in the list.",
+        "On any message that breaks the rules, choose Hide. A hidden message can be shown again with Show. Choose Delete to remove it for good.",
+        "If one student keeps breaking the rules, choose Suspend on their post.",
+        "A suspended student cannot log in. Choose Restore to give access back."
+      ],
+      "tips": [
+        "Warn first when the problem is small."
+      ],
+      "mistakes": [
+        "Suspending is serious because the student cannot log in at all."
+      ]
+    },
+    {
+      "id": "challenges",
+      "group": "Academy",
+      "title": "Monthly challenges",
+      "view": "challenges",
+      "adminOnly": true,
+      "tour": "Start a challenge, review entries, pick a winner and showcase the best work.",
+      "summary": "Run creative competitions for your students.",
+      "what": "A challenge is a creative task with a closing date. Students send one entry each. You pick the winner and can showcase the best work.",
+      "steps": [
+        "Choose New challenge.",
+        "Type the title, description, rules, category and the closing date.",
+        "Save. Students can now enter.",
+        "When it closes, choose Entries to look at what was sent.",
+        "Pick the winner and choose the best work to showcase."
+      ],
+      "tips": [
+        "Clear rules prevent arguments about who won."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "bundles",
+      "group": "Academy",
+      "title": "Course bundles",
+      "view": "bundles",
+      "adminOnly": true,
+      "tour": "Package courses together at one price, with offers and countdowns.",
+      "summary": "Create packages of courses at one price.",
+      "what": "A bundle sells several courses together for less. You can show a crossed out normal price, add a countdown, or mark a bundle Coming soon to build a waiting list.",
+      "steps": [
+        "Choose New bundle.",
+        "Type a title and description, and choose the courses to include.",
+        "Set the bundle price. You may use the suggested normal price to show the saving.",
+        "Optionally set a countdown date for a limited time offer.",
+        "Save. The system refuses a bundle whose courses clash in time, and tells you why."
+      ],
+      "tips": [
+        "Make the saving clear. Students respond to a visible discount."
+      ],
+      "mistakes": [
+        "A student with an installment plan on one of the courses cannot buy the bundle until the plan is closed."
+      ]
+    },
+    {
+      "id": "waitlist",
+      "group": "Academy",
+      "title": "Course waiting list",
+      "view": "waitlist",
+      "adminOnly": true,
+      "tour": "See how many people want each coming-soon course, and launch it when demand is high.",
+      "summary": "Measure demand before you launch a course.",
+      "what": "When a course or bundle is Coming soon, interested people join a waiting list. This page shows how many people want each one and who they are.",
+      "steps": [
+        "Open Course waiting list.",
+        "Look at the number of people waiting for each course or bundle, with their names, emails and phone numbers.",
+        "When demand is high enough, choose Launch and notify. The course opens and the people on the list are told."
+      ],
+      "tips": [
+        "Use the numbers to decide which course to run first. You can also use Launch course now inside a course in Courses and lessons."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "reviews",
+      "group": "Academy",
+      "title": "Course reviews",
+      "view": "reviews",
+      "adminOnly": true,
+      "tour": "Approve student reviews before they appear on the academy page.",
+      "summary": "Approve or reject student reviews.",
+      "what": "Students write reviews of courses they are enrolled in. You check each one before the public sees it. Rejected reviews are never shown.",
+      "steps": [
+        "Open Course reviews.",
+        "Read each review.",
+        "Choose Approve to publish it, or Reject to hide it."
+      ],
+      "tips": [
+        "Approve honest reviews, including ones that are not fully positive. They build trust."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "webinars",
+      "group": "Academy",
+      "title": "Free webinars",
+      "view": "webinars",
+      "adminOnly": true,
+      "tour": "Schedule free introduction sessions and see who registered.",
+      "summary": "Run free live sessions to attract new students.",
+      "what": "A free webinar is a live introduction to bring in new students. People register for free. Signed in students get the join link.",
+      "steps": [
+        "Choose Schedule webinar.",
+        "Type the title, date, time, seat limit and the join link.",
+        "Save. It appears on the website webinars page.",
+        "Choose Registrants to see who signed up for each webinar."
+      ],
+      "tips": [
+        "Message registrants on WhatsApp the day before so more of them attend."
+      ],
+      "mistakes": [
+        "Automatic reminders are not sent, so remind people yourself."
+      ]
+    },
+    {
+      "id": "pages",
+      "group": "Studio and services",
+      "title": "Page content",
+      "view": "pages",
+      "adminOnly": true,
+      "tour": "Change photos and wording on the Studio, About and Services pages.",
+      "summary": "Edit your website pages without a developer.",
+      "what": "Page content lets you change the photos and wording on the Studio, About and Services pages. Anything you do not touch keeps its original look. Changes show on the website straight away.",
+      "steps": [
+        "Open Page content and choose the page.",
+        "Choose the picture or text you want to change.",
+        "Upload a new picture or type the new words.",
+        "Save. Open the website to check how it looks.",
+        "To undo a change, choose Back to original."
+      ],
+      "tips": [
+        "Use clear, bright pictures. Large photos are resized for you."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "services",
+      "group": "Studio and services",
+      "title": "Services",
+      "view": "services",
+      "adminOnly": true,
+      "tour": "Manage the services shown on the homepage and the Services page.",
+      "summary": "Add, edit and order the services you offer.",
+      "what": "Services is the list of what the studio offers. It shows on the homepage and on the Services page. The number of each service follows the order you set.",
+      "steps": [
+        "Choose Add service and type the name, description and details.",
+        "Save it.",
+        "Use the up and down arrows to change the order.",
+        "Choose Edit to change a service, or Delete to remove it."
+      ],
+      "tips": [
+        "Put your most popular services first."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "talent",
+      "group": "Studio and services",
+      "title": "Talent profiles",
+      "view": "talent",
+      "adminOnly": true,
+      "tour": "Approve student talent profiles for the public directory.",
+      "summary": "Approve profiles before customers can see them.",
+      "what": "Students with a certificate can build a talent profile. Only approved profiles appear in the public talent directory with a DEBONE certified badge.",
+      "steps": [
+        "Open Talent profiles.",
+        "Read each profile and look at the work shown.",
+        "Choose Approve if it is good and honest, or Reject if it needs work."
+      ],
+      "tips": [
+        "Your approval puts the DEBONE name on a student's work. Approve only good work."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "bookings",
+      "group": "Studio and services",
+      "title": "Bookings and quotes",
+      "view": "bookings",
+      "adminOnly": true,
+      "tour": "Handle studio booking requests and send quotations with a deposit.",
+      "summary": "Turn booking requests into paid jobs.",
+      "what": "Customers send booking requests from the website. You reply with a quotation that includes a deposit. The client accepts the quotation online and pays the deposit.",
+      "steps": [
+        "Open Bookings and quotes and read the request.",
+        "Choose Quote and type the price and what is included.",
+        "Choose Send quotation. The deposit is {{depositPercent}} percent of the quotation by default.",
+        "When the client accepts and pays the deposit, confirm it and schedule the job."
+      ],
+      "tips": [
+        "A deposit protects your time. Always take one."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "digital",
+      "group": "Studio and services",
+      "title": "Digital products",
+      "view": "digital",
+      "adminOnly": true,
+      "tour": "Sell eBooks, templates and guides that buyers download after payment.",
+      "summary": "Sell downloadable products.",
+      "what": "Digital products are eBooks, prompt packs, templates and guides. Buyers download them after their payment is confirmed. Each file is kept in private storage.",
+      "steps": [
+        "Choose Add product. Type the title, description and price, and upload the PDF file.",
+        "To change a product later, choose Edit. To replace the file, use Replace PDF.",
+        "When a buyer pays and the payment is approved, the file appears in their Downloads page.",
+        "Look at the Sales column to see how many each product has sold."
+      ],
+      "tips": [
+        "Each buyer can download {{downloadLimit}} times for {{downloadDays}} days by default. Change this in Business rules."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "products",
+      "group": "Studio and services",
+      "title": "Shop products",
+      "view": "products",
+      "adminOnly": true,
+      "tour": "Add, edit and remove the products customers see in the shop.",
+      "summary": "Manage the products in your shop.",
+      "what": "Shop products controls the physical products shown in the store, such as cameras, printers and accessories.",
+      "steps": [
+        "Choose Add product.",
+        "Type the name, category, a short summary, the full description and the price.",
+        "Add a picture by upload or by link.",
+        "Save. It appears in the shop at once.",
+        "Choose Edit or Delete on a product to change or remove it."
+      ],
+      "tips": [
+        "Clear photos sell products."
+      ],
+      "mistakes": [
+        "Delete all products and Restore the original catalogue change many items at once. Use them with care."
+      ]
+    },
+    {
+      "id": "works",
+      "group": "Studio and services",
+      "title": "Selected work",
+      "view": "works",
+      "adminOnly": true,
+      "tour": "Choose the photos shown in Recent frames on the homepage.",
+      "summary": "Show your best photography on the homepage.",
+      "what": "These photos appear in Recent frames on the homepage. The newest work is shown first.",
+      "steps": [
+        "Choose Add work.",
+        "Upload the picture and give it a title.",
+        "Save. It appears on the homepage.",
+        "Choose Remove to take one down."
+      ],
+      "tips": [
+        "Show variety: portraits, events, products."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "settings",
+      "group": "Website",
+      "title": "Site settings",
+      "view": "settings",
+      "adminOnly": true,
+      "tour": "Change phone numbers, WhatsApp, address and social links across the whole website.",
+      "summary": "Keep your contact details correct everywhere.",
+      "what": "Site settings holds your phone numbers, WhatsApp number, address, opening hours and social media links. The whole website updates straight away.",
+      "steps": [
+        "Open Site settings.",
+        "Change the phone numbers, WhatsApp, address, hours or social links.",
+        "The WhatsApp number must be digits with the country code, for example 234 then the number.",
+        "Choose Save settings."
+      ],
+      "tips": [
+        "Check the WhatsApp number carefully. Customers use it every day."
+      ],
+      "mistakes": [
+        "The system refuses a phone number or email that looks wrong. Read the message and fix it."
+      ]
+    },
+    {
+      "id": "setup",
+      "group": "System",
+      "title": "Set-up and backup",
+      "view": "setup",
+      "adminOnly": true,
+      "tour": "A launch checklist, and your backups.",
+      "summary": "Check the site is ready and keep a safe copy of your data.",
+      "what": "Set-up and backup lists everything that must be in place before the site goes live, and lets you create and download backups of your data.",
+      "steps": [
+        "Open Set-up and backup and read the checklist. Fix anything shown as missing.",
+        "Choose Create backup on the server to save a copy now.",
+        "Choose Download backup file to keep a copy on your own computer or phone."
+      ],
+      "tips": [
+        "Download a backup at least once a week and keep it somewhere safe."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "rules",
+      "group": "System",
+      "title": "Business rules",
+      "view": "rules",
+      "adminOnly": true,
+      "tour": "The rules the website follows, such as refunds, installments, rewards and bank accounts.",
+      "summary": "Change how the business rules work, without a developer.",
+      "what": "Business rules are the numbers the website follows. Change a number, save, and it applies straight away to everyone.",
+      "steps": [
+        "Open Business rules.",
+        "Set how long replays last after a course ends, currently {{replayDays}} days by default.",
+        "Set downloads per product and how long download access lasts.",
+        "Set the studio deposit percent, the refund window ({{refundWindowDays}} days by default) and the notice period for a course short of students ({{noticeDays}} days by default).",
+        "Set the friend discount ({{referralDiscountPercent}} percent), the referrer reward ({{referrerRewardPercent}} percent) and the paying friends needed to withdraw ({{withdrawMinReferrals}}).",
+        "Set the certificate minimum mark ({{certMinPercent}} percent) and whether students may resubmit work.",
+        "For installments, switch them on or off, set the minimum price ({{installmentMinPrice}} naira), the days between payments, the grace period ({{installmentGraceDays}} days) and the days overdue before a plan is flagged for your decision ({{installmentDefaultDays}} days).",
+        "Type the two bank accounts that students pay into. They appear on every payment page exactly as you type them.",
+        "Choose Save business rules."
+      ],
+      "tips": [
+        "Check the bank account numbers twice. A wrong number sends student money to the wrong place."
+      ],
+      "mistakes": [
+        "Changing a rule does not change plans that students have already started. Existing installment dates stay as saved."
+      ]
+    },
+    {
+      "id": "users",
+      "group": "System",
+      "title": "Users and roles",
+      "view": "users",
+      "adminOnly": true,
+      "tour": "Make instructors, promote admins, see who is enrolled, and message students on WhatsApp.",
+      "summary": "See everyone and control who can do what.",
+      "what": "Users and roles lists every account. You can make someone an instructor or an admin, see who is enrolled, and open a WhatsApp chat with a student in one tap.",
+      "steps": [
+        "Open Users and roles. You will see everyone with their email, WhatsApp, join date, courses enrolled and role.",
+        "To change a role, use the Role dropdown on that person's row. Pick student, instructor or admin. It saves at once.",
+        "Choose the Message button beside a student to open a WhatsApp chat with them.",
+        "Use the filters at the top: Everyone, Signed up with no course yet, and Late installment. The no course yet filter finds people who registered but have not bought. A friendly message from you can turn them into students."
+      ],
+      "tips": [
+        "Make a few people admins at most. Admins can see all money."
+      ],
+      "mistakes": [
+        "A role change takes effect at once. Check the name before you pick admin."
+      ]
+    },
+    {
+      "id": "applications",
+      "group": "System",
+      "title": "Instructor applications",
+      "view": "applications",
+      "adminOnly": true,
+      "tour": "Review people who apply to teach, before anything is published.",
+      "summary": "Review applications from people who want to teach.",
+      "what": "People can apply to teach through a public form. You review each application, set a status and write notes.",
+      "steps": [
+        "Open Instructor applications and read each one.",
+        "Set the status and write a note for your own records.",
+        "Agree payment and revenue terms in writing with the person before you approve them.",
+        "If you approve, make them an instructor in Users and roles."
+      ],
+      "tips": [
+        "Ask for a sample of their work or a short trial class first."
+      ],
+      "mistakes": [
+        "Do not approve before payment terms are agreed in writing."
+      ]
+    },
+    {
+      "id": "payments",
+      "group": "System",
+      "title": "Payments",
+      "view": "payments",
+      "adminOnly": true,
+      "tour": "Every enrolment payment, with its confirmation status.",
+      "summary": "The full record of money coming in.",
+      "what": "Payments lists every enrolment payment with its status. Use it to answer a student who says they paid, and to keep your records.",
+      "steps": [
+        "Open Payments.",
+        "Find the payment by name or reference.",
+        "Check its status. If it is waiting for approval, go to Payment approvals."
+      ],
+      "tips": [
+        "Use the reference code to find a payment fast."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "referrals",
+      "group": "System",
+      "title": "Referrals and withdrawals",
+      "view": "referrals",
+      "adminOnly": true,
+      "tour": "Students earn a share of every payment their friends make. Approve withdrawals here.",
+      "summary": "Manage the referral programme and pay out rewards.",
+      "what": "Students earn a share of every payment their friends make. When a student asks to withdraw, you send the money and then approve the request here.",
+      "steps": [
+        "Open Referrals and look at Withdrawals waiting for approval. Each row shows the student, the amount, the number of paying friends and the bank account.",
+        "Check the student has enough paying friends. The default is {{withdrawMinReferrals}}.",
+        "Send the money to the account name, bank and number shown on the row.",
+        "Then choose Approve. The student is told. If you choose Decline, the rewards go back into the student's balance.",
+        "Below, Withdrawal history and the Referrers table show who earned what."
+      ],
+      "tips": [
+        "Send the money first, then choose Approve. This keeps the record honest."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "reports",
+      "group": "System",
+      "title": "Reports and analytics",
+      "view": "reports",
+      "adminOnly": true,
+      "tour": "Sales by month and item, net after refunds, sign ups, page views and top courses.",
+      "summary": "See how the business is performing.",
+      "what": "Reports and analytics shows sales by month and by item, net revenue after refunds, sign ups, page views, and your top courses and products. Page views only count page loads, and no tracking cookies are used.",
+      "steps": [
+        "Open Reports and analytics.",
+        "Read the charts for sales, sign ups and page views.",
+        "Look at the top courses and products.",
+        "Choose Download CSV to open the figures in Excel or Google Sheets.",
+        "Use Download PNG or Download SVG to save a chart for a meeting."
+      ],
+      "tips": [
+        "Review these numbers monthly to decide what to teach and sell more of."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "installments",
+      "group": "System",
+      "title": "Installments",
+      "view": "installments",
+      "adminOnly": true,
+      "tour": "Students paying in parts. Late students are listed first.",
+      "summary": "Follow students who pay in two or three parts.",
+      "what": "Students may pay for courses and bundles in 2 or 3 parts. The first payment opens the course. Each later payment is due the day before the class where the unpaid part of the course begins. If a payment is late, the system reminds the student, then allows a grace period, then pauses access until the payment is approved.",
+      "steps": [
+        "Open Installments. Late students are at the top.",
+        "Use the WhatsApp button to remind a student.",
+        "If a student paid in cash or by phone, choose Record payment.",
+        "If a student needs more time, choose More time and set a new date.",
+        "If a plan should end, choose Close plan.",
+        "A plan flagged as Needs your decision is more than {{installmentDefaultDays}} days overdue. Decide to give time or close it."
+      ],
+      "tips": [
+        "Reminders go out three days before, on the day, and the day after. Access pauses after {{installmentGraceDays}} grace days. Progress is kept and the course opens again when the payment is approved."
+      ],
+      "mistakes": [
+        "If an instructor reschedules classes, existing plans keep their saved dates. Use More time to adjust one."
+      ]
+    },
+    {
+      "id": "refunds",
+      "group": "System",
+      "title": "Refunds and schedule notices",
+      "view": "refunds",
+      "adminOnly": true,
+      "tour": "Approve refunds, and handle courses that are short of students.",
+      "summary": "Process refund requests fairly and clearly.",
+      "what": "Students ask for refunds from their dashboard. You approve or decline. The refund window is {{refundWindowDays}} days by default, and only before the course starts or before a product is downloaded. This page also handles students who must choose a new date when a course is short of students.",
+      "steps": [
+        "Open Refunds and read each request and its reason.",
+        "Choose Approve or Decline.",
+        "If online refunds are set up, the refund is sent automatically. If not, send the money yourself and choose Mark paid.",
+        "For schedule notices, see which students chose to wait for a new date, and which asked for a refund."
+      ],
+      "tips": [
+        "Reply to the student on WhatsApp so they know what happened."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "announce",
+      "group": "System",
+      "title": "Announcements",
+      "view": "announce",
+      "adminOnly": true,
+      "tour": "Post news to every student dashboard.",
+      "summary": "Send news to all students at once.",
+      "what": "Announcements posts news to every student dashboard. Students see it on their home page and in their bell.",
+      "steps": [
+        "Open Announcements.",
+        "Type a clear title and message.",
+        "Choose Post announcement.",
+        "To remove an old one, choose Delete."
+      ],
+      "tips": [
+        "Keep announcements short and clear. Include dates and times."
+      ],
+      "mistakes": [
+        "Delete all announcements removes every one. Use it carefully."
+      ]
+    },
+    {
+      "id": "feedback",
+      "group": "System",
+      "title": "Feedback and suggestions",
+      "view": "feedback",
+      "adminOnly": true,
+      "tour": "Read ideas and problems sent from the website, and set a status.",
+      "summary": "Listen to customers and students.",
+      "what": "Feedback and suggestions lists the ideas and problems sent from the website. Set a status and a note for each one.",
+      "steps": [
+        "Open Feedback.",
+        "Read each message.",
+        "Choose a Status and write a note, for example In progress or Done.",
+        "Reply to the person if they gave contact details."
+      ],
+      "tips": [
+        "Fixing small problems fast builds trust."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "newsletter",
+      "group": "System",
+      "title": "Newsletter",
+      "view": "newsletter",
+      "adminOnly": true,
+      "tour": "People who joined your mailing list from the website footer.",
+      "summary": "Your list of subscribers.",
+      "what": "Newsletter shows people who joined the mailing list from the website footer. Subscribers can also use a coupon code when they enrol, using the same email.",
+      "steps": [
+        "Open Newsletter.",
+        "Look at the list and the dates people joined.",
+        "Use the list to send updates about new courses and offers."
+      ],
+      "tips": [
+        "Send to this list when a new course opens."
+      ],
+      "mistakes": []
+    }
+  ],
+  "tourClosing": [
+    {
+      "title": "Notifications",
+      "target": ".bell",
+      "text": "The bell shows things that need you, such as submissions to mark. Open it to see them."
+    },
+    {
+      "title": "Log out",
+      "target": ".shell-logout",
+      "text": "When you are finished, log out here to keep the admin panel safe."
+    }
+  ],
+  "glossary": [
+    [
+      "Admin",
+      "A staff member who can manage everything."
+    ],
+    [
+      "Instructor",
+      "A staff member who teaches: live classes, assignments and Zoom checks."
+    ],
+    [
+      "Approve",
+      "To confirm something so it takes effect, for example a payment or a review."
+    ],
+    [
+      "Reference",
+      "A code on each payment so you can match it to your bank statement."
+    ],
+    [
+      "Grace period",
+      "Extra days after a payment is due before access is paused."
+    ],
+    [
+      "Business rules",
+      "Numbers like the refund window that you can change without a developer."
+    ],
+    [
+      "Waiting list",
+      "People who want a course that is not open yet."
+    ],
+    [
+      "Moderation",
+      "Keeping the student chat respectful by hiding messages or suspending people."
+    ]
+  ],
+  "faq": [
+    [
+      "A student says they paid but cannot open the course.",
+      "Open Payment approvals. Look for their receipt, check it against your bank, and choose Approve. The course opens straight away."
+    ],
+    [
+      "How do I stop someone entering my Zoom class?",
+      "Use Zoom Student Verification to compare the waiting room names with paid students, and admit only matches."
+    ],
+    [
+      "A student is late with an installment.",
+      "Open Installments. Late students are listed first. Remind them on WhatsApp, record a payment, give More time, or Close plan."
+    ],
+    [
+      "How do I change the refund days?",
+      "Open Business rules, change the refund window, and choose Save business rules."
+    ],
+    [
+      "How do I make a teacher?",
+      "Open Users and roles, find the person, and change their role to Instructor."
+    ],
+    [
+      "Where do I download a backup?",
+      "Open Set-up and backup and choose Download backup file."
+    ],
+    [
+      "How do I change my phone number on the website?",
+      "Open Site settings, edit the phone numbers, and choose Save settings."
+    ]
+  ]
+}

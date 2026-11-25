@@ -1,0 +1,550 @@
+{
+  "audience": "student",
+  "title": "DEBONE Student Guide",
+  "subtitle": "Everything in your student dashboard, explained step by step",
+  "intro": [
+    "Welcome to the DEBONE Academy dashboard. This is your school online. Your courses, your live classes, your homework, your marks, your payments and your certificate are all in one place, behind one login.",
+    "You do not need to be good with computers to use it. This guide explains every page in simple words. Read it from the top, or jump straight to the page you need. You can also press the speaker button and let the guide be read to you, or download it as a PDF to keep on your phone."
+  ],
+  "sections": [
+    {
+      "id": "start",
+      "group": "Start here",
+      "title": "Getting started: sign up, log in and find your way",
+      "view": null,
+      "summary": "How to create your account, sign in, and understand the layout of the dashboard.",
+      "what": "Before anything else you need an account. After that, the dashboard has the same simple layout on every page: a menu on the left, a top bar across the top, and the main page in the middle.",
+      "steps": [
+        "Open the DEBONE website and choose Sign up. Type your name, your email, your WhatsApp number with the country code, and a password. You may also choose to continue with Google.",
+        "Your WhatsApp number is needed so the team can reach you quickly about classes and payments. Write it as digits with the country code, for example 234 then your number without the first zero.",
+        "To come back later, choose Log in and use the same email and password. If you forget your password, choose Forgot password on the login page. We will help you set a new one.",
+        "On a computer, the menu is always visible on the left. On a phone, tap the menu button at the top left to open it. Tap anywhere outside the menu to close it.",
+        "The menu is grouped into four parts: Home, Learning, Practice and Account. Every page is described later in this guide."
+      ],
+      "tips": [
+        "Keep your login details private. Never share your password, even with a friend.",
+        "Use Log out at the top right when you finish, especially on a phone or computer that is not yours."
+      ],
+      "mistakes": [
+        "If the page says the details are wrong, check for spaces before or after your email and check that Caps Lock is off.",
+        "If you signed up with Google, use the Google button to log in again. You do not have a separate password."
+      ]
+    },
+    {
+      "id": "topbar",
+      "group": "Start here",
+      "title": "The top bar: tour, guide, notifications and log out",
+      "view": null,
+      "tourTarget": ".top-actions",
+      "tour": "The top bar holds your tour button, your guide, your notification bell and Log out.",
+      "summary": "The buttons across the top of every page.",
+      "what": "The top bar stays with you on every page. It shows who is signed in, and gives you quick buttons that help you learn the dashboard and stay up to date.",
+      "steps": [
+        "Take a tour starts the guided walk through the dashboard. It highlights each part of the screen and explains it. You can start it again any time.",
+        "Guide opens this full written guide. There you can read, search, listen to it being read aloud, or download the PDF.",
+        "Your name and photo show who is signed in. Change your photo on the Profile page.",
+        "The bell shows a number when you have something new: a notice from the team, a live class, a new assignment, or marks. Open the bell to read each one. Choose Mark all read to clear the number.",
+        "Log out signs you out safely."
+      ],
+      "tips": [
+        "Look at the bell every day. Class changes and marks arrive there first."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "helper",
+      "group": "Start here",
+      "title": "The Help assistant",
+      "view": null,
+      "tourTarget": ".cw-fab",
+      "tour": "The round Help button opens the DEBONE Assistant. Ask it how to use the site, any time.",
+      "summary": "A chat helper that answers common questions at any time.",
+      "what": "In the corner of the screen there is a round button marked Help. It opens the DEBONE Assistant. It answers simple questions such as how to take the tour, how to pay, or where to find your certificate.",
+      "steps": [
+        "Tap the round Help button in the corner of the screen.",
+        "Type your question in your own words, for example: how do I pay in installments. Or tap one of the suggested questions.",
+        "Read the answer.",
+        "If you need a real person, use the link at the bottom of the chat to message the studio on WhatsApp."
+      ],
+      "tips": [
+        "The assistant is for how-to questions. For payment problems, always send your receipt and reference to the team."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "overview",
+      "group": "Home",
+      "title": "Overview: your home page",
+      "view": "overview",
+      "tour": "Your home page. See your progress, your next lesson and your latest notices at a glance.",
+      "summary": "A quick picture of where you are and what to do next.",
+      "what": "Overview is the first page you see after you log in. It shows a friendly greeting, your next lesson, your progress numbers, the live classes happening, recent payments and the latest announcements.",
+      "steps": [
+        "Look at the next lesson card. It tells you the course and the lesson to continue with. Choose it to go straight there.",
+        "Check the progress numbers near the top. They show how many courses you are enrolled in, how many lessons you have finished, and your average progress.",
+        "Read the Announcements block for news from the team.",
+        "Look at Live and online to see if a class is happening now or soon.",
+        "If you have no courses yet, choose Browse courses to start something new."
+      ],
+      "tips": [
+        "Numbers on this page update by themselves when something changes. You do not need to refresh."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "courses",
+      "group": "Learning",
+      "title": "My courses and how a lesson works",
+      "view": "courses",
+      "tour": "Every course you have unlocked, with your progress. Open a course to work through its lessons one by one.",
+      "summary": "Your unlocked courses, and the step by step path through each lesson.",
+      "what": "My courses lists every course you have enrolled in, with a progress bar for each. Open a course to see its list of lessons. Lessons follow the real class timetable, so that everyone learns together and nobody is left behind.",
+      "steps": [
+        "Open My courses and choose a course card.",
+        "You will see the lessons in order. A lesson with a lock is not open yet. Hover over it or tap it to see the reason.",
+        "Open the first lesson. Each lesson has steps. Join the live class, or watch the recording if you missed it.",
+        "Write your own notes in the notes box. Your notes are saved privately. Only you can see them.",
+        "Submit the lesson assignment if there is one.",
+        "When the class is done and your assignment is submitted, the lesson counts as finished. Choose Mark as completed if the button is shown. You may see a small celebration.",
+        "The next lesson opens on the day of its class. Come back then.",
+        "When every lesson is finished, a certificate card appears. See the Certificates page."
+      ],
+      "tips": [
+        "A lesson is finished when two things are done: you attended the live class or watched its recording, and you submitted the assignment.",
+        "Free preview lessons can be opened before you pay."
+      ],
+      "mistakes": [
+        "A lesson that is locked because of an earlier lesson will open after you finish the earlier one.",
+        "A lesson that is locked because of a payment will open when your payment is confirmed. Check the Payments page."
+      ]
+    },
+    {
+      "id": "browse",
+      "group": "Learning",
+      "title": "Browse courses and enrolling",
+      "view": "browse",
+      "tour": "Find more courses. Free courses open straight away. Paid courses unlock after your payment is confirmed.",
+      "summary": "Find a new course and sign up for it.",
+      "what": "Browse courses shows every course the academy offers, with the price, the instructor, the start date and how long it runs. This is where you enrol.",
+      "steps": [
+        "Open Browse courses and look through the course cards. Use the categories to narrow the list.",
+        "Choose a card to read about the course.",
+        "Choose Enrol. A free course opens straight away.",
+        "For a paid course, a box opens showing the course fee. If you have a coupon code, type it in the coupon box. A discount you qualify for, such as an offer or a QR discount, is applied for you.",
+        "If installments are available, choose how to pay: all at once, or in 2 or 3 parts. The total price is the same either way. The box shows each amount and the date each one is due.",
+        "Choose Continue to secure payment. You will be taken to the payment page. See the Payments section for what to do there.",
+        "A course marked Coming soon is not open yet. Choose Join waiting list and we will tell you the moment it opens. You can leave the list at any time."
+      ],
+      "tips": [
+        "Offers can have a countdown. When the timer ends, the offer price ends.",
+        "Installments are offered only on courses above {{installmentMinPrice}} naira, and only if the course allows them."
+      ],
+      "mistakes": [
+        "If the Enrol button is not there, the course may be full or marked Coming soon.",
+        "If a course says it is not open for enrolment yet, join the waiting list and wait for our notice."
+      ]
+    },
+    {
+      "id": "bundles",
+      "group": "Learning",
+      "title": "Course bundles",
+      "view": "bundles",
+      "tour": "Sets of courses at one lower price. One payment unlocks every course in the bundle.",
+      "summary": "Buy several courses together and save money.",
+      "what": "A bundle is a package of courses sold at one price that is lower than buying each course alone. One payment unlocks every course in the bundle.",
+      "steps": [
+        "Open Course bundles and choose a bundle.",
+        "Read the courses inside it. The page shows what buying them separately would cost, and how much you save with the bundle.",
+        "If you already own some of the courses, the page tells you. The rest unlock with the bundle.",
+        "Choose the buy button and complete the payment as usual. All the courses in the bundle open when the payment is confirmed.",
+        "If a bundle is Coming soon, choose Join waiting list. We will notify you when it opens."
+      ],
+      "tips": [
+        "The system will not sell a bundle whose class times clash with each other, so you can attend everything."
+      ],
+      "mistakes": [
+        "A bundle cannot be bought while an installment plan is open for one of its courses. Finish or close that plan first."
+      ]
+    },
+    {
+      "id": "live",
+      "group": "Learning",
+      "title": "Live classes",
+      "view": "live",
+      "tour": "Join your instructor live, watch the class video and ask questions in the class chat.",
+      "summary": "Join classes, and chat with your instructor and classmates.",
+      "what": "Live classes lists what is coming up, what is live now and what has finished. When a class is live, you join it from here and ask your questions in the class chat.",
+      "steps": [
+        "Open Live classes. Classes are sorted into Live now, Upcoming and Past classes.",
+        "Choose a class to see its details: the course, the lesson it belongs to, the date, the time and the length.",
+        "When the class starts, the video appears on the page, or a join button opens the video room. The link appears when the class starts.",
+        "Choose I have joined the class. This records your attendance and counts toward finishing the lesson.",
+        "Type your questions in the class chat and choose Send.",
+        "If you missed the class, use Recordings to watch it later."
+      ],
+      "tips": [
+        "Join a few minutes early so you do not miss the start.",
+        "Check your Zoom display name on the Profile page if your class is held on Zoom."
+      ],
+      "mistakes": [
+        "If you cannot see the video link, the class has not started yet. The link appears when it starts."
+      ]
+    },
+    {
+      "id": "recordings",
+      "group": "Learning",
+      "title": "Recordings",
+      "view": "recordings",
+      "tour": "Missed a class or joined late? Watch every recorded class of your courses here.",
+      "summary": "Watch classes you missed, or watch again to revise.",
+      "what": "Recordings keeps the recorded video of each class, only for courses you are enrolled in. Use it when you miss a live class, or when you want to revise.",
+      "steps": [
+        "Open Recordings and find the class you need.",
+        "Choose Watch replay.",
+        "Watch the whole video. Watching the recorded video counts the same as attending the class for finishing that lesson."
+      ],
+      "tips": [
+        "Replays are available until {{replayDays}} days after the whole course ends. Watch them before then."
+      ],
+      "mistakes": [
+        "If a recording is not there yet, the instructor has not added it. Check again later."
+      ]
+    },
+    {
+      "id": "community",
+      "group": "Learning",
+      "title": "Community",
+      "view": "community",
+      "tour": "A group chat for each course. Ask questions, reply to classmates and share your progress.",
+      "summary": "Chat with the students in your course.",
+      "what": "Community gives every course its own group chat. Ask questions, help classmates, share your progress and your work. Only students enrolled in the course can post.",
+      "steps": [
+        "Open Community and choose your course.",
+        "Type your message in the box and send it. Use the paperclip or picture button to add a picture or file.",
+        "To answer someone, choose the reply button on their message.",
+        "To remove one of your own messages, choose the bin button on it.",
+        "When new messages arrive, a New messages button appears. Choose it to jump to the newest."
+      ],
+      "tips": [
+        "Be kind and stay on topic. The team can hide or remove messages that break the rules."
+      ],
+      "mistakes": [
+        "Files must be smaller than 2.4 megabytes. Choose a smaller photo if you see a size message.",
+        "A student who keeps breaking the rules can be suspended from the community."
+      ]
+    },
+    {
+      "id": "reviews",
+      "group": "Learning",
+      "title": "Course reviews",
+      "view": "reviews",
+      "tour": "Rate the courses you are enrolled in. Our team checks each review before it is shown.",
+      "summary": "Tell others what you think of a course.",
+      "what": "Course reviews lets you give a star rating and write a short comment about a course you are enrolled in. Honest reviews help future students choose well.",
+      "steps": [
+        "Open Course reviews and choose the course you want to review.",
+        "Choose a star rating from one to five.",
+        "Write a few sentences about what was good and what could be better. Write at least ten characters.",
+        "Choose Publish review. Your review goes to the team first."
+      ],
+      "tips": [
+        "After the team approves your review it appears on the academy page."
+      ],
+      "mistakes": [
+        "A review that is rejected is not shown to the public."
+      ]
+    },
+    {
+      "id": "assignments",
+      "group": "Practice",
+      "title": "Assignments",
+      "view": "assignments",
+      "tour": "Submit your work here, and see your marks and feedback after your instructor has marked it.",
+      "summary": "Do your homework, send it, and read your marks.",
+      "what": "Assignments lists all the work set for your courses with the due date and the total marks. This is where you send your work and, later, read your marks and your instructor's feedback.",
+      "steps": [
+        "Open Assignments and choose an assignment.",
+        "Read the instructions twice. Answer every part.",
+        "Write your answer in the box, or paste a link to your work, for example a link to a video or a folder with your photos.",
+        "Choose Submit. You will see a message that it was submitted.",
+        "To change your work before it is marked, choose Update submission and send again.",
+        "Later, open the same assignment to see your mark and the feedback."
+      ],
+      "tips": [
+        "Submit before the due date.",
+        "If your instructor asks you to resubmit, the page lets you send new work."
+      ],
+      "mistakes": [
+        "Marked work cannot be changed. Check your work carefully before you submit."
+      ]
+    },
+    {
+      "id": "performance",
+      "group": "Practice",
+      "title": "Performance",
+      "view": "performance",
+      "tour": "See how you are doing over time, with your marks, your progress and a tip to improve.",
+      "summary": "Your results in one place, with advice on how to improve.",
+      "what": "Performance shows how you are doing across every assignment. Results are colour coded. A mark of 75 percent or more is a Distinction. The page also gives you a tip on what to work on next.",
+      "steps": [
+        "Open Performance.",
+        "Look at the totals for each result level and your average.",
+        "Read the tip at the bottom. It is written for your current level.",
+        "Open any assignment to read the feedback again."
+      ],
+      "tips": [
+        "Your first marked assignment starts the chart. Until then the page invites you to submit work."
+      ],
+      "mistakes": []
+    },
+    {
+      "id": "certificates",
+      "group": "Practice",
+      "title": "Certificates",
+      "view": "certificates",
+      "tour": "Request your certificate when you finish a course. Our team checks your work and issues it.",
+      "summary": "Ask for your certificate and download it.",
+      "what": "A DEBONE certificate proves you completed a course. It has a verification code, so anyone can check that it is real on the Check a DEBONE certificate page of the website.",
+      "steps": [
+        "Finish every lesson in the course.",
+        "Submit every assignment and reach at least {{certMinPercent}} percent in each one.",
+        "Complete your profile. The page will remind you if something is missing.",
+        "Open Certificates and choose Request certificate.",
+        "The team checks your work and issues the certificate. You will get a notice in the bell.",
+        "Open Certificates again to view it, copy the code, and download the PDF."
+      ],
+      "tips": [
+        "Share the verification code with employers or customers so they can check it online.",
+        "For a course paid in installments, the certificate is released only after the last installment is paid."
+      ],
+      "mistakes": [
+        "If the request button is missing, one of the requirements above is not finished yet."
+      ]
+    },
+    {
+      "id": "portfolio",
+      "group": "Practice",
+      "title": "Talent profile",
+      "view": "portfolio",
+      "tour": "Build your talent profile so customers can find you. Our team approves each profile first.",
+      "summary": "Show your work to customers and get found.",
+      "what": "Talent profile is your public showcase. Customers who want to hire a photographer, editor or designer can look through the DEBONE talent directory. Students with a certificate can add their profile.",
+      "steps": [
+        "Open Talent profile.",
+        "Fill in your skills, a short description about you, and your best work.",
+        "Choose Save and send for approval.",
+        "The team checks it. When it is approved it appears in the public directory with a DEBONE certified badge."
+      ],
+      "tips": [
+        "Use your best three pieces of work, not everything you have made."
+      ],
+      "mistakes": [
+        "Until it is approved, nobody can see your profile."
+      ]
+    },
+    {
+      "id": "payments",
+      "group": "Account",
+      "title": "Payments: how to pay and how to check",
+      "view": "payments",
+      "tour": "Every payment you make is listed here with its status, so you always have a record.",
+      "summary": "Pay by bank transfer, upload your receipt, and see the status of each payment.",
+      "what": "Payments lists every payment you have made with its status. Paying is done by bank transfer. After you send the money, you upload your receipt, and the team confirms it. Your course opens automatically after that.",
+      "steps": [
+        "After you choose Enrol and continue, the payment page opens. It shows our bank accounts and a payment reference.",
+        "Transfer the exact amount to one of the accounts. Use the reference as the payment description so we can find your transfer quickly.",
+        "Upload a clear photo or PDF of your receipt. The file must be smaller than 3 megabytes.",
+        "Wait for confirmation. This usually takes a few hours on working days. The page updates by itself.",
+        "When it is confirmed, your course opens. Come back to Payments to see the status Confirmed.",
+        "If you pay in installments, open the plan on this page when the next payment is due, and repeat these steps."
+      ],
+      "tips": [
+        "Always keep your receipt.",
+        "If you have a question, send your receipt and reference to the team on WhatsApp.",
+        "For installments, reminders arrive three days before, on the day, and the day after a payment is due."
+      ],
+      "mistakes": [
+        "If a payment is late, you first get a grace period of {{installmentGraceDays}} days. After that, access to the course is paused. Your progress is kept, and the course opens again as soon as your payment is approved.",
+        "If a receipt is rejected, upload a clearer one."
+      ]
+    },
+    {
+      "id": "referrals",
+      "group": "Account",
+      "title": "Refer a friend",
+      "view": "referrals",
+      "tour": "Share your link, follow your paying friends and ask for a withdrawal when you reach the target.",
+      "summary": "Earn money when your friends join DEBONE.",
+      "what": "Refer a friend gives you a personal link. When a friend signs up through it, they get {{referralDiscountPercent}} percent off their first course. You earn {{referrerRewardPercent}} percent of every amount your friend pays.",
+      "steps": [
+        "Open Refer a friend and choose Copy link.",
+        "Send the link to friends by WhatsApp or any other way.",
+        "Watch the page to see who has joined and who has paid.",
+        "When you have {{withdrawMinReferrals}} paying friends, choose Request withdrawal.",
+        "Enter your bank name, the account name exactly as it appears at the bank, and your account number. Choose Send withdrawal request.",
+        "The team approves it after sending the money. The status shows on the page."
+      ],
+      "tips": [
+        "Your friend must use your link when signing up, so the system knows they came from you."
+      ],
+      "mistakes": [
+        "If the account name does not match the bank, the transfer may fail."
+      ]
+    },
+    {
+      "id": "requests",
+      "group": "Account",
+      "title": "Requests and refunds",
+      "view": "requests",
+      "tour": "Schedule choices and refund requests, with the progress of each one.",
+      "summary": "Ask for a refund, or choose what to do if a course date changes.",
+      "what": "Requests and refunds is where you ask the team for a refund, and where you answer a notice if a course does not have enough students to start on its date.",
+      "steps": [
+        "To ask for a refund, open Requests and refunds and choose Request a refund.",
+        "Choose the payment, and write the reason, for example: I enrolled by mistake, or the schedule does not fit my week.",
+        "Choose Request refund. You can follow its progress on the same page.",
+        "If a course is short of students, we tell you {{noticeDays}} days before the start. Choose to wait for a new date, or to take a refund."
+      ],
+      "tips": [
+        "Refunds can be requested within {{refundWindowDays}} days of payment."
+      ],
+      "mistakes": [
+        "A course that has already started, or a product that you already downloaded, cannot be refunded."
+      ]
+    },
+    {
+      "id": "downloads",
+      "group": "Account",
+      "title": "Downloads",
+      "view": "downloads",
+      "tour": "Your digital products. Download the files you have bought, up to the limit shown.",
+      "summary": "Your eBooks, templates and other digital products.",
+      "what": "Downloads is your library of digital products bought from the store. After a payment is confirmed, the file is ready here.",
+      "steps": [
+        "Open Downloads.",
+        "Find your product and choose the download button.",
+        "Save the file to your phone or computer."
+      ],
+      "tips": [
+        "Each file can be downloaded {{downloadLimit}} times and stays available for {{downloadDays}} days. Save it somewhere safe."
+      ],
+      "mistakes": [
+        "If the library is empty, no product has been bought or the payment is not yet confirmed."
+      ]
+    },
+    {
+      "id": "profile",
+      "group": "Account",
+      "title": "Profile",
+      "view": "profile",
+      "tour": "Add your photo and personal details. The percentage shows how complete your profile is.",
+      "summary": "Your photo, details, password and Zoom name.",
+      "what": "Profile holds your personal information. A complete profile is needed to request a certificate, and it helps your instructor know you.",
+      "steps": [
+        "Open Profile and choose Upload photo. Your photo appears in the top bar.",
+        "Fill in your personal details and what you want to learn or achieve.",
+        "Add your WhatsApp number if it is missing.",
+        "If your classes are on Zoom, register your Zoom display name. Use Change Zoom name if you change it later.",
+        "To change your password, type your current password, then the new one, and save."
+      ],
+      "tips": [
+        "The percentage on the page tells you how complete your profile is."
+      ],
+      "mistakes": [
+        "Use the same Zoom display name in class that you registered, so the instructor can confirm you."
+      ]
+    }
+  ],
+  "tourClosing": [
+    {
+      "title": "Notifications",
+      "target": ".bell",
+      "text": "The bell shows new announcements, live classes, assignments and marks. Open it to read them."
+    },
+    {
+      "title": "Log out",
+      "target": ".shell-logout",
+      "text": "When you are finished, log out here to keep your account safe."
+    }
+  ],
+  "glossary": [
+    [
+      "Enrol",
+      "To sign up for a course."
+    ],
+    [
+      "Installment",
+      "One part of a payment that you split into two or three parts."
+    ],
+    [
+      "Grace period",
+      "A few extra days after a payment is due before your access is paused."
+    ],
+    [
+      "Access paused",
+      "Your course is closed for now because a payment is late. Your progress is kept."
+    ],
+    [
+      "Reference",
+      "A short code on the payment page. Write it as the description of your bank transfer."
+    ],
+    [
+      "Receipt",
+      "The photo or PDF from your bank that proves you sent the money."
+    ],
+    [
+      "Recording",
+      "The saved video of a live class that you can watch later."
+    ],
+    [
+      "Assignment",
+      "Homework that your instructor marks."
+    ],
+    [
+      "Verification code",
+      "The code on your certificate that anyone can use to check it is real."
+    ],
+    [
+      "Coupon",
+      "A code that gives you a discount when you enrol."
+    ],
+    [
+      "Waiting list",
+      "A list you join when a course is not open yet, so we can tell you when it opens."
+    ],
+    [
+      "Bundle",
+      "A set of courses sold together at a lower price."
+    ]
+  ],
+  "faq": [
+    [
+      "I paid but my course is still locked.",
+      "Make sure you uploaded your receipt on the payment page. The team confirms payments, usually within a few hours on working days. Check the Payments page for the status. If it takes longer, send your receipt and reference to the team on WhatsApp."
+    ],
+    [
+      "Why can I not open the next lesson?",
+      "A lesson opens after you finish the one before it, and on the day of its class. Finish the earlier lesson: attend or watch the class and submit its assignment."
+    ],
+    [
+      "I missed a live class. What now?",
+      "Open Recordings and watch the replay. Watching it counts the same as attending."
+    ],
+    [
+      "Where is my certificate?",
+      "Finish all lessons, submit every assignment with a good enough mark, complete your profile, then request it on the Certificates page. The team will check and issue it."
+    ],
+    [
+      "I forgot my password.",
+      "On the login page choose Forgot password and follow the steps."
+    ],
+    [
+      "Can I change my mind after paying?",
+      "You can ask for a refund within {{refundWindowDays}} days of payment, before the course starts. Open Requests and refunds."
+    ],
+    [
+      "How do I use the dashboard on my phone?",
+      "It works the same way. Tap the menu button at the top left to open the menu."
+    ]
+  ]
+}

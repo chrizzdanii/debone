@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   var params = new URLSearchParams(location.search);
-  var next = params.get('next') === 'admin' ? 'staff-login.html' : 'dashboard.html';
+  var next = params.get('next') === 'admin' ? 'staff-login.html' : params.get('next') === 'guide' ? 'guide.html' : 'dashboard.html';
   var $ = function (id) { return document.getElementById(id); };
   var form = $('lg-form'), alertBox = $('lg-alert'), submit = $('lg-submit');
 

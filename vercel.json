@@ -30,6 +30,10 @@
       "destination": "/api/index"
     },
     {
+      "source": "/guide",
+      "destination": "/api/index"
+    },
+    {
       "source": "/robots.txt",
       "destination": "/api/index"
     },

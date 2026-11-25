@@ -1,7 +1,12 @@
-/* Guided tour of the student dashboard (v22). Starts once for new students; always available from the top bar. */
+/* Guided tour for the student dashboard and the admin panel (v23). Starts once for new users; always available from the top bar.
+   Step text comes from the same guide content as the written guide (/api/guide), so the two always agree. */
 (function () {
   'use strict';
-  var KEY = 'debone-tour-seen';
+  var SHELL = document.body.getAttribute('data-shell') === 'staff' ? 'staff' : 'student';
+  var KEY = 'debone-tour-seen' + (SHELL === 'staff' ? '-staff' : '');
+  var VKEY = 'debone-tour-voice';
+  var GUIDE = null;
+  var synth = window.speechSynthesis, canSpeak = !!(synth && window.SpeechSynthesisUtterance);
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var STEPS = [];
   var MENU_TEXT = {
@@ -22,15 +27,51 @@
     profile: 'Add your photo and personal details here. The percentage shows how complete your profile is.'
   };
   var MENU_ICON = { overview: 'grid', courses: 'book', browse: 'compass', live: 'live', community: 'chat', reviews: 'star', assignments: 'pen', performance: 'trend', certificates: 'shield', portfolio: 'user', downloads: 'book', requests: 'shield', referrals: 'user', payments: 'card', profile: 'user' };
+  function sectionFor(view) {
+    if (!GUIDE || !view) return null;
+    for (var i = 0; i < GUIDE.sections.length; i++) if (GUIDE.sections[i].view === view) return GUIDE.sections[i];
+    return null;
+  }
+  function sectionById(id) {
+    if (!GUIDE) return null;
+    for (var i = 0; i < GUIDE.sections.length; i++) if (GUIDE.sections[i].id === id) return GUIDE.sections[i];
+    return null;
+  }
+  function guideUrl(id) { return 'guide.html?for=' + SHELL + (id ? '#sec-' + id : ''); }
+  function visible(el) {
+    if (!el) return false;
+    var cs = window.getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+    return el.offsetParent !== null || cs.position === 'fixed';
+  }
   function buildSteps() {
-    var seen = {}, menu = [];
+    var seen = {}, menu = [], mobile = window.innerWidth <= 900;
+    var who = SHELL === 'staff' ? 'admin panel' : 'dashboard';
     Array.prototype.forEach.call(document.querySelectorAll('#side a[data-view]'), function (a) {
       var v = a.getAttribute('data-view');
-      if (seen[v]) return; seen[v] = true;
+      if (seen[v] || !visible(a)) return; seen[v] = true;
       var label = a.textContent.replace(/\s+/g, ' ').trim();
-      menu.push({ title: label, text: MENU_TEXT[v] || ('Open ' + label + ' to see everything in this section.'), target: 'a[data-view="' + v + '"]', icon: MENU_ICON[v] || 'grid' });
+      var sec = sectionFor(v);
+      var text = (sec && (sec.tour || sec.summary)) || MENU_TEXT[v] || ('Open ' + label + ' to see everything in this section.');
+      menu.push({ title: label, text: text, target: 'a[data-view="' + v + '"]', icon: MENU_ICON[v] || 'grid', more: sec ? guideUrl(sec.id) : null });
     });
-    return [ { title: 'Welcome to your dashboard', text: 'This short tour shows you where everything is. It takes about a minute. You can skip it, or start it again any time from the Take a tour button.', target: null, icon: 'star' } ].concat(menu, [ { title: 'Notifications', text: 'The bell shows new announcements, live classes, assignments and marks. Open it to read them.', target: '.bell', icon: 'bell' }, { title: 'Log out', text: 'When you are finished, log out here to keep your account safe.', target: '.shell-logout', icon: 'shield' }, { title: 'You are ready', text: 'That is the tour. You can start it again any time from the Take a tour button at the top.', target: null, icon: 'check', finish: true } ]);
+    var steps = [{ title: 'Welcome to your ' + who, text: 'This tour shows you every part of the ' + who + ', one by one. It takes a few minutes. You can skip it, go back, or start it again any time from the Take a tour button. Press the speaker button if you would like each step read to you.', target: null, icon: 'star' }];
+    steps.push({ title: 'Where you are', text: 'The title at the top shows which page you are on. Whatever you choose in the menu opens in the big area below it. That area is where all your work happens.', target: '#crumb', icon: 'grid' });
+    if (mobile) steps.push({ title: 'The menu button', text: 'On a phone the menu is hidden to save space. Tap this button to open it, and tap outside the menu to close it.', target: '#burger', icon: 'grid' });
+    steps = steps.concat(menu);
+    var extra = [
+      { title: 'Take a tour', text: 'This button starts this tour again whenever you want.', target: '.tour-btn', icon: 'compass' },
+      { title: 'The full guide', text: 'Open the Guide to read every page in simple words, search it, listen to it being read aloud until you stop it, or download it as a PDF to keep.', target: '.guide-btn', icon: 'book', more: guideUrl() },
+      { title: 'Your name', text: 'This shows who is signed in on this device.', target: '.user-chip', icon: 'user' }
+    ];
+    var closing = (GUIDE && GUIDE.tourClosing) || [];
+    var closeText = function (t, d) { for (var i = 0; i < closing.length; i++) if (closing[i].title === t) return closing[i].text; return d; };
+    extra.push({ title: 'Notifications', text: closeText('Notifications', 'The bell shows new things that need your attention. Open it to read them.'), target: '.bell', icon: 'bell' });
+    extra.push({ title: 'Log out', text: closeText('Log out', 'When you are finished, log out here to keep your account safe.'), target: '.shell-logout', icon: 'shield' });
+    if (SHELL === 'student') extra.push({ title: 'The Help assistant', text: ((sectionById('helper') || {}).tour) || 'The round Help button opens the DEBONE Assistant. Ask it how to use the site, any time.', target: '.cw-fab', icon: 'chat', more: guideUrl('helper') });
+    extra.forEach(function (e) { var el = document.querySelector(e.target); if (visible(el)) steps.push(e); });
+    steps.push({ title: 'You are ready', text: 'That is the whole tour. Keep the Guide button handy: it has the full step by step instructions for every page, and it can read them to you.', target: null, icon: 'check', finish: true, more: guideUrl() });
+    return steps;
   }
 
   var root, hole, card, idx = 0, active = false;
@@ -44,6 +85,24 @@
     if (sc) sc.classList.toggle('show', open);
   }
 
+  function voiceOn() { try { return localStorage.getItem(VKEY) === '1'; } catch (e) { return false; } }
+  function syncVoice() { var vb = root && $('.tour-voice'); if (vb) { vb.classList.toggle('on', voiceOn()); vb.setAttribute('aria-pressed', voiceOn() ? 'true' : 'false'); } }
+  function setVoice(on) {
+    try { localStorage.setItem(VKEY, on ? '1' : '0'); } catch (e) {}
+    syncVoice();
+    if (on) speak(); else if (canSpeak) synth.cancel();
+  }
+  function speak() {
+    if (!canSpeak || !voiceOn() || !active) return;
+    var s = STEPS[idx]; if (!s) return;
+    synth.cancel();
+    var u = new SpeechSynthesisUtterance(s.title + '. ' + s.text);
+    var vs = synth.getVoices() || [], want = ['en-NG', 'en-GB', 'en-US'], v = null;
+    for (var i = 0; i < want.length && !v; i++) v = vs.filter(function (x) { return x.lang.replace('_', '-') === want[i]; })[0];
+    if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-GB';
+    setTimeout(function () { synth.speak(u); }, 80);
+  }
+
   function build() {
     root = document.createElement('div');
     root.className = 'tour';
@@ -51,10 +110,12 @@
       '<div class="tour-hole"></div>' +
       '<div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title">' +
         '<div class="tour-top"><span class="tour-ico"></span><span class="tour-count"></span>' +
+        (canSpeak ? '<button type="button" class="tour-voice" aria-pressed="false" aria-label="Read each step aloud" title="Read each step aloud"></button>' : '') +
         '<button type="button" class="tour-x" aria-label="Close the tour">&times;</button></div>' +
         '<div class="tour-bar"><i></i></div>' +
         '<h3 id="tour-title"></h3>' +
         '<p class="tour-text"></p>' +
+        '<a class="tour-more" target="_blank" rel="noopener" hidden>Read the full steps in the guide</a>' +
         '<div class="tour-dots"></div>' +
         '<div class="tour-nav">' +
           '<button type="button" class="btn btn-ghost btn-sm tour-prev">Back</button>' +
@@ -70,6 +131,8 @@
     $('.tour-prev').addEventListener('click', function () { go(idx - 1); });
     $('.tour-skip').addEventListener('click', close);
     $('.tour-x').addEventListener('click', close);
+    var vb = $('.tour-voice');
+    if (vb) { vb.innerHTML = icon('live') || '&#128266;'; vb.addEventListener('click', function () { setVoice(!voiceOn()); }); syncVoice(); }
     document.addEventListener('keydown', function (e) {
       if (!active) return;
       if (e.key === 'Escape') close();
@@ -102,6 +165,8 @@
     $('.tour-next').textContent = s.finish ? 'Finish' : 'Next';
     $('.tour-skip').style.visibility = s.finish ? 'hidden' : 'visible';
     Array.prototype.forEach.call($('.tour-dots').children, function (b, n) { b.classList.toggle('on', n === idx); });
+    var more = $('.tour-more');
+    if (more) { if (s.more) { more.href = s.more; more.hidden = false; more.textContent = s.finish ? 'Open the full guide' : 'Read the full steps in the guide'; } else more.hidden = true; }
     var swap = function () { title.textContent = s.title; text.textContent = s.text; text.classList.remove('swap'); };
     if (animate && !reduce) { text.classList.add('swap'); setTimeout(swap, 220); } else swap();
   }
@@ -140,6 +205,7 @@
     var el = s.target ? document.querySelector(s.target) : null;
     if (el) el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
     render(true);
+    speak();
     setTimeout(place, reduce ? 0 : 350);
     setTimeout(place, 800);
   }
@@ -150,18 +216,27 @@
   }
 
   function open() {
-    STEPS = buildSteps();
-    if (!root) build(); else renderDots();
-    active = true;
-    root.style.display = 'block';
-    root.classList.remove('closing');
-    side(false);
-    go(0);
+    loadGuide(function () {
+      STEPS = buildSteps();
+      if (!root) build(); else renderDots();
+      syncVoice();
+      active = true;
+      root.style.display = 'block';
+      root.classList.remove('closing');
+      side(false);
+      go(0);
+    });
+  }
+  function loadGuide(cb) {
+    if (GUIDE) return cb();
+    fetch('/api/guide?for=' + SHELL, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { GUIDE = d && d.guide ? d.guide : null; cb(); }).catch(function () { cb(); });
   }
 
   function close() {
     try { localStorage.setItem(KEY, '1'); } catch (e) {}
     active = false;
+    if (canSpeak) synth.cancel();
     side(false);
     root.classList.add('closing');
     setTimeout(function () { root.style.display = 'none'; }, reduce ? 0 : 350);
@@ -170,6 +245,7 @@
   function finish() {
     try { localStorage.setItem(KEY, '1'); } catch (e) {}
     active = false;
+    if (canSpeak) synth.cancel();
     side(false);
     var done = root.querySelector('.tour-done');
     done.classList.add('show');
@@ -190,10 +266,19 @@
     b.innerHTML = '<span class="tour-btn-ico">' + icon('compass') + '</span><span>Take a tour</span>';
     b.addEventListener('click', open);
     bar.insertBefore(b, bar.firstChild);
+    if (!bar.querySelector('.guide-btn')) {
+      var g = document.createElement('a');
+      g.className = 'btn btn-ghost btn-sm guide-btn';
+      g.href = 'guide.html?for=' + SHELL;
+      g.innerHTML = '<span class="tour-btn-ico">' + icon('book') + '</span><span>Guide</span>';
+      bar.insertBefore(g, b.nextSibling);
+    }
   }
 
   addButton();
   var seen = false;
   try { seen = !!localStorage.getItem(KEY); } catch (e) {}
-  if (!seen && document.getElementById('side')) setTimeout(open, 1100);
+  var asked = /(^|[?&])tour=1(&|$)/.test(location.search);
+  if (asked) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} }
+  if ((asked || !seen) && document.getElementById('side')) setTimeout(open, asked ? 900 : (SHELL === 'staff' ? 2200 : 1100));
 })();

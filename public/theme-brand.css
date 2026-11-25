@@ -1838,3 +1838,14 @@ html.fx-cursor .app a,html.fx-cursor .app button,html.fx-cursor .app .btn{cursor
   .theme-brand .rf2-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   .theme-brand .rf2-hero{grid-column:1/-1}
 }
+
+/* ===== Tour v23: voice button, guide link, guide button ===== */
+.theme-brand .guide-btn{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;text-decoration:none}
+.theme-brand .guide-btn .tour-btn-ico svg{width:16px;height:16px;display:block}
+@media (max-width:520px){.theme-brand .guide-btn span:last-child{display:none}}
+.theme-brand .tour-voice{width:36px;height:36px;border-radius:50%;border:1px solid rgba(244,244,240,.25);background:transparent;color:var(--ash);cursor:pointer;display:grid;place-items:center;padding:0}
+.theme-brand .tour-voice svg{width:18px;height:18px}
+.theme-brand .tour-voice:hover{color:var(--bone);border-color:var(--bone)}
+.theme-brand .tour-voice.on{background:var(--orange);border-color:var(--orange);color:#0B0B0B}
+.theme-brand .tour-more{display:inline-block;margin-top:10px;color:var(--orange);font:600 .82rem Inter,sans-serif;text-decoration:underline;text-underline-offset:3px}
+.theme-brand .tour-more[hidden]{display:none}

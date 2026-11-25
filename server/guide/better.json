@@ -1,0 +1,99 @@
+{
+  "title": "Why the DEBONE dashboard is better",
+  "intro": "Many training schools run on a mix of WhatsApp groups, video call links, bank alerts and paper or spreadsheet records. Each piece works alone, but nothing connects them, and students and teachers lose time and information. The DEBONE dashboard joins every part into one place. We do not name other companies here. The comparison below is with the usual way schools work.",
+  "points": [
+    {
+      "title": "One login for everything",
+      "text": "Courses, live classes, recordings, homework, marks, community chat, payments, downloads and certificates are all behind one login. Students never hunt for a link in an old message.",
+      "usual": "Usually a group chat for notices, a separate link for video, a different place for homework and a notebook for payments."
+    },
+    {
+      "title": "Lessons follow your real timetable",
+      "text": "The next lesson opens after the live class, or its recording, is done and the assignment is submitted. Everyone moves together, and progress is real, not just clicks.",
+      "usual": "Often all lessons open at once, so students rush ahead without learning, or fall behind without anyone noticing."
+    },
+    {
+      "title": "Pay in two or three parts, fairly and automatically",
+      "text": "Students can split a course fee into 2 or 3 payments, with the same total price. Due dates are tied to the live classes. Reminders go out before the due date. If a payment is late there is a grace period, then access pauses by itself, and the course opens again the moment the payment is approved. Progress is never lost.",
+      "usual": "Usually a handwritten list, chasing people by phone, and arguments about who owes what."
+    },
+    {
+      "title": "Built for Nigerian bank transfers",
+      "text": "Students get a payment reference, send a bank transfer, and upload a receipt. The team checks it and the course opens automatically. There are two bank accounts shown, and the owner can change them at any time.",
+      "usual": "Often a screenshot sent in a chat that gets lost, and the student waits to be remembered."
+    },
+    {
+      "title": "Updates arrive without refreshing",
+      "text": "New marks, confirmed payments, new classes and changes by the team show up within moments, without reloading the page.",
+      "usual": "Students keep asking: is my payment confirmed, is the class today, did my marks come out."
+    },
+    {
+      "title": "Never miss a class",
+      "text": "Every class can have a recording, and students watch it from the Recordings page. Watching the recording counts the same as attending for finishing the lesson. Replays stay open for days after the course ends.",
+      "usual": "A missed class is gone, or a video link buried somewhere in a chat."
+    },
+    {
+      "title": "Marks, feedback and advice in one place",
+      "text": "Assignments are marked with a score and written feedback. Results are colour coded, and the Performance page gives each student a tip on what to improve. Instructors can ask for a resubmission.",
+      "usual": "Marks on paper, feedback by voice, and no record of progress over time."
+    },
+    {
+      "title": "Certificates that can be checked",
+      "text": "A DEBONE certificate is issued only when the work is truly finished and checked by the team. Each one has a verification code that anyone can check online, and students can download the PDF.",
+      "usual": "A printed paper that anyone can copy and nobody can verify."
+    },
+    {
+      "title": "Graduates get found",
+      "text": "Students with a certificate can build a talent profile. After the team approves it, it appears in a public directory with a DEBONE certified badge, so customers can find and hire them.",
+      "usual": "Students finish the course and are on their own."
+    },
+    {
+      "title": "Students can earn by sharing",
+      "text": "Each student gets a personal link. Friends who join get a discount, and the student earns a share of what the friends pay, with a clear withdrawal process.",
+      "usual": "Word of mouth that is never tracked or rewarded."
+    },
+    {
+      "title": "Clear, trackable refunds",
+      "text": "Students ask for refunds inside the dashboard and watch the status. If a course is short of students, they are told in advance and choose a new date or a refund.",
+      "usual": "Awkward phone calls and disagreements about what was promised."
+    },
+    {
+      "title": "Private notes and a safe community",
+      "text": "Students write private notes in each lesson that only they can see. Each course has its own moderated chat where only enrolled students can post.",
+      "usual": "Public groups with strangers, spam and no control."
+    },
+    {
+      "title": "A control room for the owner",
+      "text": "The admin panel lists exactly what needs attention today: payments to approve, work to mark, refunds, certificate requests and late installments. Late students are listed first, with a WhatsApp button beside each. Reports show sales by month, net after refunds, sign ups and top courses, and can be downloaded as a spreadsheet file.",
+      "usual": "Memory, paper and guesswork."
+    },
+    {
+      "title": "Change the rules without a programmer",
+      "text": "Refund days, installment rules, rewards, certificate marks, download limits and bank accounts are all changed from one Business rules page and apply at once. Website pages, services, shop products and homepage photos are edited in the same panel.",
+      "usual": "Every change needs a developer and costs time and money."
+    },
+    {
+      "title": "Safer by design",
+      "text": "Student pages open only for signed in students and staff pages only for staff. The server checks the role on every action. Digital files are kept in private storage, and backups can be created and downloaded from the panel.",
+      "usual": "Shared passwords, open links and no backup."
+    },
+    {
+      "title": "Built to teach its own users",
+      "text": "There is a guided tour, a full written guide you can read, listen to or download, and a built in help assistant. Nobody is left to guess.",
+      "usual": "Someone has to explain everything by phone, again and again."
+    }
+  ],
+  "table": [
+    ["Live classes, recordings and chat together", "Yes", "Usually spread across several apps"],
+    ["Lessons open on the class schedule", "Yes", "Rarely"],
+    ["Installments with automatic reminders and pause", "Yes", "Usually by hand"],
+    ["Bank transfer with receipt and reference", "Yes", "Often by screenshot"],
+    ["Checkable certificates", "Yes", "Rarely"],
+    ["Talent directory for graduates", "Yes", "Rarely"],
+    ["Student referrals with withdrawals", "Yes", "Rarely"],
+    ["Refund and schedule notice workflow", "Yes", "By phone"],
+    ["Owner to do list and reports", "Yes", "By memory"],
+    ["Rules changed without a developer", "Yes", "Usually needs a developer"],
+    ["Tour, written guide, voice guide and PDF", "Yes", "Rarely"]
+  ]
+}

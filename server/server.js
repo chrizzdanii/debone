@@ -1386,6 +1386,34 @@ route('GET', '/api/courses/:id/image', async ctx => {
 route('GET', '/api/settings', async ctx => {
   json(ctx.res, 200, { settings: Object.assign({}, SETTINGS_DEFAULTS, db.settings, { announcementOn: false, announcement: '' }) });
 });
+/* ---------- The guide: written guide, voice guide and PDF (one set of content files, live numbers filled in) ---------- */
+const guideLib = (() => { try { return require('./guide.js'); } catch (e) { console.error('Guide module not loaded:', e.message); return null; } })();
+function guideAudience(ctx) {
+  const user = requireUser(ctx);
+  const want = ctx.query.get('for') === 'staff' ? 'staff' : ctx.query.get('for') === 'student' ? 'student' : (isStaff(user) ? 'staff' : 'student');
+  if (want === 'staff' && !isStaff(user)) throw httpError(403, 'The staff guide is only for staff.');
+  return { user, audience: want };
+}
+route('GET', '/api/guide', async ctx => {
+  if (!guideLib) throw httpError(503, 'The guide is not available right now.');
+  const { user, audience } = guideAudience(ctx);
+  const settings = Object.assign({}, SETTINGS_DEFAULTS, db.settings);
+  ctx.res.setHeader('Cache-Control', 'private, no-cache');
+  json(ctx.res, 200, { guide: guideLib.content(audience, settings, isAdmin(user)), canReadStaff: isStaff(user) });
+});
+route('GET', '/api/guide/pdf', async ctx => {
+  if (!guideLib) throw httpError(503, 'The PDF guide is not available right now.');
+  const { user, audience } = guideAudience(ctx);
+  const settings = Object.assign({}, SETTINGS_DEFAULTS, db.settings);
+  let buf;
+  try { buf = await guideLib.pdf(audience, settings, isAdmin(user)); }
+  catch (e) { throw httpError(e.status || 500, e.status === 503 ? e.message : 'Could not make the PDF. Please try again.'); }
+  const name = audience === 'staff' ? (isAdmin(user) ? 'DEBONE-Admin-Guide.pdf' : 'DEBONE-Instructor-Guide.pdf') : 'DEBONE-Student-Guide.pdf';
+  ctx.res.writeHead(200, { 'Content-Type': 'application/pdf', 'Content-Length': buf.length, 'Content-Disposition': 'attachment; filename="' + name + '"',
+    'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'X-Robots-Tag': 'noindex' });
+  ctx.res.end(buf);
+});
+
 route('PUT', '/api/staff/settings', async ctx => {
   requireStaff(ctx, true);
   const b = ctx.body, out = {};
@@ -1671,7 +1699,7 @@ const GUIDES = [
     a: 'New announcements, live classes, assignments and marks appear as a pop-up in the top right corner and in the bell icon at the top. Click a pop-up to go straight to it.',
     next: ['Can you show me around?'] },
   { id: 'tour', q: ['tour', 'tutorial', 'how to use', 'how do i use', 'guide me', 'show me around', 'new here', 'getting started', 'get started'],
-    a: 'Press Take a tour at the top of the dashboard. It walks you through every part in about a minute and you can start it again at any time.',
+    a: 'Press Take a tour at the top of the dashboard. It walks you through every part and you can start it again at any time. For the full written guide, press Guide next to it. You can read it, listen to it being read aloud, or download it as a PDF.',
     next: ['How do I enrol?', 'How do I complete my profile?'] },
   { id: 'price', q: ['price', 'cost', 'how much', 'fee', 'fees', 'naira', '₦', 'tuition', 'afford', 'expensive'],
     a: 'Each course shows its price on the Browse courses page. Free courses show Free, and courses marked Coming soon are not open yet. Bundles are cheaper than buying courses separately, and newsletter subscribers get a 30% coupon.',
@@ -4448,13 +4476,14 @@ const MAINTENANCE_OPEN = /^\/(api\/|staff-login|admin|error-pages\.|favicon|503|
 function serveStatic(req, res, pathname, user) {
   let p = decodeURIComponent(pathname);
   if (p === '/') p = '/index.html';
-  if (p === '/dashboard' || p === '/admin') p += '.html';   // Vercel serves clean URLs without .html
+  if (p === '/dashboard' || p === '/admin' || p === '/guide') p += '.html';   // Vercel serves clean URLs without .html
   if (process.env.MAINTENANCE_MODE === '1' && !isStaff(user) && !MAINTENANCE_OPEN.test(p) && (/\.html$/.test(p) || !path.extname(p))) return sendErrorPage(res, 503);
   countView(p);
   if (p === '/dashboard.html' && !user) { res.writeHead(302, { Location: '/login.html?next=dashboard' }); return res.end(); }
   if (p === '/admin.html' && !isStaff(user)) { res.writeHead(302, { Location: '/staff-login.html' }); return res.end(); }
+  if (p === '/guide.html' && !user) { res.writeHead(302, { Location: '/login.html?next=guide' }); return res.end(); }
   // The dashboard and admin pages sit outside public/ so that only signed-in people can load them (Vercel serves public/ to everyone)
-  const baseDir = (p === '/dashboard.html' || p === '/admin.html') ? PRIVATE_DIR : PUBLIC_DIR;
+  const baseDir = (p === '/dashboard.html' || p === '/admin.html' || p === '/guide.html') ? PRIVATE_DIR : PUBLIC_DIR;
   let file = path.join(baseDir, path.normalize(p));
   if (!file.startsWith(baseDir + path.sep) && file !== baseDir) return sendErrorPage(res, 403);
   if (!path.extname(file) && fs.existsSync(file + '.html')) file += '.html';
